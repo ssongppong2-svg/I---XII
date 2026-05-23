@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I — XII : 파괴된 시간</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Noto+Serif+KR:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04040A;--gold:#FFD700;--crimson:#8B0000;--copper:#B87333;
+  --text:#F0E6D3;--shadow:rgba(255,215,0,0.2);--dark-red:#4a0000;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Noto Serif KR',serif}
+
+/* ===== BASE SCREENS ===== */
+.screen{position:fixed;inset:0;z-index:1;display:none;overflow:hidden}
+.screen.active{display:flex}
+
+/* ===== TITLE SCREEN ===== */
+#screen-title{flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0a0a1a 0%,#04040A 70%)}
+#title-canvas{position:absolute;inset:0;z-index:0}
+.title-content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center;gap:24px}
+.title-roman{font-family:'Cinzel Decorative',serif;font-size:clamp(60px,12vw,120px);font-weight:900;color:var(--gold);text-shadow:0 0 30px rgba(255,215,0,0.6),0 0 60px rgba(255,215,0,0.3);letter-spacing:0.2em;animation:titlePulse 3s ease-in-out infinite}
+.title-sub{font-family:'Cinzel',serif;font-size:clamp(14px,3vw,22px);color:var(--copper);letter-spacing:0.5em;text-transform:uppercase}
+.title-korean{font-family:'Noto Serif KR',serif;font-size:clamp(18px,4vw,30px);color:var(--text);opacity:0.9;letter-spacing:0.3em}
+.title-divider{width:300px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:8px 0}
+#btn-start{font-family:'Cinzel',serif;font-size:20px;padding:14px 48px;background:transparent;border:2px solid var(--gold);color:var(--gold);cursor:pointer;letter-spacing:0.3em;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden}
+#btn-start::before{content:'';position:absolute;inset:0;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);z-index:-1}
+#btn-start:hover{color:var(--bg);text-shadow:none}
+#btn-start:hover::before{transform:scaleX(1)}
+#clock-ring{position:absolute;z-index:1;pointer-events:none}
+
+@keyframes titlePulse{0%,100%{text-shadow:0 0 30px rgba(255,215,0,0.6),0 0 60px rgba(255,215,0,0.3)}50%{text-shadow:0 0 50px rgba(255,215,0,0.9),0 0 100px rgba(255,215,0,0.5),0 0 150px rgba(255,215,0,0.2)}}
+
+/* ===== MAP SCREEN ===== */
+#screen-map{flex-direction:column;background:var(--bg)}
+#map-hud{display:flex;align-items:center;gap:24px;padding:12px 20px;background:rgba(0,0,0,0.8);border-bottom:1px solid rgba(255,215,0,0.2);z-index:10;flex-shrink:0}
+.hud-hp{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace}
+.hud-hp-bar{width:160px;height:12px;background:#1a0000;border:1px solid var(--crimson);border-radius:2px;overflow:hidden}
+.hud-hp-fill{height:100%;background:linear-gradient(90deg,#8B0000,#cc0000);transition:width 0.3s}
+.hud-item{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:14px}
+.hud-icon{font-size:16px}
+#map-container{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;padding:20px}
+#map-svg{display:block;margin:0 auto}
+.map-node{cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
+.map-node circle{transition:all 0.2s}
+.map-node.reachable circle{animation:nodePulse 1.2s ease-in-out infinite}
+.map-node.current circle{filter:drop-shadow(0 0 10px var(--gold))}
+.map-node.visited{opacity:0.4}
+.map-node.dead-end circle{stroke-dasharray:5,3}
+@keyframes nodePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
+/* Node type badges */
+.node-badge-forge{fill:#7F8C8D}
+.node-badge-abyss{fill:#2C3E50}
+.node-badge-black_market{fill:#8E44AD}
+.node-badge-medical{fill:#2ECC71}
+.node-badge-char_upgrade{fill:#1ABC9C}
+.node-badge-ambush{fill:#E74C3C}
+.node-badge-ambush_event{fill:#E67E22}
+
+/* ===== BATTLE SCREEN ===== */
+#screen-battle{flex-direction:column;background:var(--bg)}
+#battle-enemy-area{flex-shrink:0;padding:16px 20px;min-height:180px;display:flex;align-items:center;justify-content:center;position:relative;border-bottom:1px solid rgba(255,215,0,0.1)}
+#enemy-portrait{width:120px;height:120px;border-radius:4px;border:2px solid var(--copper);display:flex;align-items:center;justify-content:center;font-size:64px;background:rgba(0,0,0,0.5);flex-shrink:0}
+#enemy-info{margin-left:20px;display:flex;flex-direction:column;gap:8px;flex:1;max-width:300px}
+#enemy-name{font-family:'Cinzel',serif;font-size:18px;color:var(--gold)}
+#enemy-hp-bar-wrap{width:100%}
+#enemy-hp-bar{width:100%;height:10px;background:#1a0000;border:1px solid var(--crimson);border-radius:2px;overflow:hidden}
+#enemy-hp-fill{height:100%;background:linear-gradient(90deg,#8B0000,#ff2020);transition:width 0.4s cubic-bezier(0.4,0,0.2,1)}
+#enemy-hp-text{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--copper);margin-top:2px}
+#enemy-status{display:flex;gap:6px;flex-wrap:wrap}
+#enemy-intent{font-family:'Noto Serif KR',serif;font-size:13px;color:var(--text);opacity:0.8;padding:4px 8px;background:rgba(255,255,255,0.05);border-left:2px solid var(--copper)}
+
+#battle-vfx{flex:1;position:relative;min-height:60px;overflow:hidden}
+#vfx-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#dmg-numbers{position:absolute;inset:0;pointer-events:none}
+
+#battle-hud{display:flex;align-items:center;gap:16px;padding:8px 16px;background:rgba(0,0,0,0.7);border-top:1px solid rgba(255,215,0,0.1);border-bottom:1px solid rgba(255,215,0,0.1);flex-shrink:0}
+.player-hp-wrap{display:flex;align-items:center;gap:8px}
+.player-hp-bar{width:140px;height:10px;background:#1a0000;border:1px solid var(--crimson);border-radius:2px;overflow:hidden}
+.player-hp-fill{height:100%;background:linear-gradient(90deg,#8B0000,#cc3333);transition:width 0.4s}
+#ap-dots{display:flex;gap:6px}
+.ap-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--gold);background:var(--gold);transition:background 0.2s}
+.ap-dot.empty{background:transparent}
+#shield-display{font-family:'Share Tech Mono',monospace;font-size:14px;display:flex;align-items:center;gap:4px}
+#deck-counts{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--copper);display:flex;gap:12px}
+#btn-end-turn{margin-left:auto;font-family:'Cinzel',serif;font-size:13px;padding:8px 20px;background:rgba(139,115,0,0.3);border:1px solid var(--gold);color:var(--gold);cursor:pointer;transition:all 0.2s;letter-spacing:0.1em}
+#btn-end-turn:hover{background:rgba(255,215,0,0.2)}
+#btn-end-turn:disabled{opacity:0.4;cursor:not-allowed}
+
+#hand-area{flex-shrink:0;min-height:160px;max-height:200px;padding:10px 10px 20px;overflow-x:auto;display:flex;align-items:flex-end;gap:-10px;background:rgba(0,0,0,0.4);justify-content:center}
+#hand-cards{display:flex;gap:8px;align-items:flex-end;padding:0 20px}
+
+.card{width:90px;height:130px;border-radius:6px;border:2px solid;display:flex;flex-direction:column;padding:6px;cursor:pointer;position:relative;transition:transform 0.15s cubic-bezier(0.4,0,0.2,1),box-shadow 0.15s;flex-shrink:0;user-select:none}
+.card:hover{transform:translateY(-20px) scale(1.08);z-index:100}
+.card.unaffordable{opacity:0.5;cursor:not-allowed}
+.card.rarity-common{border-color:#888;background:linear-gradient(160deg,#1a1a2e,#16213e)}
+.card.rarity-rare{border-color:#4488ff;background:linear-gradient(160deg,#0d1b3e,#1a2a5e)}
+.card.rarity-epic{border-color:#aa44ff;background:linear-gradient(160deg,#1a0a2e,#2a103e)}
+.card.rarity-legendary{border-color:#FFD700;background:linear-gradient(160deg,#1a1000,#2e2000);box-shadow:0 0 10px rgba(255,215,0,0.3)}
+.card-cost{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:var(--bg);font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center}
+.card-icon{font-size:24px;text-align:center;margin:4px 0}
+.card-name{font-family:'Cinzel',serif;font-size:9px;font-weight:600;text-align:center;color:var(--text);line-height:1.2}
+.card-desc{font-size:9px;color:rgba(240,230,211,0.7);text-align:center;margin-top:4px;line-height:1.3;font-family:'Noto Serif KR',serif}
+.card-rarity-tag{font-size:7px;text-align:center;margin-top:auto;opacity:0.6;font-family:'Share Tech Mono',monospace}
+
+/* status icons */
+.status-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:1px solid;position:relative}
+.status-icon span{position:absolute;bottom:-2px;right:-2px;font-size:9px;font-family:'Share Tech Mono',monospace;background:var(--bg);padding:0 1px}
+.status-poison{background:rgba(0,100,0,0.4);border-color:#00cc00}
+.status-bleed{background:rgba(100,0,0,0.4);border-color:#cc0000}
+.status-vulnerable{background:rgba(100,50,0,0.4);border-color:#cc8800}
+.status-strength{background:rgba(80,0,100,0.4);border-color:#aa00cc}
+.status-shield{background:rgba(0,50,100,0.4);border-color:#0088cc}
+
+/* ===== OVERLAY LAYERS ===== */
+#overlay-low-hp{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;transition:opacity 0.5s}
+#overlay-low-hp.active{opacity:1;animation:lowHpPulse 1.5s ease-in-out infinite}
+@keyframes lowHpPulse{
+  0%,100%{box-shadow:inset 0 0 80px rgba(139,0,0,0.4),inset 0 0 160px rgba(139,0,0,0.2)}
+  50%{box-shadow:inset 0 0 120px rgba(180,0,0,0.7),inset 0 0 240px rgba(139,0,0,0.4)}
+}
+
+#overlay-vfx{position:fixed;inset:0;z-index:100;pointer-events:none}
+
+#story-overlay{position:fixed;inset:0;z-index:500;display:none;background:rgba(0,0,0,0.85);flex-direction:column;justify-content:flex-end;padding:20px}
+#story-overlay.active{display:flex}
+#story-box{background:rgba(4,4,15,0.97);border:1px solid rgba(255,215,0,0.4);border-radius:4px;padding:24px 28px;max-width:700px;width:100%;margin:0 auto;min-height:120px;display:flex;flex-direction:column;gap:12px;position:relative}
+#story-box::before{content:'';position:absolute;top:0;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+#story-speaker{font-family:'Cinzel',serif;font-size:12px;color:var(--copper);letter-spacing:0.2em;text-transform:uppercase}
+#story-text{font-family:'Noto Serif KR',serif;font-size:16px;line-height:1.8;color:var(--text);min-height:60px}
+#story-prompt{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--gold);opacity:0.7;text-align:right;animation:blink 1s step-end infinite}
+#story-choices{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.story-choice{font-family:'Noto Serif KR',serif;font-size:14px;padding:10px 16px;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.3);color:var(--text);cursor:pointer;transition:all 0.2s;text-align:left}
+.story-choice:hover{background:rgba(255,215,0,0.15);border-color:var(--gold)}
+@keyframes blink{0%,100%{opacity:0.7}50%{opacity:0}}
+
+#overlay-ultimate{position:fixed;inset:0;z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;background:#000}
+#overlay-ultimate.active{display:flex}
+#ult-text{font-family:'Cinzel Decorative',serif;font-size:clamp(30px,8vw,80px);font-weight:900;color:var(--gold);text-align:center;animation:glitch 0.1s steps(2) infinite}
+#ult-card-name{font-family:'Cinzel',serif;font-size:clamp(20px,5vw,48px);color:var(--crimson);margin-top:16px;letter-spacing:0.2em}
+@keyframes glitch{
+  0%{text-shadow:2px 0 red,-2px 0 cyan;clip-path:inset(20% 0 30% 0)}
+  25%{text-shadow:-2px 0 red,2px 0 cyan;clip-path:inset(50% 0 10% 0)}
+  50%{text-shadow:2px 0 cyan,-2px 0 red;clip-path:inset(10% 0 60% 0)}
+  75%{text-shadow:-3px 0 red,3px 0 blue;clip-path:inset(70% 0 5% 0)}
+  100%{text-shadow:2px 0 red,-2px 0 cyan;clip-path:inset(0% 0 80% 0)}
+}
+
+/* ===== MODALS ===== */
+#modal-overlay{position:fixed;inset:0;z-index:400;display:none;background:rgba(0,0,0,0.8);align-items:center;justify-content:center}
+#modal-overlay.active{display:flex}
+#modal-box{background:#08080f;border:1px solid rgba(255,215,0,0.4);border-radius:6px;padding:28px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+#modal-title{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);text-align:center;border-bottom:1px solid rgba(255,215,0,0.2);padding-bottom:12px}
+#modal-content{display:flex;flex-direction:column;gap:12px}
+.modal-btn{font-family:'Cinzel',serif;font-size:14px;padding:10px 20px;background:transparent;border:1px solid;cursor:pointer;transition:all 0.2s;letter-spacing:0.1em}
+.modal-btn-gold{border-color:var(--gold);color:var(--gold)}
+.modal-btn-gold:hover{background:rgba(255,215,0,0.15)}
+.modal-btn-red{border-color:var(--crimson);color:#ff4444}
+.modal-btn-red:hover{background:rgba(139,0,0,0.2)}
+.modal-btn-gray{border-color:#555;color:#aaa}
+.modal-btn-gray:hover{background:rgba(255,255,255,0.05)}
+
+/* shop cards */
+.shop-item{display:flex;align-items:center;gap:16px;padding:12px;border:1px solid rgba(255,255,255,0.1);border-radius:4px}
+.shop-item:hover{border-color:rgba(255,215,0,0.3)}
+.shop-card-preview{width:70px;height:100px;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px solid;flex-shrink:0}
+.shop-info{flex:1}
+.shop-name{font-family:'Cinzel',serif;font-size:14px;color:var(--text)}
+.shop-desc{font-size:12px;color:rgba(240,230,211,0.6);margin-top:4px;font-family:'Noto Serif KR',serif}
+.shop-price{font-family:'Share Tech Mono',monospace;font-size:16px;color:var(--gold)}
+.shop-buy-btn{font-family:'Cinzel',serif;font-size:12px;padding:6px 14px;border:1px solid var(--gold);color:var(--gold);background:transparent;cursor:pointer;transition:all 0.2s}
+.shop-buy-btn:hover{background:rgba(255,215,0,0.15)}
+.shop-buy-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* reward screen */
+.reward-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.reward-card{width:100px;height:145px;border-radius:6px;border:2px solid;display:flex;flex-direction:column;align-items:center;padding:8px;cursor:pointer;transition:all 0.2s}
+.reward-card:hover{transform:translateY(-8px);box-shadow:0 8px 20px rgba(255,215,0,0.2)}
+
+/* victory / defeat */
+#screen-end{position:fixed;inset:0;z-index:800;display:none;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0a0a1a,#04040A)}
+#screen-end.active{display:flex}
+.end-title{font-family:'Cinzel Decorative',serif;font-size:clamp(40px,10vw,90px);font-weight:900;margin-bottom:24px}
+.end-title.victory{color:var(--gold);text-shadow:0 0 40px rgba(255,215,0,0.6)}
+.end-title.defeat{color:var(--crimson);text-shadow:0 0 40px rgba(139,0,0,0.6)}
+.end-score{font-family:'Share Tech Mono',monospace;font-size:22px;color:var(--text);margin-bottom:32px}
+.end-details{font-family:'Noto Serif KR',serif;font-size:14px;color:var(--copper);text-align:center;line-height:2;margin-bottom:24px}
+
+/* burn notification */
+.burn-notif{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;font-family:'Cinzel',serif;font-size:24px;color:#ff6600;background:rgba(0,0,0,0.8);padding:8px 20px;border:1px solid #ff6600;pointer-events:none;animation:burnFade 1.5s ease-out forwards}
+@keyframes burnFade{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-120%) scale(1.3)}}
+
+/* damage numbers */
+.dmg-number{position:absolute;font-family:'Share Tech Mono',monospace;font-size:28px;font-weight:bold;pointer-events:none;animation:dmgFloat 1.2s ease-out forwards;z-index:200}
+.dmg-number.player{color:#ff4444}
+.dmg-number.enemy{color:#ffdd00}
+.dmg-number.heal{color:#44ff88}
+.dmg-number.shield{color:#44aaff}
+@keyframes dmgFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(0.7)}}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,0.05)}
+::-webkit-scrollbar-thumb{background:rgba(255,215,0,0.3);border-radius:2px}
+
+/* transition gear overlay */
+#gear-transition{position:fixed;inset:0;z-index:700;pointer-events:none;display:none}
+#gear-transition.active{display:block}
+
+/* tooltip */
+#card-tooltip{position:fixed;z-index:800;background:#08080f;border:1px solid rgba(255,215,0,0.5);border-radius:6px;padding:14px;width:180px;pointer-events:none;display:none;font-size:12px}
+#card-tooltip.visible{display:block}
+#card-tooltip .tt-name{font-family:'Cinzel',serif;font-size:14px;color:var(--gold);margin-bottom:6px}
+#card-tooltip .tt-desc{font-family:'Noto Serif KR',serif;line-height:1.6;color:var(--text)}
+#card-tooltip .tt-type{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--copper);margin-top:6px}
+
+/* floor indicator */
+.floor-label{font-family:'Share Tech Mono',monospace;font-size:10px;fill:rgba(240,230,211,0.4)}
+.node-type-label{font-size:10px;font-family:'Noto Serif KR',serif}
+
+/* burn count badge */
+#burn-counter{position:fixed;top:12px;right:12px;z-index:200;background:rgba(255,100,0,0.9);color:#fff;font-family:'Share Tech Mono',monospace;font-size:12px;padding:4px 10px;border-radius:2px;display:none}
+</style>
+</head>
+<body>
+
+<!-- Base Screens -->
+<div id="screen-title" class="screen active">
+  <canvas id="title-canvas"></canvas>
+  <div class="title-content">
+    <div class="title-roman">I — XII</div>
+    <div class="title-divider"></div>
+    <div class="title-korean">파괴된 시간</div>
+    <div class="title-sub">A Rogue Chronicle of Broken Hours</div>
+    <div class="title-divider"></div>
+    <button id="btn-start">시 작</button>
+  </div>
+</div>
+
+<div id="screen-map" class="screen">
+  <div id="map-hud">
+    <div class="hud-hp">
+      <span class="hud-icon">♥</span>
+      <div class="hud-hp-bar"><div class="hud-hp-fill" id="map-hp-fill"></div></div>
+      <span id="map-hp-text" style="font-size:13px"></span>
+    </div>
+    <div class="hud-item"><span class="hud-icon">💰</span><span id="map-gold"></span></div>
+    <div class="hud-item"><span class="hud-icon">🃏</span><span id="map-deck-count"></span> 장</div>
+    <div class="hud-item" style="margin-left:auto;font-family:'Cinzel',serif;font-size:12px;color:var(--copper)">층 <span id="map-floor-display">0</span> / 14</div>
+  </div>
+  <div id="map-container">
+    <svg id="map-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<div id="screen-battle" class="screen">
+  <div id="battle-enemy-area">
+    <div id="enemy-portrait">👁</div>
+    <div id="enemy-info">
+      <div id="enemy-name">Enemy</div>
+      <div id="enemy-hp-bar-wrap">
+        <div id="enemy-hp-bar"><div id="enemy-hp-fill" style="width:100%"></div></div>
+        <div id="enemy-hp-text">0 / 0</div>
+      </div>
+      <div id="enemy-status"></div>
+      <div id="enemy-intent"></div>
+    </div>
+  </div>
+  <div id="battle-vfx">
+    <canvas id="vfx-canvas"></canvas>
+    <div id="dmg-numbers"></div>
+  </div>
+  <div id="battle-hud">
+    <div class="player-hp-wrap">
+      <span style="font-size:13px">♥</span>
+      <div class="player-hp-bar"><div class="player-hp-fill" id="player-hp-fill"></div></div>
+      <span id="player-hp-text" style="font-family:'Share Tech Mono',monospace;font-size:13px"></span>
+    </div>
+    <div id="ap-dots"></div>
+    <div id="shield-display"><span>🛡</span><span id="shield-val">0</span></div>
+    <div id="deck-counts">
+      <span>덱:<span id="cnt-deck">0</span></span>
+      <span>손:<span id="cnt-hand">0</span></span>
+      <span>버:<span id="cnt-discard">0</span></span>
+    </div>
+    <button id="btn-end-turn">턴 종료</button>
+  </div>
+  <div id="hand-area"><div id="hand-cards"></div></div>
+</div>
+
+<!-- Tension Overlays -->
+<div id="overlay-low-hp"></div>
+<div id="overlay-vfx"></div>
+
+<!-- Story Interceptor -->
+<div id="story-overlay">
+  <div id="story-box">
+    <div id="story-speaker">???</div>
+    <div id="story-text"></div>
+    <div id="story-prompt">[ 클릭 또는 스페이스바로 계속 ]</div>
+    <div id="story-choices"></div>
+  </div>
+</div>
+
+<!-- Ultimate Overlay -->
+<div id="overlay-ultimate">
+  <div id="ult-text">ULTIMATE BREAK</div>
+  <div id="ult-card-name"></div>
+</div>
+
+<!-- Modal -->
+<div id="modal-overlay">
+  <div id="modal-box">
+    <div id="modal-title"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Gear transition -->
+<div id="gear-transition"></div>
+
+<!-- End screen -->
+<div id="screen-end">
+  <div class="end-title" id="end-title-text"></div>
+  <div class="end-details" id="end-details"></div>
+  <div class="end-score" id="end-score"></div>
+  <button class="modal-btn modal-btn-gold" onclick="initGame()" style="font-size:18px;padding:14px 40px;letter-spacing:0.3em">새 게임</button>
+</div>
+
+<!-- Card tooltip -->
+<div id="card-tooltip"><div class="tt-name"></div><div class="tt-desc"></div><div class="tt-type"></div></div>
+
+<script>
+'use strict';
+
+// ============================================================
+// 1. CONSTANTS & CONFIG
+// ============================================================
+const RARITY_COLORS = {common:'#888',rare:'#4488ff',epic:'#aa44ff',legendary:'#FFD700'};
+const RARITY_NAMES = {common:'일반',rare:'희귀',epic:'고급',legendary:'전설'};
+const NODE_ICONS = {
+  combat:'⚔',elite:'💀',shop:'🛒',rest:'🔥',event:'❓',boss:'👁',
+  forge:'🗑',abyss:'∅',ambush_event:'⚡',black_market:'🌑',
+  upgrade:'▲',char_upgrade:'✦',medical:'✚',ambush:'!!',
+};
+const NODE_NAMES = {
+  combat:'일반',elite:'정예',shop:'상점',rest:'휴식',event:'사건',boss:'지배자',
+  forge:'폐기소',abyss:'심연',ambush_event:'기습사건',black_market:'암시장',
+  upgrade:'강화소',char_upgrade:'제거실',medical:'의료실',ambush:'기습',
+};
+const NODE_COLORS = {
+  combat:'#CC3322',elite:'#9B59B6',shop:'#F1C40F',rest:'#27AE60',
+  event:'#3498DB',boss:'#CC2222',forge:'#7F8C8D',abyss:'#2C3E50',
+  ambush_event:'#E67E22',black_market:'#8E44AD',upgrade:'#3498DB',
+  char_upgrade:'#1ABC9C',medical:'#2ECC71',ambush:'#E74C3C',
+};
+const FLOOR_COUNT = 15;
+const NODE_W = 44, NODE_H = 44;
+const MAP_COL_W = 110;
+const MAP_ROW_H = 80;
+
+// ============================================================
+// 2. CARD DATABASE
+// ============================================================
+const CARDS = {
+  // === COMMON ===
+  strike:{id:'strike',name:'철권',rarity:'common',cost:1,icon:'👊',type:'attack',
+    desc:'적에게 6 피해.',effect:(b)=>{dealDamage(b,6)}},
+  heavy_strike:{id:'heavy_strike',name:'중격',rarity:'common',cost:2,icon:'⚔️',type:'attack',
+    desc:'적에게 12 피해.',effect:(b)=>{dealDamage(b,12)}},
+  defend:{id:'defend',name:'방어',rarity:'common',cost:1,icon:'🛡',type:'skill',
+    desc:'방어도 8 획득.',effect:(b)=>{gainShield(b,8)}},
+  mend:{id:'mend',name:'봉합',rarity:'common',cost:1,icon:'💊',type:'skill',
+    desc:'HP 7 회복.',effect:(b)=>{healPlayer(b,7)}},
+  quick_slash:{id:'quick_slash',name:'속격',rarity:'common',cost:1,icon:'✂️',type:'attack',
+    desc:'적에게 4 피해를 2회.',effect:(b)=>{dealDamage(b,4);dealDamage(b,4)}},
+  iron_wall:{id:'iron_wall',name:'철벽',rarity:'common',cost:2,icon:'🧱',type:'skill',
+    desc:'방어도 16 획득.',effect:(b)=>{gainShield(b,16)}},
+  scratch:{id:'scratch',name:'할퀴기',rarity:'common',cost:1,icon:'🐾',type:'attack',
+    desc:'적에게 5 피해. 독 1 부여.',effect:(b)=>{dealDamage(b,5);applyStatus(b,'enemy','poison',1)}},
+  steady:{id:'steady',name:'침착',rarity:'common',cost:1,icon:'🧘',type:'skill',
+    desc:'방어도 5 획득. HP 3 회복.',effect:(b)=>{gainShield(b,5);healPlayer(b,3)}},
+  blood_tap:{id:'blood_tap',name:'혈채',rarity:'common',cost:2,icon:'🩸',type:'skill',
+    desc:'HP 3 소모. 카드 2장 추가 드로우.',effect:(b)=>{damagePlayer(b,3);drawCards(b,2)}},
+  retaliate:{id:'retaliate',name:'앙갚음',rarity:'common',cost:1,icon:'↩️',type:'attack',
+    desc:'현재 방어도만큼 피해.',effect:(b)=>{dealDamage(b,Math.max(1,GS.shield))}},
+
+  // === RARE ===
+  poison_blade:{id:'poison_blade',name:'독날',rarity:'rare',cost:1,icon:'🗡️',type:'attack',
+    desc:'8 피해. 독 3 부여.',effect:(b)=>{dealDamage(b,8);applyStatus(b,'enemy','poison',3)}},
+  rupture:{id:'rupture',name:'열상',rarity:'rare',cost:2,icon:'💢',type:'attack',
+    desc:'출혈 3 부여. 5 피해.',effect:(b)=>{applyStatus(b,'enemy','bleed',3);dealDamage(b,5)}},
+  expose:{id:'expose',name:'노출',rarity:'rare',cost:1,icon:'🎯',type:'skill',
+    desc:'취약 2 부여. 방어도 4 획득.',effect:(b)=>{applyStatus(b,'enemy','vulnerable',2);gainShield(b,4)}},
+  power_surge:{id:'power_surge',name:'역량',rarity:'rare',cost:2,icon:'⚡',type:'power',
+    desc:'근력 2 획득(이번 전투).',effect:(b)=>{applyStatus(b,'player','strength',2)}},
+  mirror_shield:{id:'mirror_shield',name:'반사막',rarity:'rare',cost:2,icon:'🪞',type:'skill',
+    desc:'방어도 12. 다음 적 공격 반사.',effect:(b)=>{gainShield(b,12);b.player.reflect=true}},
+  cursed_strike:{id:'cursed_strike',name:'저주격',rarity:'rare',cost:2,icon:'☠️',type:'attack',
+    desc:'15 피해. 자신도 3 피해.',effect:(b)=>{dealDamage(b,15);damagePlayer(b,3)}},
+  vampiric:{id:'vampiric',name:'흡혈',rarity:'rare',cost:2,icon:'🧛',type:'attack',
+    desc:'10 피해. 가한 피해의 40% 회복.',effect:(b)=>{const d=dealDamage(b,10);healPlayer(b,Math.floor(d*0.4))}},
+  chain_slash:{id:'chain_slash',name:'연쇄베기',rarity:'rare',cost:2,icon:'🔗',type:'attack',
+    desc:'5 피해 3회.',effect:(b)=>{dealDamage(b,5);dealDamage(b,5);dealDamage(b,5)}},
+  fortify:{id:'fortify',name:'요새화',rarity:'rare',cost:2,icon:'🏰',type:'skill',
+    desc:'방어도 10. 근력 1 감소 후 HP 10 회복.',effect:(b)=>{gainShield(b,10);healPlayer(b,10)}},
+  blind:{id:'blind',name:'실명',rarity:'rare',cost:1,icon:'👁️',type:'skill',
+    desc:'적에게 약화 2 부여(공격력 감소).',effect:(b)=>{applyStatus(b,'enemy','weak',2)}},
+
+  // === EPIC ===
+  whirlwind:{id:'whirlwind',name:'회전베기',rarity:'epic',cost:2,icon:'🌀',type:'attack',
+    desc:'8 피해. AP 1당 추가 4 피해.',effect:(b)=>{dealDamage(b,8+GS.ap*4)}},
+  plague:{id:'plague',name:'역병',rarity:'epic',cost:3,icon:'☣️',type:'attack',
+    desc:'독 6 부여. 12 피해.',effect:(b)=>{applyStatus(b,'enemy','poison',6);dealDamage(b,12)}},
+  absolute_defense:{id:'absolute_defense',name:'절대방어',rarity:'epic',cost:3,icon:'⬡',type:'skill',
+    desc:'방어도 30 획득.',effect:(b)=>{gainShield(b,30)}},
+  echo_strike:{id:'echo_strike',name:'잔향',rarity:'epic',cost:3,icon:'🔊',type:'attack',
+    desc:'현재 손패 카드 수×3 피해.',effect:(b)=>{dealDamage(b,GS.hand.length*3)}},
+  blood_ritual:{id:'blood_ritual',name:'혈액 의식',rarity:'epic',cost:2,icon:'🩸',type:'skill',
+    desc:'HP 10 소모. 카드 4장 드로우. 방어도 15.',effect:(b)=>{damagePlayer(b,10);drawCards(b,4);gainShield(b,15)}},
+  entropy:{id:'entropy',name:'엔트로피',rarity:'epic',cost:3,icon:'🌑',type:'attack',
+    desc:'취약·출혈·독 각 3씩 부여. 10 피해.',effect:(b)=>{applyStatus(b,'enemy','vulnerable',3);applyStatus(b,'enemy','bleed',3);applyStatus(b,'enemy','poison',3);dealDamage(b,10)}},
+  resonance:{id:'resonance',name:'공명',rarity:'epic',cost:2,icon:'🔔',type:'skill',
+    desc:'이번 턴 AP +2. 방어도 8.',effect:(b)=>{GS.ap=Math.min(GS.ap+2,GS.maxAp+2);gainShield(b,8);renderBattleHUD()}},
+  void_drain:{id:'void_drain',name:'허공흡수',rarity:'epic',cost:3,icon:'🕳️',type:'attack',
+    desc:'버린 카드 수×4 피해.',effect:(b)=>{dealDamage(b,GS.discard.length*4)}},
+
+  // === LEGENDARY ===
+  time_fracture:{id:'time_fracture',name:'시간균열',rarity:'legendary',cost:0,icon:'⏳',type:'legendary',
+    desc:'AP를 5로 설정. 카드 3장 드로우. ULTIMATE BREAK.',effect:(b)=>{GS.ap=5;drawCards(b,3);renderBattleHUD();triggerUltimate('시간균열')}},
+  oblivion:{id:'oblivion',name:'망각',rarity:'legendary',cost:3,icon:'💫',type:'legendary',
+    desc:'60 피해. 취약 5 부여. ULTIMATE BREAK.',effect:(b)=>{dealDamage(b,60);applyStatus(b,'enemy','vulnerable',5);triggerUltimate('망각')}},
+  last_breath:{id:'last_breath',name:'마지막 숨결',rarity:'legendary',cost:2,icon:'🌬️',type:'legendary',
+    desc:'HP 1로. 방어도 60. 독 8. ULTIMATE BREAK.',effect:(b)=>{GS.hp=1;GS.shield=60;applyStatus(b,'enemy','poison',8);triggerUltimate('마지막 숨결');renderBattleHUD()}},
+  XII_strike:{id:'XII_strike',name:'XII의 강타',rarity:'legendary',cost:4,icon:'⚜️',type:'legendary',
+    desc:'80 피해. HP 20 회복. ULTIMATE BREAK.',effect:(b)=>{dealDamage(b,80);healPlayer(b,20);triggerUltimate('XII의 강타')}},
+};
+
+// Starting deck
+const STARTING_DECK = [
+  'strike','strike','strike','defend','defend','mend','quick_slash','retaliate','steady','blood_tap'
+];
+
+// ============================================================
+// 3. ENEMY DATABASE
+// ============================================================
+const ENEMIES = {
+  // Basic mobs (floors 1-4)
+  tick_wraith:{id:'tick_wraith',name:'시계 유령',emoji:'👻',maxHp:45,
+    patterns:[
+      {type:'attack',value:8,label:'⚔ 긁힘 (8)'},
+      {type:'attack',value:12,label:'⚔ 발톱 (12)'},
+      {type:'defend',value:6,label:'🛡 웅크림 (방어 6)'},
+    ],
+    drops:{gold:[15,25],card:true}},
+  rust_soldier:{id:'rust_soldier',name:'녹슨 병사',emoji:'🤖',maxHp:55,
+    patterns:[
+      {type:'attack',value:10,label:'⚔ 주먹 (10)'},
+      {type:'attack',value:10,label:'⚔ 주먹 (10)'},
+      {type:'attack',value:14,label:'⚔ 쇠망치 (14)'},
+    ],
+    drops:{gold:[18,28],card:true}},
+  shadow_hound:{id:'shadow_hound',name:'그림자 사냥개',emoji:'🐺',maxHp:38,
+    patterns:[
+      {type:'attack',value:7,label:'⚔ 물기 (7)'},
+      {type:'attack',value:7,label:'⚔ 물기 (7)'},
+      {type:'attack',value:11,label:'⚔ 돌진 (11)'},
+      {type:'buff',value:0,label:'💨 포효 (강화)'},
+    ],
+    drops:{gold:[12,22],card:true}},
+
+  // Mid mobs (floors 5-9)
+  bronze_automaton:{id:'bronze_automaton',name:'청동 자동인형',emoji:'🏺',maxHp:80,
+    patterns:[
+      {type:'attack',value:14,label:'⚔ 기어 충격 (14)'},
+      {type:'defend',value:12,label:'🛡 철갑 전개 (방어 12)'},
+      {type:'attack',value:18,label:'⚔ 피스톤 (18)'},
+    ],
+    drops:{gold:[25,40],card:true}},
+  plague_bearer:{id:'plague_bearer',name:'역병 전달자',emoji:'🦠',maxHp:65,
+    patterns:[
+      {type:'poison',value:3,label:'☣ 독무 (독 3)'},
+      {type:'attack',value:10,label:'⚔ 오염 공격 (10)'},
+      {type:'poison',value:5,label:'☣ 역병 (독 5)'},
+    ],
+    drops:{gold:[22,35],card:true}},
+  iron_monk:{id:'iron_monk',name:'철의 수도사',emoji:'🥋',maxHp:72,
+    patterns:[
+      {type:'attack',value:12,label:'⚔ 수도 권법 (12)'},
+      {type:'attack',value:12,label:'⚔ 수도 권법 (12)'},
+      {type:'defend',value:16,label:'🛡 명상 (방어 16)'},
+      {type:'attack',value:20,label:'⚔ 일격 (20)'},
+    ],
+    drops:{gold:[28,42],card:true}},
+
+  // Elites (floors 5-10)
+  crimson_warden:{id:'crimson_warden',name:'진홍 수호자',emoji:'🛡️',maxHp:110,
+    patterns:[
+      {type:'attack',value:16,label:'⚔ 진홍 베기 (16)'},
+      {type:'defend',value:20,label:'🛡 방패 올리기 (방어 20)'},
+      {type:'attack',value:22,label:'⚔ 강타 (22)'},
+      {type:'attack',value:16,label:'⚔ 진홍 베기 (16)'},
+    ],
+    elite:true,drops:{gold:[40,60],card:true}},
+  void_sentinel:{id:'void_sentinel',name:'허공 파수꾼',emoji:'🌑',maxHp:95,
+    patterns:[
+      {type:'attack',value:14,label:'⚔ 허공 손길 (14)'},
+      {type:'poison',value:4,label:'☣ 허공 독무 (독 4)'},
+      {type:'attack',value:20,label:'⚔ 소멸 (20)'},
+      {type:'debuff',value:0,label:'🎯 취약 2 부여'},
+    ],
+    elite:true,drops:{gold:[40,60],card:true}},
+
+  // Bosses
+  clock_titan:{id:'clock_titan',name:'시계 거인',emoji:'🕰️',maxHp:200,
+    patterns:[
+      {type:'attack',value:20,label:'⚔ 기어 분쇄 (20)'},
+      {type:'attack',value:20,label:'⚔ 기어 분쇄 (20)'},
+      {type:'defend',value:25,label:'🛡 시간 응고 (방어 25)'},
+      {type:'attack',value:30,label:'⚔ 초침 강타 (30)'},
+      {type:'debuff',value:0,label:'⏱ 시간 역행 (버프 제거)'},
+    ],
+    boss:true,drops:{gold:[80,120],card:true}},
+  XII_final:{id:'XII_final',name:'XII — 파괴된 시간',emoji:'⚜️',maxHp:320,
+    patterns:[
+      {type:'attack',value:24,label:'⚔ 시간의 낫 (24)'},
+      {type:'attack',value:24,label:'⚔ 시간의 낫 (24)'},
+      {type:'poison',value:6,label:'☣ 부패 (독 6)'},
+      {type:'attack',value:35,label:'⚔ 운명의 일격 (35)'},
+      {type:'defend',value:30,label:'🛡 시간 방벽 (방어 30)'},
+      {type:'attack',value:45,label:'⚔ 파국 (45)'},
+    ],
+    boss:true,drops:{gold:[200,200],card:false}},
+};
+
+// ============================================================
+// 4. MAP STORY DATABASE
+// ============================================================
+const STORY_SETS = {
+  combat:[
+    ['어둠 속에서 무언가가 움직인다.','녹슨 기어 소리가 귓가에 맴돈다.','싸움을 피할 수 없다.'],
+    ['시계 파편이 공중에 떠 있다.','그것들이 날카롭게 빛난다.','시간이 멈춘 이 공간에서, 너만이 살아있다.'],
+    ['발소리. 무거운 발소리.','그림자가 길게 드리운다.','만날 운명이었는지도 모른다.'],
+    ['이 층의 공기는 썩은 냄새가 난다.','누군가—혹은 무언가—가 기다리고 있다.','도망칠 곳은 없다.'],
+    ['벽에 핏자국이 있다.','신선한 것은 아니다.','하지만 오래된 것도 아니다.'],
+  ],
+  elite:[
+    ['이건... 일반적인 존재가 아니다.','그것의 눈에서 시간의 파편이 흘러내린다.','도망친다면 등에 칼이 꽂힐 것이다.'],
+    ['정예. 그 단어만으로 충분하다.','이 복도에서 살아남은 자는 없다고 했다.','나는 다를 것이다.'],
+    ['그것은 나를 보고 웃는다.','시간이 부서진 이 세계에서, 웃음이란 무언가.','증명해 보여라.'],
+    ['강하다. 첫눈에 알 수 있다.','하지만 강한 것은 쓰러뜨릴 수 있다.','반드시 그래야 한다.'],
+    ['상처 자국이 온몸에 새겨져 있다.','수많은 전투를 살아남았다는 증거.','오늘이 마지막이 될 것이다.'],
+  ],
+  shop:[
+    ['어둠 속에 불빛 하나.','상인이다. 이런 곳에서.','\"뭔가 필요한 거 있어요? 시간은 충분해요... 아, 그건 거짓말이지.\"'],
+    ['\"오셨군요.\" 목소리는 모래처럼 거칠다.','\"여기서 살아남으려면... 도움이 필요하죠.\"','\"가격은 황금으로. 목숨은 거스름돈이 없어요.\"'],
+    ['촛불이 흔들린다.','상인의 얼굴은 항상 그림자 속에 있다.','\"선택하세요. 시간이 없잖아요.\"'],
+    ['\"이건 귀한 물건이에요.\" 상인이 속삭인다.','\"파괴된 시간의 조각에서 건진 거라고요.\"','\"비싸지만... 살아있는 게 더 비싸죠.\"'],
+    ['상점은 냄새가 났다. 황동과 피의 냄새.','\"보이는 건 다 팔아요.\" 상인이 말한다.','\"안 보이는 것도요.\"'],
+  ],
+  rest:[
+    ['잠시 멈춘다.','이 공간만은 시간이 멈춰있지 않은 것 같다.','아주 잠깐, 숨을 고른다.'],
+    ['벽에 기댄다.','생각해본다. 여기까지 온 이유를.','아직 살아있다. 그것만으로 충분하다.'],
+    ['불씨가 타오른다.','온기가 손가락 끝까지 스며든다.','다음을 생각한다.'],
+    ['고요함. 이 탑에서 이런 곳이 있다니.','하지만 고요함은 오래가지 않는다.','그걸 알면서도, 잠시 눈을 감는다.'],
+    ['상처를 살펴본다.','생각보다 깊다.','하지만 여기서 포기할 수는 없다.'],
+  ],
+  event:[
+    ['갈림길 앞에 뭔가가 있다.','작은 상자. 잠겨있다.','열쇠는 없지만, 방법이 없진 않다.'],
+    ['벽에 글씨가 새겨져 있다.','\"시간은 파괴될 수 있다. 하지만 결코 멈추지 않는다.\"','무슨 의미인지, 생각해본다.'],
+    ['부상당한 자가 쓰러져 있다.','살아있다. 아직.','도울 것인가, 지나칠 것인가.'],
+    ['제단이 있다.','그 위에 빛나는 무언가가 놓여있다.','대가를 치른다면, 가질 수 있다.'],
+    ['두 개의 문.','하나는 금. 하나는 녹슨 철.','선택이 항상 옳은 것은 아니다.'],
+  ],
+  boss:[
+    ['마침내.','오랜 시간이 걸렸다. 하지만 여기에 있다.','XII — 파괴된 시간 앞에.'],
+    ['탑의 심장.','여기서 모든 것이 시작되었고, 끝날 것이다.','아니면 내가 끝낼 것이다.'],
+    ['\"왔구나.\" 목소리가 공간을 가득 채운다.','\"오래 기다렸다.\"','\"하지만 이것이 끝이다.\"'],
+    ['기어들이 멈춰있다.','시계가 부서져 있다.','그리고 XII가 기다린다.'],
+    ['이것이 파괴된 시간의 끝이다.','내가 만들 새로운 시작이다.','싸우자.'],
+  ],
+  forge:[
+    ['벽 한쪽이 뜨겁다.','용광로가 있다. 아직 살아있다.','불필요한 것을 던져 넣으면 재가 된다.'],
+    ['\"버려라.\" 용광로가 말하는 것 같다.','무거운 짐은 발목을 잡는다.','필요없는 기억을 불태운다.'],
+    ['연기 냄새가 났다.','무언가를 파괴해야 더 강해진다.','이 탑은 그런 논리로 운영된다.'],
+    ['파괴와 정제는 같은 말이다.','약한 것을 제거하면 강한 것만 남는다.','선택하라. 무엇을 버릴 것인가.'],
+    ['시간의 잔해가 쌓인 곳.','태워버리면 사라진다. 완전히.','그것이 이 장치의 목적이다.'],
+  ],
+  abyss:[
+    ['바닥이 보이지 않는다.','그래도 내려가야 한다면.','무엇이 올라올지는 아무도 모른다.'],
+    ['심연은 쳐다보는 자를 쳐다본다.','여기서 만나는 것은 예측 불가.','뛰어들 준비가 됐는가.'],
+    ['이 공간은 시간의 규칙을 따르지 않는다.','무작위. 혼돈. 기회.','심연에 뛰어든다.'],
+    ['어떤 자들은 여기서 전설을 얻었다.','어떤 자들은 모든 것을 잃었다.','그것이 심연이다.'],
+    ['확률과 운명 사이 어딘가.','이곳은 그 경계에 있다.','심연이 응답한다.'],
+  ],
+  ambush_event:[
+    ['갑자기 땅이 흔들린다.','발 아래가 무너지고 있다.','선택할 시간이 없다 — 떨어진다.'],
+    ['함정이었다.','이 경로는 처음부터 막혀있었다.','다른 곳으로 강제로 이동된다.'],
+    ['시간 균열이 발생했다.','공간이 뒤틀리고, 어딘가로 빨려들어간다.','저항할 수 없다.'],
+    ['누군가가 경로를 바꿔놓았다.','뒤를 돌아보지만 이미 늦었다.','전혀 다른 장소에 서 있다.'],
+    ['지도가 틀렸다.','아니면 지도가 변했다.','강제로 재배치된다.'],
+  ],
+  black_market:[
+    ['빛이 없는 곳에서 빛이 새나온다.','그 안에 사람—혹은 그것이—앉아있다.','\"금지된 물건도 팔아요. 값을 알면 되니까.\"'],
+    ['공식 상점이 아니다.','하지만 여기 없는 건 없다.','대신 팔 것도 있어야 한다.'],
+    ['\"카드도 팔아드려요.\" 목소리가 속삭인다.','\"당신의 덱에서. 골드로 교환해드리지.\"','\"그리고 저는 특별한 물건도 있어요.\"'],
+    ['저주받은 물건도 강하다면 가치가 있다.','암시장의 철학은 단순하다.','거래는 공정하다. 단지 위험할 뿐.'],
+    ['이런 곳이 있다는 걸 모르는 자들이 많다.','당신은 알았다. 그게 행운인지는 모르지만.','무엇을 팔고, 무엇을 살 것인가.'],
+  ],
+  upgrade:[
+    ['작업대가 있다.','도구들이 가지런히 놓여있다.','무딘 검도 갈면 예리해진다.'],
+    ['개조. 강화. 진화.','이 탑에서 성장하지 않으면 죽는다.','카드 하나를 선택해 갈아낸다.'],
+    ['기술자의 손길이 느껴지는 공간.','여기서 약한 것이 강해진다.','시간이 많지 않다. 선택하라.'],
+    ['강화는 비용 없이 이루어지지 않는다.','하지만 지금은 공짜다.','이런 기회는 자주 없다.'],
+    ['낡은 것을 버리지 않고 개선한다.','그것이 이 공간의 이념이다.','어떤 카드를 업그레이드할 것인가.'],
+  ],
+  char_upgrade:[
+    ['제거실. 이름이 섬뜩하다.','하지만 제거되는 것은 약점이다.','선택하라. 무엇을 강화할 것인가.'],
+    ['몸이 한계다.','하지만 한계는 넘어설 수 있다.','이 방이 그것을 도와준다.'],
+    ['\"능력을 선택하세요.\" 목소리가 말한다.','어디선가 들려오는 것 같다.','방 자체가 말하는 것 같다.'],
+    ['성장. 강화. 적응.','이 탑을 살아남으려면 변해야 한다.','한 가지를 고를 수 있다.'],
+    ['인간의 한계를 재정의하는 장소.','여기를 지나간 자들은 달라진다.','더 강하게, 더 단단하게.'],
+  ],
+  medical:[
+    ['의료실.','여기서는 제대로 된 치료를 받을 수 있다.','시계탑에서 이런 곳이 있다니 기적이다.'],
+    ['약 냄새가 났다.','피와 기름 냄새가 아니라, 약 냄새.','처음 맡아보는 것 같은 느낌이다.'],
+    ['\"상처를 보여드리겠습니까?\" 목소리가 묻는다.','자동화된 의료 장치인 것 같다.','아직 작동한다는 것이 놀랍다.'],
+    ['전투 피로가 쌓인 몸.','이곳에서 제대로 쉰다.','몸이 다시 가동 준비를 마친다.'],
+    ['상처가 아문다.','단순히 아무는 것이 아니라, 근본적으로 회복된다.','이 시계탑에서 가장 인간적인 장소.'],
+  ],
+  ambush:[
+    ['양쪽에서 동시에 나타났다.','미리 알았다면 피할 수 있었을까.','아니다. 이건 함정이었다.'],
+    ['하나도 벅찬데.','둘이다.','선택지가 없다. 싸워라.'],
+    ['왼쪽. 오른쪽.','동시에 공격한다.','이것이 기습이다.'],
+    ['전략을 짤 시간이 없다.','둘 다 적이다.','먼저 약한 것부터. 아니면 강한 것부터.'],
+    ['함께 나타났다는 것은 함께 죽는다는 것이다.','하지만 지금은 내가 위험하다.','집중하라.'],
+  ],
+};
+
+const EVENT_DATA = [
+  {title:'잠긴 상자',desc:'녹슨 자물쇠가 채워진 상자가 있다.',
+    choices:[
+      {text:'[도전] 자물쇠를 강제로 열다 (성공시 카드 획득, 실패시 -15 HP)',
+        action:(resolve)=>{if(Math.random()<0.6){resolve('card')}else{damagePlayerDirect(15);showModal('실패','자물쇠가 손을 베었다. -15 HP');resolve('fail')}}},
+      {text:'[안전] 상자를 가져가다 (+30 골드)',
+        action:(resolve)=>{GS.gold+=30;resolve('gold')}},
+      {text:'[무시] 지나친다.',action:(resolve)=>{resolve('skip')}},
+    ]},
+  {title:'부상당한 자',desc:'핏자국 위에 쓰러진 자가 있다. 아직 숨이 있다.',
+    choices:[
+      {text:'[치료] 가진 약을 나눠주다 (-10 HP, +50 골드)',
+        action:(resolve)=>{damagePlayerDirect(10);GS.gold+=50;resolve('gold')}},
+      {text:'[수색] 소지품을 뒤지다 (카드 획득 또는 저주)',
+        action:(resolve)=>{if(Math.random()<0.5){resolve('card')}else{applyStatus(null,'player','bleed',3);showModal('저주','그는 죽어가면서 저주를 걸었다. 출혈 3.');resolve('fail')}}},
+      {text:'[외면] 그냥 지나친다.',action:(resolve)=>{resolve('skip')}},
+    ]},
+  {title:'고대 제단',desc:'황금빛 제단이 피를 요구한다.',
+    choices:[
+      {text:'[헌납] 피를 바치다 (-20 HP, 다음 전투 시작시 방어도 25)',
+        action:(resolve)=>{damagePlayerDirect(20);GS.artifacts.push('altar_shield');resolve('artifact')}},
+      {text:'[거부] 제단을 무시한다.',action:(resolve)=>{resolve('skip')}},
+    ]},
+  {title:'두 개의 문',desc:'금문과 녹슨 철문. 하나만 선택할 수 있다.',
+    choices:[
+      {text:'[금문] 화려해 보이는 문 (+80 골드 또는 -30 HP)',
+        action:(resolve)=>{if(Math.random()<0.4){GS.gold+=80;resolve('gold')}else{damagePlayerDirect(30);showModal('함정','금문 뒤에는 함정이 있었다. -30 HP');resolve('fail')}}},
+      {text:'[철문] 낡고 믿음직한 문 (카드 1장 획득)',
+        action:(resolve)=>{resolve('card')}},
+    ]},
+  {title:'시간의 파편',desc:'깨진 시계 파편이 바닥에 흩어져 있다. 뭔가 속삭인다.',
+    choices:[
+      {text:'[집다] 파편을 집어 힘을 얻다 (+1 최대 AP, -15 HP)',
+        action:(resolve)=>{GS.maxAp=Math.min(GS.maxAp+1,5);damagePlayerDirect(15);resolve('artifact')}},
+      {text:'[남기다] 파편을 남겨둔다.',action:(resolve)=>{resolve('skip')}},
+    ]},
+];
+
+// ============================================================
+// 5. GLOBAL STATE
+// ============================================================
+let GS = {
+  hp:80,maxHp:80,ap:3,maxAp:3,gold:100,shield:0,
+  maxHandSize:10,
+  deck:[],hand:[],discard:[],
+  map:null,currentFloor:0,currentNodeId:null,
+  visitedNodes:new Set(),
+  battle:null,
+  story:{active:false,lines:[],idx:0,typing:false,displayed:'',pendingChoices:null,callback:null},
+  artifacts:[],
+  score:0,turnCount:0,enemiesKilled:0,
+};
+
+// ============================================================
+// 6. UTILITY FUNCTIONS
+// ============================================================
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function rng(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+function pickRandom(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function weightedPick(items,weights){
+  const total=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*total;
+  for(let i=0;i<items.length;i++){r-=weights[i];if(r<=0)return items[i]}
+  return items[items.length-1];
+}
+function deepClone(obj){return JSON.parse(JSON.stringify(obj))}
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+function cardById(id){return CARDS[id]?{...CARDS[id]}:null}
+function randomCardPool(rarities,count){
+  const pool=Object.values(CARDS).filter(c=>rarities.includes(c.rarity));
+  return shuffle(pool).slice(0,count);
+}
+
+// ============================================================
+// 7. MAP GENERATOR
+// ============================================================
+function generateMap(){
+  const floors=[];
+  let nodeId=0;
+  for(let f=0;f<FLOOR_COUNT;f++){
+    let count;
+    if(f===0||f===FLOOR_COUNT-1)count=1;
+    else count=rng(3,5);
+    const nodes=[];
+    for(let c=0;c<count;c++){
+      const id=`f${f}n${c}`;
+      let type;
+      if(f===FLOOR_COUNT-1)type='boss';
+      else if(f===0)type='combat'; // 시작 노드
+      else if(f<=3)type=weightedPick(
+        ['combat','event','rest','forge','upgrade','medical'],
+        [45,20,15,8,7,5]);
+      else if(f<=7)type=weightedPick(
+        ['combat','elite','shop','event','abyss','ambush_event','black_market','forge','char_upgrade'],
+        [30,18,12,12,8,6,5,5,4]);
+      else if(f<=11)type=weightedPick(
+        ['elite','ambush','abyss','black_market','medical','upgrade','char_upgrade','combat','shop'],
+        [22,18,14,12,10,8,7,5,4]);
+      else type=weightedPick(
+        ['elite','ambush','abyss','black_market','medical','char_upgrade'],
+        [28,25,18,12,10,7]);
+
+      const storySet=STORY_SETS[type]||STORY_SETS.combat;
+      const storyLines=storySet[f%storySet.length];
+
+      let enemyId=null,enemyId2=null;
+      if(type==='combat'){
+        const basicEnemies=['tick_wraith','rust_soldier','shadow_hound'];
+        const midEnemies=['bronze_automaton','plague_bearer','iron_monk'];
+        enemyId=f<=5?pickRandom(basicEnemies):pickRandom(midEnemies);
+      }else if(type==='elite'){
+        enemyId=pickRandom(['crimson_warden','void_sentinel']);
+      }else if(type==='ambush'){
+        enemyId=pickRandom(['crimson_warden','void_sentinel']);
+        const basicEnemies=['tick_wraith','rust_soldier','shadow_hound'];
+        const midEnemies=['bronze_automaton','plague_bearer','iron_monk'];
+        enemyId2=f<=7?pickRandom(basicEnemies):pickRandom(midEnemies);
+      }else if(type==='boss'){
+        enemyId=f<14?'clock_titan':'XII_final';
+      }
+
+      nodes.push({
+        id,floor:f,col:c,cols:count,type,links:[],
+        deadEnd:false,visited:false,
+        story:storyLines,enemyId,enemyId2,x:0,y:0,
+      });
+    }
+    floors.push(nodes);
+  }
+
+  // Connect nodes
+  for(let f=0;f<FLOOR_COUNT-1;f++){
+    const cur=floors[f],nxt=floors[f+1];
+    // Each node in current floor, randomly link to 1-2 nodes in next floor
+    for(let i=0;i<cur.length;i++){
+      const cnt=cur.length===1?nxt.length:rng(1,Math.min(2,nxt.length));
+      const targets=shuffle([...Array(nxt.length).keys()]).slice(0,cnt);
+      targets.forEach(j=>{ if(!cur[i].links.includes(nxt[j].id)) cur[i].links.push(nxt[j].id); });
+    }
+    // 30% dead ends on non-final floors
+    if(f>0&&f<FLOOR_COUNT-2){
+      for(let i=0;i<cur.length;i++){
+        if(Math.random()<0.3){cur[i].deadEnd=true;cur[i].links=[];}
+      }
+    }
+    // Guarantee at least one path
+    const anyLinked=cur.some(n=>!n.deadEnd&&n.links.length>0);
+    if(!anyLinked){
+      const alive=cur.find(n=>!n.deadEnd)||cur[0];
+      alive.deadEnd=false;
+      alive.links=[nxt[0].id];
+    }
+    // Ensure every next-floor node is reachable from somewhere
+    const reachable=new Set();
+    cur.forEach(n=>n.links.forEach(l=>reachable.add(l)));
+    if(reachable.size===0&&nxt.length>0){
+      cur[0].links=[nxt[0].id];cur[0].deadEnd=false;
+    }
+  }
+
+  // Assign positions
+  const SVG_W=600;
+  for(let f=0;f<FLOOR_COUNT;f++){
+    const nodes=floors[f];
+    nodes.forEach((n,i)=>{
+      n.x=SVG_W/2+(i-(nodes.length-1)/2)*(SVG_W/(nodes.length+1));
+      n.y=(FLOOR_COUNT-1-f)*MAP_ROW_H+50;
+    });
+  }
+
+  const flat={};
+  floors.forEach(fl=>fl.forEach(n=>flat[n.id]=n));
+  return {floors,flat,totalH:(FLOOR_COUNT)*MAP_ROW_H+100};
+}
+
+// ============================================================
+// 8. STORY ENGINE
+// ============================================================
+let storyTypingTimer=null;
+function showStoryOverlay(lines,choices,callback){
+  const so=document.getElementById('story-overlay');
+  const st=document.getElementById('story-text');
+  const sc=document.getElementById('story-choices');
+  const sp=document.getElementById('story-prompt');
+  GS.story={active:true,lines,idx:0,typing:false,displayed:'',pendingChoices:choices,callback};
+  so.classList.add('active');
+  sc.innerHTML='';
+  sp.style.display='block';
+  document.getElementById('map-container').style.pointerEvents='none';
+  typeStoryLine();
+}
+
+function typeStoryLine(){
+  const {lines,idx}=GS.story;
+  if(idx>=lines.length){
+    finishStory();return;
+  }
+  const line=lines[idx];
+  GS.story.typing=true;GS.story.displayed='';
+  const st=document.getElementById('story-text');
+  if(storyTypingTimer)clearInterval(storyTypingTimer);
+  let i=0;
+  storyTypingTimer=setInterval(()=>{
+    GS.story.displayed+=line[i++]||'';
+    st.textContent=GS.story.displayed;
+    if(i>=line.length){clearInterval(storyTypingTimer);GS.story.typing=false;}
+  },30);
+}
+
+function advanceStory(){
+  if(GS.story.typing){
+    // Skip to end of current line
+    clearInterval(storyTypingTimer);
+    GS.story.typing=false;
+    const line=GS.story.lines[GS.story.idx];
+    GS.story.displayed=line;
+    document.getElementById('story-text').textContent=line;
+    return;
+  }
+  GS.story.idx++;
+  const sc=document.getElementById('story-choices');
+  sc.innerHTML='';
+  if(GS.story.idx>=GS.story.lines.length){
+    finishStory();
+  }else{
+    typeStoryLine();
+  }
+}
+
+function finishStory(){
+  const sp=document.getElementById('story-prompt');
+  const sc=document.getElementById('story-choices');
+  const choices=GS.story.pendingChoices;
+  if(choices&&choices.length>0){
+    sp.style.display='none';
+    sc.innerHTML='';
+    choices.forEach((ch,i)=>{
+      const btn=document.createElement('button');
+      btn.className='story-choice';
+      btn.textContent=ch;
+      btn.onclick=()=>{
+        hideStoryOverlay();
+        if(GS.story.callback)GS.story.callback(i);
+      };
+      sc.appendChild(btn);
+    });
+  }else{
+    sp.style.display='block';
+    sp.textContent='[ 클릭하여 계속 ]';
+    GS.story.pendingChoices=null;
+    GS.story.typing=false;
+  }
+}
+
+function hideStoryOverlay(){
+  document.getElementById('story-overlay').classList.remove('active');
+  document.getElementById('map-container').style.pointerEvents='';
+  GS.story.active=false;
+}
+
+function storyClick(){
+  if(!GS.story.active)return;
+  if(GS.story.pendingChoices&&GS.story.pendingChoices.length>0&&GS.story.idx>=GS.story.lines.length)return;
+  if(GS.story.idx<GS.story.lines.length){
+    advanceStory();
+  }else{
+    hideStoryOverlay();
+    if(GS.story.callback)GS.story.callback(-1);
+  }
+}
+
+// ============================================================
+// 9. DECK ENGINE
+// ============================================================
+function battleStartDraw(){
+  const combined=shuffle([...GS.deck,...GS.discard]);
+  GS.deck=combined;GS.discard=[];GS.hand=[];
+  drawCards(null,7);
+}
+
+function drawCards(b,n){
+  let drawn=0;
+  for(let i=0;i<n;i++){
+    if(GS.deck.length===0){
+      if(GS.discard.length===0)break;
+      GS.deck=shuffle([...GS.discard]);GS.discard=[];
+    }
+    const card=GS.deck.pop();
+    if(GS.hand.length<GS.maxHandSize){
+      GS.hand.push(card);drawn++;
+    }else{
+      GS.discard.push(card);
+      showBurnNotif(card);
+    }
+  }
+  return drawn;
+}
+
+function showBurnNotif(cardId){
+  const card=CARDS[cardId];
+  const el=document.createElement('div');
+  el.className='burn-notif';
+  el.textContent=`🔥 소각: ${card?card.name:cardId}`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1600);
+}
+
+function playCard(cardIdx){
+  const b=GS.battle;
+  if(!b||b.playerTurn===false)return;
+  const cardId=GS.hand[cardIdx];
+  const card=CARDS[cardId];
+  if(!card)return;
+  if(GS.ap<card.cost)return;
+  GS.ap-=card.cost;
+  GS.hand.splice(cardIdx,1);
+  GS.discard.push(cardId);
+  try{card.effect(b);}catch(e){console.error('Card effect error',cardId,e)}
+  updateStatusEffects();
+  renderBattleHUD();
+  renderHand();
+  checkBattleEnd();
+}
+
+function turnStart(){
+  const b=GS.battle;
+  GS.ap=GS.maxAp;
+  if(b.player.reflect)b.player.reflect=false;
+  drawCards(b,3);
+  // Process player status
+  if(b.player.poison>0){damagePlayerDirect(b.player.poison);b.player.poison=Math.max(0,b.player.poison-1);}
+  if(b.player.bleed>0){damagePlayerDirect(b.player.bleed);b.player.bleed=Math.max(0,b.player.bleed-1);}
+  renderBattleHUD();renderHand();
+  GS.turnCount++;
+}
+
+function endTurn(){
+  const b=GS.battle;
+  if(!b||!b.playerTurn)return;
+  b.playerTurn=false;
+  document.getElementById('btn-end-turn').disabled=true;
+  // Enemy turn
+  setTimeout(()=>enemyTurn(b),400);
+}
+
+// ============================================================
+// 10. BATTLE ENGINE
+// ============================================================
+function startBattle(enemyId){
+  const eData=ENEMIES[enemyId];
+  if(!eData){console.error('Unknown enemy',enemyId);return;}
+  const enemy={
+    ...deepClone(eData),
+    hp:eData.maxHp,
+    patternIdx:0,
+    shield:0,
+    poison:0,bleed:0,vulnerable:0,weak:0,strength:0,
+    reflect:false,
+  };
+  GS.battle={
+    enemy,
+    player:{poison:0,bleed:0,strength:0,reflect:false},
+    playerTurn:true,
+    turn:1,
+  };
+  GS.shield=0;
+  // Apply altar artifact
+  if(GS.artifacts.includes('altar_shield')){
+    GS.shield=25;
+    GS.artifacts=GS.artifacts.filter(a=>a!=='altar_shield');
+  }
+  battleStartDraw();
+  switchScreen('battle');
+  renderBattleScreen();
+  document.getElementById('btn-end-turn').disabled=false;
+}
+
+function dealDamage(b,amount){
+  const enemy=b.enemy;
+  let dmg=amount;
+  // Strength bonus
+  if(b.player.strength>0)dmg+=b.player.strength;
+  // Vulnerable bonus
+  if(enemy.vulnerable>0)dmg=Math.floor(dmg*1.5);
+  dmg=Math.max(0,dmg);
+  // Apply to shield first
+  let shDmg=Math.min(enemy.shield,dmg);
+  enemy.shield=Math.max(0,enemy.shield-dmg);
+  enemy.hp=Math.max(0,enemy.hp-(dmg-shDmg));
+  showDmgNumber(dmg,'enemy');
+  spawnHitParticles();
+  renderBattleScreen();
+  return dmg;
+}
+
+function damagePlayer(b,amount){
+  let dmg=amount;
+  if(b.enemy.weak>0)dmg=Math.floor(dmg*0.75);
+  damagePlayerDirect(dmg);
+}
+
+function damagePlayerDirect(amount){
+  let dmg=Math.max(0,amount);
+  const shAbsorb=Math.min(GS.shield,dmg);
+  GS.shield=Math.max(0,GS.shield-dmg);
+  dmg=Math.max(0,dmg-shAbsorb);
+  GS.hp=Math.max(0,GS.hp-dmg);
+  if(dmg>0)showDmgNumber(dmg,'player');
+  updateLowHpOverlay();
+  renderBattleHUD();
+  checkBattleEnd();
+}
+
+function gainShield(b,amount){
+  GS.shield+=amount;
+  showDmgNumber(amount,'shield');
+  renderBattleHUD();
+}
+
+function healPlayer(b,amount){
+  GS.hp=Math.min(GS.maxHp,GS.hp+amount);
+  showDmgNumber(amount,'heal');
+  renderBattleHUD();
+}
+
+function applyStatus(b,target,status,amount){
+  if(target==='enemy'&&b){
+    if(!b.enemy[status])b.enemy[status]=0;
+    b.enemy[status]+=amount;
+    renderEnemyStatus();
+  }else if(target==='player'){
+    if(!GS.battle)return;
+    if(!GS.battle.player[status])GS.battle.player[status]=0;
+    GS.battle.player[status]+=amount;
+  }
+}
+
+function updateStatusEffects(){
+  const b=GS.battle;if(!b)return;
+  if(b.enemy.bleed>0){
+    b.enemy.hp=Math.max(0,b.enemy.hp-b.enemy.bleed);
+    b.enemy.bleed=Math.max(0,b.enemy.bleed-1);
+    showDmgNumber(b.enemy.bleed+1,'enemy');
+  }
+  renderBattleScreen();
+}
+
+function enemyTurn(b){
+  if(!b)return;
+  const e=b.enemy;
+  const pat=e.patterns[e.patternIdx%e.patterns.length];
+  e.patternIdx++;
+
+  const doAction=()=>{
+    if(pat.type==='attack'){
+      let dmg=pat.value;
+      if(e.strength>0)dmg+=e.strength;
+      if(e.weak>0){dmg=Math.floor(dmg*0.75);e.weak=Math.max(0,e.weak-1);}
+      if(b.player.reflect){showModal('반사!',`적의 공격이 반사되었다! ${dmg} 피해`);dealDamage(b,dmg);}
+      else{damagePlayer(b,dmg);}
+    }else if(pat.type==='defend'){
+      e.shield+=pat.value;
+    }else if(pat.type==='poison'){
+      if(!b.player.poison)b.player.poison=0;
+      b.player.poison+=pat.value;
+    }else if(pat.type==='buff'){
+      if(!e.strength)e.strength=0;e.strength+=2;
+    }else if(pat.type==='debuff'){
+      applyStatus(b,'player','vulnerable',2);
+    }
+    // Process enemy poison & bleed at end of enemy turn
+    if(e.poison>0){e.hp=Math.max(0,e.hp-e.poison);showDmgNumber(e.poison,'enemy');e.poison=Math.max(0,e.poison-1);}
+    if(e.bleed>0){e.hp=Math.max(0,e.hp-e.bleed);showDmgNumber(e.bleed,'enemy');e.bleed=Math.max(0,e.bleed-1);}
+    if(e.vulnerable>0)e.vulnerable=Math.max(0,e.vulnerable-1);
+    renderBattleScreen();
+    if(checkBattleEnd())return;
+    b.playerTurn=true;
+    b.turn++;
+    GS.shield=0; // reset player shield each turn (only block stays)
+    turnStart();
+    document.getElementById('btn-end-turn').disabled=false;
+  };
+  setTimeout(doAction,500);
+}
+
+function checkBattleEnd(){
+  const b=GS.battle;if(!b)return false;
+  if(b.enemy.hp<=0){
+    b.playerTurn=false;
+    setTimeout(()=>battleVictory(),600);
+    return true;
+  }
+  if(GS.hp<=0){
+    GS.hp=0;
+    b.playerTurn=false;
+    setTimeout(()=>showDefeat(),600);
+    return true;
+  }
+  return false;
+}
+
+function battleVictory(){
+  const b=GS.battle;
+  const e=b.enemy;
+  // 기습: 첫 번째 적 처치 후 두 번째 적과 연속 전투
+  if(e.isAmbush&&e.ambushNextEnemyId){
+    const midGold=rng(10,25);
+    GS.gold+=midGold;
+    const warn=document.createElement('div');
+    warn.style.cssText='position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);z-index:9000;color:#E67E22;font-size:14px;font-family:"Cinzel",serif;font-weight:900;letter-spacing:0.2em;text-shadow:0 0 20px #E67E22;text-align:center;pointer-events:none';
+    warn.textContent=`+${midGold}골드 — 두 번째 적!`;
+    document.getElementById('app').appendChild(warn);
+    setTimeout(()=>{
+      warn.remove();
+      startBattle(e.ambushNextEnemyId);
+    },1200);
+    return;
+  }
+  const goldGain=rng(e.drops.gold[0],e.drops.gold[1]);
+  GS.gold+=goldGain;
+  GS.score+=goldGain+(e.boss?500:e.elite?200:50);
+  GS.enemiesKilled++;
+  const rewardCards=e.drops.card?randomCardPool(['common','rare','epic','legendary'],3):[];
+  showReward(goldGain,rewardCards);
+}
+
+function showReward(gold,cards){
+  const content=document.getElementById('modal-content');
+  const title=document.getElementById('modal-title');
+  title.textContent='전투 보상';
+  content.innerHTML=`<p style="font-family:'Share Tech Mono',monospace;color:var(--gold)">💰 +${gold} 골드</p>`;
+  if(cards.length>0){
+    content.innerHTML+=`<p style="font-family:'Cinzel',serif;font-size:13px;color:var(--copper)">카드 선택 (1장):</p>`;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;gap:12px;flex-wrap:wrap;justify-content:center';
+    cards.forEach(card=>{
+      const btn=document.createElement('div');
+      btn.style.cssText=`cursor:pointer;padding:12px;border:2px solid ${RARITY_COLORS[card.rarity]||'#888'};border-radius:6px;text-align:center;width:120px;transition:all 0.2s;background:rgba(0,0,0,0.5)`;
+      btn.innerHTML=`<div style="font-size:28px">${card.icon}</div><div style="font-family:'Cinzel',serif;font-size:11px;color:var(--text);margin-top:4px">${card.name}</div><div style="font-size:10px;color:rgba(240,230,211,0.6);margin-top:4px;font-family:'Noto Serif KR',serif">${card.desc}</div><div style="font-size:9px;color:${RARITY_COLORS[card.rarity]||'#888'};margin-top:4px">${RARITY_NAMES[card.rarity]}</div>`;
+      btn.onmouseenter=()=>btn.style.borderColor=RARITY_COLORS[card.rarity]||'#888';
+      btn.onclick=()=>{
+        GS.deck.push(card.id);
+        hideModal();
+        returnToMap();
+      };
+      wrap.appendChild(btn);
+    });
+    content.appendChild(wrap);
+  }
+  const skipBtn=document.createElement('button');
+  skipBtn.className='modal-btn modal-btn-gray';
+  skipBtn.textContent='건너뛰기';
+  skipBtn.onclick=()=>{hideModal();returnToMap();};
+  content.appendChild(skipBtn);
+  showModal();
+}
+
+// ============================================================
+// 11. VFX MANAGER
+// ============================================================
+let particles=[];
+let vfxAnimFrame=null;
+function initVFX(){
+  const canvas=document.getElementById('vfx-canvas');
+  if(!canvas)return;
+  canvas.width=canvas.offsetWidth||400;
+  canvas.height=canvas.offsetHeight||80;
+  if(!vfxAnimFrame)animateVFX();
+}
+
+function spawnHitParticles(){
+  const canvas=document.getElementById('vfx-canvas');
+  if(!canvas)return;
+  const cx=canvas.width*0.5,cy=canvas.height*0.3;
+  for(let i=0;i<12;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=rng(50,150)/60;
+    particles.push({x:cx,y:cy,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+      life:1,maxLife:1,color:`hsl(${rng(0,30)},100%,${rng(50,80)}%)`,size:rng(2,6)});
+  }
+}
+
+function animateVFX(){
+  const canvas=document.getElementById('vfx-canvas');
+  if(!canvas){vfxAnimFrame=null;return;}
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth||400;
+  canvas.height=canvas.offsetHeight||80;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles=particles.filter(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=0.08;p.life-=0.025;
+    if(p.life<=0)return false;
+    ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    return true;
+  });
+  vfxAnimFrame=requestAnimationFrame(animateVFX);
+}
+
+function showDmgNumber(amount,target){
+  const wrap=document.getElementById('dmg-numbers');
+  if(!wrap)return;
+  const el=document.createElement('div');
+  el.className=`dmg-number ${target}`;
+  const prefix=target==='heal'?'+':target==='shield'?'🛡':'';
+  el.textContent=prefix+amount;
+  el.style.left=rng(20,70)+'%';
+  el.style.top=target==='enemy'?rng(10,40)+'%':rng(50,80)+'%';
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),1300);
+}
+
+function triggerUltimate(cardName){
+  return new Promise(resolve=>{
+    const ov=document.getElementById('overlay-ultimate');
+    document.getElementById('ult-card-name').textContent=cardName;
+    ov.classList.add('active');
+    setTimeout(()=>{ov.classList.remove('active');resolve();},1000);
+  });
+}
+
+function updateLowHpOverlay(){
+  const ov=document.getElementById('overlay-low-hp');
+  if(GS.hp<=20&&GS.hp>0){ov.classList.add('active');}
+  else{ov.classList.remove('active');}
+}
+
+// ============================================================
+// 12. SCREEN RENDERERS
+// ============================================================
+
+// --- TITLE SCREEN ---
+function initTitleScreen(){
+  const canvas=document.getElementById('title-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const particles=[];
+  const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+  for(let i=0;i<60;i++){
+    particles.push({
+      x:Math.random()*canvas.width,y:Math.random()*canvas.height,
+      speed:Math.random()*1.5+0.5,
+      size:Math.random()*8+8,
+      opacity:Math.random()*0.6+0.1,
+      label:ROMAN[Math.floor(Math.random()*ROMAN.length)],
+      drift:(Math.random()-0.5)*0.5,
+    });
+  }
+  let angle=0;
+  function draw(){
+    if(!document.getElementById('screen-title').classList.contains('active'))return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    angle+=0.003;
+    // Gear ring
+    const cx=canvas.width/2,cy=canvas.height/2;
+    const radius=Math.min(canvas.width,canvas.height)*0.38;
+    for(let i=0;i<12;i++){
+      const a=angle+(i/12)*Math.PI*2;
+      const x=cx+Math.cos(a)*radius,y=cy+Math.sin(a)*radius;
+      ctx.save();ctx.globalAlpha=0.12+Math.sin(angle*2+i)*0.05;
+      ctx.font=`bold ${20+i%3*4}px 'Cinzel Decorative',serif`;
+      ctx.fillStyle=`hsl(${40+i*5},80%,60%)`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(ROMAN[i],x,y);ctx.restore();
+    }
+    // Falling particles
+    particles.forEach(p=>{
+      p.y+=p.speed;p.x+=p.drift;
+      if(p.y>canvas.height+20)p.y=-20;
+      if(p.x<-20)p.x=canvas.width+20;
+      if(p.x>canvas.width+20)p.x=-20;
+      ctx.save();ctx.globalAlpha=p.opacity*0.7;
+      ctx.font=`${p.size}px 'Share Tech Mono',monospace`;
+      ctx.fillStyle='#FFD700';
+      ctx.textAlign='center';ctx.fillText(p.label,p.x,p.y);ctx.restore();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// --- MAP SCREEN ---
+function renderMapScreen(){
+  const svg=document.getElementById('map-svg');
+  const map=GS.map;if(!map)return;
+  const SVG_W=620;const SVG_H=map.totalH;
+  svg.setAttribute('width',SVG_W);svg.setAttribute('height',SVG_H);
+  svg.innerHTML='';
+
+  // Determine reachable nodes
+  const reachable=new Set();
+  if(GS.currentNodeId===null){
+    // Start: all floor 0 nodes
+    map.floors[0].forEach(n=>reachable.add(n.id));
+  }else{
+    const cur=map.flat[GS.currentNodeId];
+    if(cur)cur.links.forEach(l=>reachable.add(l));
+  }
+
+  // Draw lines
+  map.floors.forEach(fl=>{
+    fl.forEach(node=>{
+      node.links.forEach(lid=>{
+        const target=map.flat[lid];
+        if(!target)return;
+        const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1',node.x);line.setAttribute('y1',node.y);
+        line.setAttribute('x2',target.x);line.setAttribute('y2',target.y);
+        line.setAttribute('stroke','rgba(255,215,0,0.25)');line.setAttribute('stroke-width','1.5');
+        svg.appendChild(line);
+      });
+    });
+  });
+
+  // Draw nodes
+  map.floors.forEach(fl=>{
+    fl.forEach(node=>{
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.setAttribute('class','map-node'+(node.id===GS.currentNodeId?' current':(GS.visitedNodes.has(node.id)?' visited':(reachable.has(node.id)?' reachable':''))));
+
+      const isCurrent=node.id===GS.currentNodeId;
+      const isVisited=GS.visitedNodes.has(node.id);
+      const isReachable=reachable.has(node.id);
+
+      // Circle
+      const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circle.setAttribute('cx',node.x);circle.setAttribute('cy',node.y);circle.setAttribute('r','18');
+      const nodeClr=NODE_COLORS[node.type]||'#888888';
+      let stroke=node.deadEnd?'#cc2222':(isVisited?'rgba(80,80,80,0.5)':(isReachable?nodeClr:'rgba(80,80,80,0.3)'));
+      let fill=isVisited?'rgba(0,0,0,0.3)':'rgba(4,4,15,0.85)';
+      if(isCurrent){stroke='#FFD700';fill='rgba(255,215,0,0.12)';}
+      if(isReachable&&!isVisited&&!isCurrent){stroke=nodeClr;fill=`rgba(${hexToRgb(nodeClr)},0.08)`;}
+      if(node.type==='boss'){stroke='#cc2222';fill='rgba(139,0,0,0.2)';}
+      if(node.deadEnd){circle.setAttribute('stroke-dasharray','4,3');}
+      circle.setAttribute('stroke',stroke);circle.setAttribute('stroke-width','2');
+      circle.setAttribute('fill',fill);
+      g.appendChild(circle);
+
+      // Icon
+      const text=document.createElementNS('http://www.w3.org/2000/svg','text');
+      text.setAttribute('x',node.x);text.setAttribute('y',node.y);
+      text.setAttribute('text-anchor','middle');text.setAttribute('dominant-baseline','middle');
+      text.setAttribute('font-size','14');text.textContent=NODE_ICONS[node.type]||'?';
+      g.appendChild(text);
+
+      // Floor label
+      const flabel=document.createElementNS('http://www.w3.org/2000/svg','text');
+      flabel.setAttribute('x',node.x);flabel.setAttribute('y',node.y+28);
+      flabel.setAttribute('text-anchor','middle');flabel.setAttribute('font-size','9');
+      flabel.setAttribute('font-family','Share Tech Mono,monospace');
+      flabel.setAttribute('fill','rgba(240,230,211,0.4)');
+      flabel.textContent=node.deadEnd?'막다른 길':NODE_NAMES[node.type];
+      g.appendChild(flabel);
+
+      // Dead end red X
+      if(node.deadEnd){
+        const xmark=document.createElementNS('http://www.w3.org/2000/svg','text');
+        xmark.setAttribute('x',node.x+14);xmark.setAttribute('y',node.y-14);
+        xmark.setAttribute('font-size','12');xmark.setAttribute('fill','#cc2222');
+        xmark.textContent='✕';g.appendChild(xmark);
+      }
+
+      // Current glow ring
+      if(isCurrent){
+        const glow=document.createElementNS('http://www.w3.org/2000/svg','circle');
+        glow.setAttribute('cx',node.x);glow.setAttribute('cy',node.y);glow.setAttribute('r','24');
+        glow.setAttribute('fill','none');glow.setAttribute('stroke','rgba(255,215,0,0.4)');
+        glow.setAttribute('stroke-width','2');
+        g.insertBefore(glow,g.firstChild);
+      }
+
+      // Click handler
+      if(isReachable&&!isVisited&&!node.deadEnd){
+        g.style.cursor='pointer';
+        g.onclick=()=>handleNodeClick(node.id);
+      }
+      svg.appendChild(g);
+    });
+  });
+
+  // Scroll to current position
+  const currentNode=GS.currentNodeId?map.flat[GS.currentNodeId]:map.floors[0][0];
+  if(currentNode){
+    const container=document.getElementById('map-container');
+    const scrollTarget=SVG_H-currentNode.y-container.clientHeight/2;
+    container.scrollTop=Math.max(0,scrollTarget);
+  }
+  updateMapHUD();
+}
+
+function updateMapHUD(){
+  const hpPct=(GS.hp/GS.maxHp)*100;
+  document.getElementById('map-hp-fill').style.width=hpPct+'%';
+  document.getElementById('map-hp-text').textContent=`${GS.hp}/${GS.maxHp}`;
+  document.getElementById('map-gold').textContent=GS.gold;
+  document.getElementById('map-deck-count').textContent=GS.deck.length+GS.hand.length+GS.discard.length;
+  document.getElementById('map-floor-display').textContent=GS.currentFloor;
+}
+
+function handleNodeClick(nodeId){
+  if(GS.story.active)return;
+  const node=GS.map.flat[nodeId];if(!node)return;
+  // Show story overlay
+  const lines=node.story||['이 곳으로 향한다.'];
+  const choices=node.type==='event'?null:null;
+  showStoryOverlay(lines,null,()=>{
+    enterNode(node);
+  });
+}
+
+function enterNode(node){
+  GS.currentNodeId=node.id;
+  GS.visitedNodes.add(node.id);
+  GS.currentFloor=node.floor;
+  node.visited=true;
+
+  if(node.type==='combat'||node.type==='elite'||node.type==='boss'){
+    const eid=node.enemyId||(node.floor>=14?'XII_final':'tick_wraith');
+    startBattle(eid);
+  }else if(node.type==='ambush'){
+    startAmbush(node.enemyId,node.enemyId2);
+  }else if(node.type==='shop'){
+    openShop();
+  }else if(node.type==='rest'){
+    openRest();
+  }else if(node.type==='event'){
+    openEvent();
+  }else if(node.type==='forge'){
+    openForge();
+  }else if(node.type==='abyss'){
+    openAbyss();
+  }else if(node.type==='ambush_event'){
+    openAmbushEvent(node);
+  }else if(node.type==='black_market'){
+    openBlackMarket();
+  }else if(node.type==='upgrade'){
+    openCardUpgrade();
+  }else if(node.type==='char_upgrade'){
+    openCharUpgrade();
+  }else if(node.type==='medical'){
+    openMedical();
+  }
+}
+
+// --- BATTLE SCREEN ---
+function renderBattleScreen(){
+  if(!GS.battle)return;
+  const b=GS.battle;const e=b.enemy;
+  // Enemy
+  document.getElementById('enemy-portrait').textContent=e.emoji||'👾';
+  document.getElementById('enemy-name').textContent=e.name;
+  const hpPct=Math.max(0,(e.hp/e.maxHp)*100);
+  document.getElementById('enemy-hp-fill').style.width=hpPct+'%';
+  document.getElementById('enemy-hp-text').textContent=`${Math.max(0,e.hp)} / ${e.maxHp}`;
+  renderEnemyStatus();
+  // Intent
+  const pat=e.patterns[e.patternIdx%e.patterns.length];
+  document.getElementById('enemy-intent').textContent=`다음 행동: ${pat.label}`;
+  renderBattleHUD();
+  renderHand();
+}
+
+function renderEnemyStatus(){
+  const b=GS.battle;if(!b)return;
+  const e=b.enemy;
+  const container=document.getElementById('enemy-status');
+  container.innerHTML='';
+  const statuses=[
+    {key:'poison',icon:'☣',cls:'status-poison',label:'독'},
+    {key:'bleed',icon:'🩸',cls:'status-bleed',label:'출혈'},
+    {key:'vulnerable',icon:'🎯',cls:'status-vulnerable',label:'취약'},
+    {key:'shield',icon:'🛡',cls:'status-shield',label:'방어'},
+    {key:'strength',icon:'💪',cls:'status-strength',label:'근력'},
+    {key:'weak',icon:'💧',cls:'status-strength',label:'약화'},
+  ];
+  statuses.forEach(s=>{
+    if(e[s.key]&&e[s.key]>0){
+      const d=document.createElement('div');
+      d.className=`status-icon ${s.cls}`;
+      d.title=s.label;
+      d.innerHTML=`${s.icon}<span>${e[s.key]}</span>`;
+      container.appendChild(d);
+    }
+  });
+}
+
+function renderBattleHUD(){
+  // HP
+  const hpPct=(GS.hp/GS.maxHp)*100;
+  document.getElementById('player-hp-fill').style.width=hpPct+'%';
+  document.getElementById('player-hp-text').textContent=`${GS.hp}/${GS.maxHp}`;
+  // AP dots
+  const apDots=document.getElementById('ap-dots');
+  apDots.innerHTML='';
+  for(let i=0;i<Math.max(GS.maxAp,GS.ap);i++){
+    const dot=document.createElement('div');
+    dot.className='ap-dot'+(i<GS.ap?'':' empty');
+    apDots.appendChild(dot);
+  }
+  // Shield
+  document.getElementById('shield-val').textContent=GS.shield;
+  // Counts
+  document.getElementById('cnt-deck').textContent=GS.deck.length;
+  document.getElementById('cnt-hand').textContent=GS.hand.length;
+  document.getElementById('cnt-discard').textContent=GS.discard.length;
+  updateLowHpOverlay();
+}
+
+function renderHand(){
+  const hand=document.getElementById('hand-cards');
+  hand.innerHTML='';
+  GS.hand.forEach((cardId,idx)=>{
+    const card=CARDS[cardId];if(!card)return;
+    const el=document.createElement('div');
+    el.className=`card rarity-${card.rarity}${GS.ap<card.cost?' unaffordable':''}`;
+    el.innerHTML=`
+      <div class="card-cost">${card.cost}</div>
+      <div class="card-icon">${card.icon}</div>
+      <div class="card-name">${card.name}</div>
+      <div class="card-desc">${card.desc}</div>
+      <div class="card-rarity-tag">${RARITY_NAMES[card.rarity]}</div>
+    `;
+    if(GS.ap>=card.cost&&GS.battle&&GS.battle.playerTurn){
+      el.onclick=()=>{if(GS.battle&&GS.battle.playerTurn)playCard(idx)};
+    }
+    el.onmouseenter=(ev)=>showTooltip(card,ev);
+    el.onmouseleave=()=>hideTooltip();
+    hand.appendChild(el);
+  });
+}
+
+function showTooltip(card,ev){
+  const tt=document.getElementById('card-tooltip');
+  tt.querySelector('.tt-name').textContent=card.name;
+  tt.querySelector('.tt-desc').textContent=card.desc;
+  tt.querySelector('.tt-type').textContent=`${RARITY_NAMES[card.rarity]} • ${card.type} • AP ${card.cost}`;
+  tt.style.left=(ev.clientX+16)+'px';
+  tt.style.top=(ev.clientY-40)+'px';
+  tt.classList.add('visible');
+}
+function hideTooltip(){document.getElementById('card-tooltip').classList.remove('visible')}
+
+// ============================================================
+// 13. SHOP / REST / EVENT HANDLERS
+// ============================================================
+function openShop(){
+  const items=randomCardPool(['common','rare','epic','legendary'],3);
+  const prices={common:50,rare:80,epic:120,legendary:200};
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='🛒 시간의 상인';
+  content.innerHTML=`<p style="font-family:'Share Tech Mono',monospace;color:var(--gold)">💰 보유 골드: ${GS.gold}</p>`;
+  items.forEach(card=>{
+    const price=prices[card.rarity]||50;
+    const row=document.createElement('div');
+    row.className='shop-item';
+    row.innerHTML=`
+      <div class="shop-card-preview rarity-${card.rarity}" style="border-color:${RARITY_COLORS[card.rarity]||'#888'}">
+        <div style="font-size:24px">${card.icon}</div>
+        <div style="font-size:10px;font-family:'Cinzel',serif;color:var(--text);text-align:center;padding:0 4px">${card.name}</div>
+      </div>
+      <div class="shop-info">
+        <div class="shop-name">${card.name}</div>
+        <div class="shop-desc">${card.desc}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div class="shop-price">💰${price}</div>
+        <button class="shop-buy-btn" ${GS.gold<price?'disabled':''} data-cid="${card.id}" data-price="${price}">구매</button>
+      </div>
+    `;
+    content.appendChild(row);
+  });
+  const skipBtn=document.createElement('button');
+  skipBtn.className='modal-btn modal-btn-gray';
+  skipBtn.textContent='상점 떠나기';
+  skipBtn.onclick=()=>{hideModal();returnToMap();};
+  content.appendChild(skipBtn);
+
+  // Buy handlers
+  content.querySelectorAll('.shop-buy-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      const cid=btn.dataset.cid;const price=parseInt(btn.dataset.price);
+      if(GS.gold<price)return;
+      GS.gold-=price;GS.deck.push(cid);
+      showModal('구매 완료',`${CARDS[cid].name}을(를) 덱에 추가했습니다.`);
+      setTimeout(()=>{hideModal();openShop();},800);
+    };
+  });
+  showModal();
+}
+
+function openRest(){
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='🔥 휴식 지점';
+  content.innerHTML=`<p style="font-family:'Noto Serif KR',serif;line-height:1.8;color:var(--text)">잠시 몸을 쉰다. 상처가 조금 아문다.</p><p style="color:var(--copper);font-family:'Share Tech Mono',monospace">현재 HP: ${GS.hp}/${GS.maxHp}</p>`;
+  const healBtn=document.createElement('button');
+  healBtn.className='modal-btn modal-btn-gold';
+  healBtn.textContent=`⛑ 치료 (+30 HP)`;
+  healBtn.onclick=()=>{
+    const old=GS.hp;
+    GS.hp=Math.min(GS.maxHp,GS.hp+30);
+    showModal('치료',`HP +${GS.hp-old} 회복. (${GS.hp}/${GS.maxHp})`);
+    setTimeout(()=>{hideModal();returnToMap();},800);
+  };
+  content.appendChild(healBtn);
+
+  // Upgrade option
+  const upgradeBtn=document.createElement('button');
+  upgradeBtn.className='modal-btn modal-btn-gold';
+  upgradeBtn.textContent='⬆ 카드 강화 (덱에서 1장 선택)';
+  upgradeBtn.onclick=()=>{
+    hideModal();
+    openCardUpgrade();
+  };
+  content.appendChild(upgradeBtn);
+
+  const leaveBtn=document.createElement('button');
+  leaveBtn.className='modal-btn modal-btn-gray';
+  leaveBtn.textContent='계속 전진';
+  leaveBtn.onclick=()=>{hideModal();returnToMap();};
+  content.appendChild(leaveBtn);
+  showModal();
+}
+
+function openCardUpgrade(){
+  const allCards=[...new Set([...GS.deck,...GS.discard,...GS.hand])];
+  if(allCards.length===0){showModal('실패','강화할 카드가 없습니다.');return;}
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='카드 강화';
+  content.innerHTML='<p style="font-size:13px;color:var(--copper)">강화할 카드를 선택하세요 (피해/방어 +20%):</p>';
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:10px;justify-content:center';
+  allCards.slice(0,8).forEach(cid=>{
+    const card=CARDS[cid];if(!card)return;
+    const btn=document.createElement('button');
+    btn.style.cssText=`border:2px solid ${RARITY_COLORS[card.rarity]||'#888'};background:rgba(0,0,0,0.5);color:var(--text);padding:10px;border-radius:4px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px`;
+    btn.innerHTML=`<div style="font-size:20px">${card.icon}</div><div>${card.name}</div>`;
+    btn.onclick=()=>{
+      GS.score+=30;
+      showModal('강화 완료',`${card.name}이(가) 강화되었습니다.`);
+      setTimeout(()=>{hideModal();returnToMap();},800);
+    };
+    wrap.appendChild(btn);
+  });
+  content.appendChild(wrap);
+  showModal();
+}
+
+function openEvent(){
+  const evData=EVENT_DATA[rng(0,EVENT_DATA.length-1)];
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent=`❓ ${evData.title}`;
+  content.innerHTML=`<p style="font-family:'Noto Serif KR',serif;line-height:1.8;color:var(--text)">${evData.desc}</p>`;
+  evData.choices.forEach((ch,i)=>{
+    const btn=document.createElement('button');
+    btn.className='modal-btn modal-btn-gold';
+    btn.style.textAlign='left';
+    btn.textContent=ch.text;
+    btn.onclick=()=>{
+      ch.action((result)=>{
+        updateMapHUD();
+        if(result==='card'){
+          const cards=randomCardPool(['common','rare','epic'],3);
+          hideModal();
+          const c=document.getElementById('modal-content');
+          document.getElementById('modal-title').textContent='카드 획득';
+          c.innerHTML='<p style="color:var(--copper)">카드 1장 선택:</p>';
+          const w=document.createElement('div');w.style.cssText='display:flex;gap:12px;flex-wrap:wrap';
+          cards.forEach(card=>{
+            const b2=document.createElement('button');
+            b2.style.cssText=`border:2px solid ${RARITY_COLORS[card.rarity]||'#888'};background:rgba(0,0,0,0.5);color:var(--text);padding:10px;border-radius:4px;cursor:pointer;font-size:12px;font-family:'Cinzel',serif`;
+            b2.innerHTML=`<div style="font-size:20px">${card.icon}</div><div>${card.name}</div>`;
+            b2.onclick=()=>{GS.deck.push(card.id);hideModal();returnToMap();};
+            w.appendChild(b2);
+          });
+          c.appendChild(w);
+          showModal();
+        }else{
+          setTimeout(()=>{hideModal();returnToMap();},800);
+        }
+      });
+    };
+    content.appendChild(btn);
+  });
+  showModal();
+}
+
+// ============================================================
+// NEW NODE HANDLERS (14-type system)
+// ============================================================
+
+// 폐기소: 덱에서 카드 영구 제거
+function openForge(){
+  const allPool=[...GS.deck,...GS.hand,...GS.discard];
+  if(allPool.length===0){showModal('폐기소','제거할 카드가 없습니다.');setTimeout(()=>{hideModal();returnToMap();},1200);return;}
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='🗑 폐기소 — 영구 파괴';
+  content.innerHTML=`<p style="font-family:'Noto Serif KR',serif;color:#aaa;line-height:1.8;margin-bottom:12px">카드를 용광로에 던진다. 다시는 돌아오지 않는다.<br>1~2장 선택 가능.</p>`;
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-height:280px;overflow-y:auto';
+  let removed=0;
+  const uniqueCards=[...new Set(allPool)];
+  uniqueCards.slice(0,12).forEach(cid=>{
+    const card=CARDS[cid];if(!card)return;
+    const btn=document.createElement('button');
+    btn.style.cssText=`border:2px solid ${RARITY_COLORS[card.rarity]||'#555'};background:rgba(0,0,0,0.6);color:var(--text);padding:10px 8px;border-radius:6px;cursor:pointer;font-family:'Cinzel',serif;font-size:11px;min-width:70px;transition:all 0.2s`;
+    btn.innerHTML=`<div style="font-size:18px">${card.icon||'🃏'}</div><div style="font-size:9px;margin-top:2px">${card.name}</div>`;
+    btn.onclick=()=>{
+      if(removed>=2)return;
+      removed++;
+      // Remove first occurrence from all piles
+      const removeFrom=(arr)=>{const i=arr.indexOf(cid);if(i>=0)arr.splice(i,1);};
+      removeFrom(GS.deck);removeFrom(GS.hand);removeFrom(GS.discard);
+      btn.style.opacity='0.3';btn.style.transform='scale(0.8)';btn.disabled=true;
+      if(removed>=2){setTimeout(()=>{hideModal();returnToMap();},500);}
+    };
+    wrap.appendChild(btn);
+  });
+  content.appendChild(wrap);
+  const doneBtn=document.createElement('button');
+  doneBtn.className='modal-btn modal-btn-gray';
+  doneBtn.textContent='완료 (폐기소 떠나기)';
+  doneBtn.onclick=()=>{hideModal();returnToMap();};
+  content.appendChild(doneBtn);
+  showModal();
+}
+
+// 심연: 완전 랜덤 이벤트
+function openAbyss(){
+  const events=[
+    {desc:'심연에서 낡은 지갑이 올라온다.',effect:()=>{const g=rng(20,80);GS.gold+=g;return`+${g} 골드 획득`;}},
+    {desc:'어둠 속에서 카드 한 장이 떠오른다.',effect:()=>{const c=randomCardPool(['rare','epic'],1)[0];if(c){GS.deck.push(c.id);return`${c.name} 획득`;}return'실패';}},
+    {desc:'심연이 당신의 생명력을 빼앗는다.',effect:()=>{const d=rng(10,25);damagePlayerDirect(d);return`-${d} HP`;}},
+    {desc:'최대 손패 한도가 늘어난다.',effect:()=>{GS.maxHandSize+=2;return`최대 손패 +2 (현재 ${GS.maxHandSize})`;}},
+    {desc:'전설 카드가 심연에서 솟아오른다.',effect:()=>{const c=randomCardPool(['legendary'],1)[0];if(c){GS.deck.push(c.id);return`[전설] ${c.name} 획득`;}return'빈 심연';}},
+    {desc:'심연의 에너지가 몸을 타고 흐른다.',effect:()=>{GS.maxHp+=15;GS.hp=Math.min(GS.hp+15,GS.maxHp);return`최대 HP +15`;}},
+    {desc:'심연이 아무것도 돌려주지 않는다.',effect:()=>'... 아무 일도 없었다.'},
+    {desc:'적의 영혼이 심연에서 깨어난다.',effect:()=>{const d=rng(15,35);damagePlayerDirect(d);const g=rng(40,80);GS.gold+=g;return`-${d} HP, +${g} 골드`;}},
+  ];
+  const picked=pickRandom(events);
+  const result=picked.effect();
+  updateMapHUD();
+  showModal('심연 ∅',`${picked.desc}<br><br><span style="color:var(--gold)">${result}</span>`);
+  setTimeout(()=>{hideModal();returnToMap();},2000);
+}
+
+// 기습 사건: 강제 이동
+function openAmbushEvent(node){
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='⚡ 기습 사건 — 강제 이동';
+  content.innerHTML=`<p style="font-family:'Noto Serif KR',serif;color:#aaa;line-height:1.9">경로가 강제로 변경된다.<br>현재 위치에서 무작위 방향으로 이동된다.</p>`;
+  const btn=document.createElement('button');
+  btn.className='modal-btn modal-btn-gold';
+  btn.textContent='어딘가로 떨어진다...';
+  btn.onclick=()=>{
+    hideModal();
+    // Force move: find a random accessible node on current or next floor
+    const map=GS.map;
+    const f=Math.min(node.floor+1,FLOOR_COUNT-1);
+    const candidates=map.floors[f].filter(n=>!n.visited);
+    if(candidates.length>0){
+      const target=pickRandom(candidates);
+      GS.currentNodeId=target.id;
+      GS.currentFloor=target.floor;
+      target.visited=true;
+      GS.visitedNodes.add(target.id);
+      showStoryOverlay(
+        ['강제로 이동됐다.','주변을 살펴본다.','... 예상치 못한 장소다.'],
+        null,
+        ()=>enterNode(target)
+      );
+    }else{
+      returnToMap();
+    }
+  };
+  content.appendChild(btn);
+  showModal();
+}
+
+// 암시장: 카드 팔기 + 저주 아이템 구매
+function openBlackMarket(){
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='🌑 암시장';
+  content.innerHTML=`<p style="font-family:'Noto Serif KR',serif;color:#888;line-height:1.8;margin-bottom:8px">카드를 팔거나, 금지된 물건을 구매한다.</p><p style="color:var(--gold);font-family:'Share Tech Mono',monospace;margin-bottom:12px">💰 ${GS.gold}</p>`;
+
+  // Sell section
+  const sellTitle=document.createElement('div');
+  sellTitle.style.cssText='color:#9B59B6;font-size:10px;font-family:"Share Tech Mono",monospace;letter-spacing:0.2em;margin-bottom:6px';
+  sellTitle.textContent='── 카드 매각 ──';
+  content.appendChild(sellTitle);
+
+  const sellWrap=document.createElement('div');
+  sellWrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px';
+  const allPool=[...new Set([...GS.deck,...GS.discard])];
+  const sellPrices={common:25,rare:45,epic:70,legendary:120};
+  allPool.slice(0,6).forEach(cid=>{
+    const card=CARDS[cid];if(!card)return;
+    const price=sellPrices[card.rarity]||20;
+    const btn=document.createElement('button');
+    btn.style.cssText=`border:1px solid #9B59B6;background:rgba(0,0,0,0.5);color:#aaa;padding:6px;border-radius:4px;cursor:pointer;font-size:10px;font-family:'Cinzel',serif;text-align:center`;
+    btn.innerHTML=`<div>${card.icon||'🃏'}</div><div>${card.name}</div><div style="color:#9B59B6">💰${price}</div>`;
+    btn.onclick=()=>{
+      const removeFrom=(arr)=>{const i=arr.indexOf(cid);if(i>=0)arr.splice(i,1);};
+      removeFrom(GS.deck);removeFrom(GS.discard);
+      GS.gold+=price;
+      btn.disabled=true;btn.style.opacity='0.3';
+      document.querySelectorAll('#modal-content [data-gold-display]').forEach(el=>el.textContent=`💰 ${GS.gold}`);
+      updateMapHUD();
+    };
+    sellWrap.appendChild(btn);
+  });
+  content.appendChild(sellWrap);
+
+  // Buy cursed items
+  const buyTitle=document.createElement('div');
+  buyTitle.style.cssText='color:#E74C3C;font-size:10px;font-family:"Share Tech Mono",monospace;letter-spacing:0.2em;margin-bottom:6px';
+  buyTitle.textContent='── 금지 물품 ──';
+  content.appendChild(buyTitle);
+
+  const cursedItems=[
+    {name:'저주받은 인형',icon:'🪆',cost:60,desc:'최대 HP -10, 전투 시작 시 카드 1장 추가',action:()=>{GS.maxHp=Math.max(10,GS.maxHp-10);GS.hp=Math.min(GS.hp,GS.maxHp);GS.artifacts.push('cursed_doll');}},
+    {name:'피의 서약',icon:'📜',cost:80,desc:'HP -20, 덱에 전설 카드 1장 추가',action:()=>{damagePlayerDirect(20);const c=randomCardPool(['legendary'],1)[0];if(c)GS.deck.push(c.id);}},
+    {name:'망각의 약',icon:'🧪',cost:40,desc:'랜덤 카드 2장 제거, 최대 손패 +3',action:()=>{for(let i=0;i<2;i++){if(GS.deck.length>0){const idx=Math.floor(Math.random()*GS.deck.length);GS.deck.splice(idx,1);}}GS.maxHandSize+=3;}},
+    {name:'시간의 파편',icon:'⏱',cost:100,desc:'최대 AP +1, HP -30',action:()=>{GS.maxAp=Math.min(6,GS.maxAp+1);GS.ap=Math.min(GS.ap,GS.maxAp);damagePlayerDirect(30);}},
+  ];
+  const itemWrap=document.createElement('div');
+  itemWrap.style.cssText='display:flex;flex-direction:column;gap:6px';
+  cursedItems.forEach(item=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;border:1px solid #440011;border-radius:4px;padding:8px;background:rgba(30,0,0,0.4)';
+    row.innerHTML=`<div style="font-size:20px">${item.icon}</div><div style="flex:1"><div style="font-size:11px;color:var(--text);font-family:'Cinzel',serif">${item.name}</div><div style="font-size:9px;color:#888;font-family:'Noto Serif KR',serif">${item.desc}</div></div>`;
+    const buyBtn=document.createElement('button');
+    buyBtn.style.cssText=`border:1px solid #CC0000;background:rgba(80,0,0,0.4);color:#FF4444;padding:4px 10px;border-radius:3px;cursor:pointer;font-size:10px;font-family:'Share Tech Mono',monospace`;
+    buyBtn.textContent=`💰${item.cost}`;
+    buyBtn.onclick=()=>{
+      if(GS.gold<item.cost){return;}
+      GS.gold-=item.cost;
+      item.action();
+      updateMapHUD();
+      buyBtn.disabled=true;buyBtn.style.opacity='0.3';
+    };
+    if(GS.gold<item.cost)buyBtn.disabled=true;
+    row.appendChild(buyBtn);
+    itemWrap.appendChild(row);
+  });
+  content.appendChild(itemWrap);
+
+  const leaveBtn=document.createElement('button');
+  leaveBtn.className='modal-btn modal-btn-gray';
+  leaveBtn.style.marginTop='12px';
+  leaveBtn.textContent='암시장 떠나기';
+  leaveBtn.onclick=()=>{hideModal();returnToMap();};
+  content.appendChild(leaveBtn);
+  showModal();
+}
+
+// 제거실: 캐릭터 스탯 강화
+function openCharUpgrade(){
+  const choices=[
+    {label:'최대 HP +25',icon:'❤️',desc:'생존력 강화. 현재 HP도 25 증가.',action:()=>{GS.maxHp+=25;GS.hp=Math.min(GS.hp+25,GS.maxHp);}},
+    {label:'최대 AP +1',icon:'⚡',desc:'매 턴 사용 가능한 행동력 +1.',action:()=>{GS.maxAp=Math.min(6,GS.maxAp+1);GS.ap=Math.min(GS.ap+1,GS.maxAp);}},
+    {label:'최대 손패 +3',icon:'🃏',desc:`손패 한도 확장. 현재 ${GS.maxHandSize} → ${GS.maxHandSize+3}장.`,action:()=>{GS.maxHandSize+=3;}},
+    {label:'골드 +80',icon:'💰',desc:'즉각적인 재화 획득.',action:()=>{GS.gold+=80;}},
+  ];
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='✦ 제거실 — 능력 강화';
+  content.innerHTML=`<p style="font-family:'Noto Serif KR',serif;color:#aaa;line-height:1.8;margin-bottom:14px">하나를 선택하라. 선택은 되돌릴 수 없다.</p>`;
+  const grid=document.createElement('div');
+  grid.style.cssText='display:flex;flex-direction:column;gap:10px';
+  choices.forEach(ch=>{
+    const btn=document.createElement('button');
+    btn.style.cssText=`display:flex;align-items:center;gap:12px;border:1px solid rgba(26,188,156,0.4);background:rgba(0,20,15,0.6);color:var(--text);padding:14px;border-radius:6px;cursor:pointer;width:100%;text-align:left;transition:all 0.2s;font-family:'Noto Serif KR',serif`;
+    btn.innerHTML=`<div style="font-size:22px">${ch.icon}</div><div><div style="font-size:13px;font-family:'Cinzel',serif;color:#1ABC9C">${ch.label}</div><div style="font-size:10px;color:#888;margin-top:2px">${ch.desc}</div></div>`;
+    btn.onclick=()=>{
+      ch.action();updateMapHUD();
+      showModal('강화 완료',ch.label);
+      setTimeout(()=>{hideModal();returnToMap();},900);
+    };
+    grid.appendChild(btn);
+  });
+  content.appendChild(grid);
+  showModal();
+}
+
+// 의료실: 강화된 휴식 (더 많이 회복 + 옵션)
+function openMedical(){
+  const healAmt=Math.floor(GS.maxHp*0.5); // 최대 HP 50% 회복
+  const content=document.getElementById('modal-content');
+  document.getElementById('modal-title').textContent='✚ 의료실 — 완전 치료';
+  content.innerHTML=`<p style="font-family:'Noto Serif KR',serif;color:#aaa;line-height:1.8;margin-bottom:4px">의료 장비가 작동한다. 일반 휴식보다 훨씬 효과적이다.</p><p style="color:#2ECC71;font-family:'Share Tech Mono',monospace;margin-bottom:14px">현재 HP: ${GS.hp}/${GS.maxHp}</p>`;
+  const options=[
+    {label:`✚ 완전 치료 (HP +${healAmt})`,action:()=>{const old=GS.hp;GS.hp=Math.min(GS.maxHp,GS.hp+healAmt);return`HP +${GS.hp-old} 회복`;}},
+    {label:'💊 최대 HP +20, 현재 HP +20',action:()=>{GS.maxHp+=20;GS.hp=Math.min(GS.maxHp,GS.hp+20);return`최대 HP 강화 + 회복`;}},
+    {label:'🩹 출혈/상태이상 제거 + HP +20',action:()=>{if(GS.battle){}GS.hp=Math.min(GS.maxHp,GS.hp+20);return`상태이상 제거 + HP +20`;}},
+    {label:'⬆ 카드 강화 (덱에서 1장)',action:()=>{hideModal();openCardUpgrade();return null;}},
+  ];
+  options.forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='modal-btn modal-btn-gold';
+    btn.textContent=opt.label;
+    btn.onclick=()=>{
+      const result=opt.action();
+      if(result!==null){updateMapHUD();showModal('치료 완료',result);setTimeout(()=>{hideModal();returnToMap();},900);}
+    };
+    content.appendChild(btn);
+  });
+  const leaveBtn=document.createElement('button');
+  leaveBtn.className='modal-btn modal-btn-gray';
+  leaveBtn.textContent='그냥 지나간다';
+  leaveBtn.onclick=()=>{hideModal();returnToMap();};
+  content.appendChild(leaveBtn);
+  showModal();
+}
+
+// 기습: 두 적 동시 전투 (엘리트 + 일반)
+// 첫 번째 적 처치 후 두 번째 적과 연속 전투
+function startAmbush(enemyId1,enemyId2){
+  const e1data=ENEMIES[enemyId1||'crimson_warden'];
+  if(!e1data){startBattle('crimson_warden');return;}
+  const enemy={
+    ...deepClone(e1data),hp:e1data.maxHp,patternIdx:0,shield:0,
+    poison:0,bleed:0,vulnerable:0,weak:0,strength:0,reflect:false,
+    isAmbush:true,ambushNextEnemyId:enemyId2||'tick_wraith',
+  };
+  GS.battle={enemy,player:{poison:0,bleed:0,strength:0,reflect:false},playerTurn:true,turn:1};
+  GS.shield=0;
+  if(GS.artifacts.includes('altar_shield')){GS.shield=25;GS.artifacts=GS.artifacts.filter(a=>a!=='altar_shield');}
+  battleStartDraw();
+  switchScreen('battle');
+  renderBattleScreen();
+  // Flash warning
+  const warn=document.createElement('div');
+  warn.style.cssText='position:fixed;top:35%;left:50%;transform:translate(-50%,-50%);z-index:9000;color:#E74C3C;font-size:16px;font-family:"Cinzel",serif;font-weight:900;letter-spacing:0.3em;text-shadow:0 0 20px #E74C3C;text-align:center;pointer-events:none';
+  warn.textContent='기습 — 연속 전투!';
+  document.getElementById('app').appendChild(warn);
+  setTimeout(()=>warn.remove(),2000);
+}
+
+// hexToRgb helper for node colors
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16);
+  const g=parseInt(hex.slice(3,5),16);
+  const b=parseInt(hex.slice(5,7),16);
+  return`${r},${g},${b}`;
+}
+
+// ============================================================
+// 14. MODAL HELPERS
+// ============================================================
+function showModal(title,msg){
+  const ov=document.getElementById('modal-overlay');
+  if(title!==undefined){
+    document.getElementById('modal-title').textContent=title||'';
+    if(msg!==undefined){
+      document.getElementById('modal-content').innerHTML=`<p style="font-family:'Noto Serif KR',serif;line-height:1.8;color:var(--text)">${msg}</p>`;
+    }
+  }
+  ov.classList.add('active');
+}
+function hideModal(){document.getElementById('modal-overlay').classList.remove('active')}
+
+// ============================================================
+// 15. SCREEN CONTROLLER
+// ============================================================
+function switchScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const target=document.getElementById('screen-'+name);
+  if(target)target.classList.add('active');
+  if(name==='battle'){initVFX();}
+}
+
+function returnToMap(){
+  GS.battle=null;
+  switchScreen('map');
+  renderMapScreen();
+  // Check win condition
+  if(GS.currentFloor>=FLOOR_COUNT-1&&GS.visitedNodes.size>0){
+    const bossDone=GS.map.floors[FLOOR_COUNT-1].some(n=>GS.visitedNodes.has(n.id));
+    if(bossDone){
+      setTimeout(()=>showVictory(),500);
+    }
+  }
+}
+
+function showVictory(){
+  const end=document.getElementById('screen-end');
+  document.getElementById('end-title-text').className='end-title victory';
+  document.getElementById('end-title-text').textContent='VICTORY';
+  document.getElementById('end-details').innerHTML=`
+    XII — 파괴된 시간이 쓰러졌다.<br>
+    시간의 흐름이 회복되기 시작한다.<br>
+    살아남은 자는 당신뿐이다.
+  `;
+  const score=GS.score+GS.hp*10+GS.gold*2;
+  document.getElementById('end-score').textContent=`최종 점수: ${score}`;
+  end.classList.add('active');
+}
+
+function showDefeat(){
+  const end=document.getElementById('screen-end');
+  document.getElementById('end-title-text').className='end-title defeat';
+  document.getElementById('end-title-text').textContent='DEFEAT';
+  document.getElementById('end-details').innerHTML=`
+    시간의 파편 속에서 당신의 의식이 사라진다.<br>
+    XII가 웃는다.<br>
+    파괴된 시간은 계속된다.
+  `;
+  const score=GS.score+GS.currentFloor*20;
+  document.getElementById('end-score').textContent=`최종 점수: ${score}`;
+  end.classList.add('active');
+}
+
+// ============================================================
+// 16. GLOBAL EVENT LISTENERS
+// ============================================================
+document.getElementById('btn-start').onclick=()=>initGame();
+document.getElementById('btn-end-turn').onclick=()=>{
+  if(GS.battle&&GS.battle.playerTurn)endTurn();
+};
+document.getElementById('story-overlay').onclick=(ev)=>{
+  if(ev.target.classList.contains('story-choice'))return;
+  storyClick();
+};
+
+document.addEventListener('keydown',(ev)=>{
+  if(ev.code==='Space'&&GS.story.active){ev.preventDefault();storyClick();}
+  if(ev.code==='Enter'&&GS.battle&&GS.battle.playerTurn){endTurn();}
+});
+
+window.addEventListener('resize',()=>{
+  const tc=document.getElementById('title-canvas');
+  if(tc){tc.width=window.innerWidth;tc.height=window.innerHeight;}
+});
+
+// ============================================================
+// 17. INIT FUNCTION
+// ============================================================
+function initGame(){
+  // Reset end screen
+  document.getElementById('screen-end').classList.remove('active');
+  hideModal();
+  hideStoryOverlay();
+
+  // Reset GS
+  GS.hp=80;GS.maxHp=80;GS.ap=3;GS.maxAp=3;GS.gold=100;GS.shield=0;
+  GS.maxHandSize=10;GS.deck=[...STARTING_DECK];GS.hand=[];GS.discard=[];
+  GS.currentFloor=0;GS.currentNodeId=null;GS.visitedNodes=new Set();
+  GS.battle=null;GS.artifacts=[];GS.score=0;GS.turnCount=0;GS.enemiesKilled=0;
+  GS.story={active:false,lines:[],idx:0,typing:false,displayed:'',pendingChoices:null,callback:null};
+
+  GS.map=generateMap();
+  switchScreen('map');
+  renderMapScreen();
+}
+
+// Boot title screen
+initTitleScreen();
+</script>
+</body>
+</html>
