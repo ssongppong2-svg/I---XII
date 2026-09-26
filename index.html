@@ -18,7 +18,7 @@
   --panel:#15131B; --panel-2:#1C1924; --line:#2B2735; --line-2:#3C3649;
   --bone:#EDE6D9; --ash:#A39CAF; --mute:#6F6980;
   --brass:#D6AE62; --brass-hi:#F2D38F; --brass-lo:#7C6234;
-  --danger:#FF4B37; --warn:#FFB84A; --aether:#5FE3D2; --volt:#B894FF; --blood:#C0203D; --ok:#8BDCA6;
+  --danger:#FF4B37; --warn:#FFB84A; --aether:#5FE3D2; --volt:#B894FF; --blood:#C0203D; --ok:#8BDCA6; --foe:#FF5C8A;
   --k-melee:#EFA45E; --k-shot:#5FE3D2; --k-far:#86B8FF; --k-jam:#B894FF; --k-guard:#AFC6DA; --k-cool:#8BDCA6; --k-move:#F2E6C8;
   --vh:100vh;
   --gap:4px;
@@ -29,7 +29,7 @@
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @supports (height:100dvh){:root{--vh:100dvh}}
-*,*::before,*::after{box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{height:100%;box-sizing:border-box;background:var(--ink)}
 body{margin:0;min-height:100%;display:flex;flex-direction:column;background:var(--ink);color:var(--bone);font:14px/1.45 var(--f-ui);word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow-x:hidden}
 button{font:inherit;color:inherit;margin:0}
@@ -42,7 +42,8 @@ svg{display:block}
   /* 오전(낮) — 감시망의 차가운 청회색 */
   --sky-a:#0B1219; --sky-b:#16232F; --tile-a:#1A2531; --tile-edge:#2A3B4A; --eye:#D9F1FF; --tick-on:var(--brass-hi);
   --reserve:450px;                     /* 보드 밖 UI가 차지하는 세로 높이 */
-  --board:clamp(252px, min(calc(100vw - 32px), calc(var(--vh) - var(--reserve))), 520px);
+  --extra:0px;                         /* 일반 전투: 맨 윗줄 SD 머리 공간 */
+  --board:clamp(210px, min(calc(100vw - 32px), calc(var(--vh) - var(--reserve) - var(--extra))), 520px);
   --cs:calc((var(--board) - 4 * var(--gap)) / 5);
   position:relative;flex:1 0 auto;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
@@ -63,6 +64,10 @@ svg{display:block}
 @keyframes vig{from{opacity:1}to{opacity:0}}
 .col{width:max(var(--board), min(calc(100vw - 32px), 420px));max-width:100%;position:relative;z-index:1}
 @media (hover:none){#app{--reserve:416px}}   /* 터치 기기는 단축키 안내가 없다 */
+/* 일반 전투: 맨 윗줄에도 SD가 서므로 머리가 위 패널을 가리지 않게 여백 */
+#app.mode-normal{--extra:22px}
+@media (max-height:700px){#app.mode-normal{--extra:14px}}
+.board.mode-normal{margin-top:var(--extra)}
 @media (max-height:700px){#app{gap:4px;padding-block:6px 8px}.foot{height:54px}.d-row.d-flav{display:none}.log p:first-child:not(:last-child){display:none}}
 
 /* ── HUD ── */
@@ -93,6 +98,8 @@ svg{display:block}
 .bar.bol{height:11px}
 .bar.bol>i,.bar.pol>i{background:linear-gradient(90deg,#3E2F7A,var(--volt))}
 .bar.bol::after,.bar.pol::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#ffffff33}
+.bar.bol.kills>i{background:linear-gradient(90deg,#5A1630,var(--foe))}
+.bar.bol.kills::after{display:none}
 .hud-btns{grid-area:btns;display:flex;gap:4px}
 .icon-btn{width:30px;height:30px;display:grid;place-items:center;border-radius:4px;border:1px solid var(--line-2);background:var(--panel);cursor:pointer;padding:0;touch-action:manipulation}
 .icon-btn svg{width:16px;height:16px;fill:var(--ash)}
@@ -105,6 +112,9 @@ svg{display:block}
 .mini{display:grid;grid-template-columns:repeat(5,6px);grid-auto-rows:6px;gap:1px;flex:none}
 .mini i{background:#ffffff12;border-radius:1px}
 .mini i.on{background:var(--warn)}
+.mini.foe-mode i.on{background:var(--foe)}
+.mini i.on2{background:rgba(255,92,138,.38)}
+.mini i.foe{box-shadow:inset 0 0 0 1.5px #C9B8D6}
 .mini i.me{box-shadow:inset 0 0 0 1.5px var(--brass-hi)}
 .int-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
 .int-label{display:flex;align-items:center;gap:4px;font:700 10px/1 var(--f-ui);letter-spacing:.06em;color:var(--warn);white-space:nowrap;overflow:hidden}
@@ -114,7 +124,7 @@ svg{display:block}
 .int-label svg{width:11px;height:11px;fill:var(--warn)}
 #intName{flex:none;font:900 13.5px/1.2 var(--f-serif)}
 .chip{font:700 10px/1 var(--f-ui);padding:2px 5px;border-radius:2px;border:1px solid currentColor;white-space:nowrap}
-.c-warn{color:var(--warn)} .c-volt{color:var(--volt)} .c-ok{color:var(--ok)} .c-dim{color:var(--ash)}
+.c-warn{color:var(--warn)} .c-volt{color:var(--volt)} .c-ok{color:var(--ok)} .c-dim{color:var(--ash)} .c-foe{color:var(--foe)}
 .amb-chip{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;padding-left:9px;border-left:1px solid var(--line);color:var(--danger);font:700 10px/1.1 var(--f-ui);white-space:nowrap}
 .amb-chip svg{width:15px;height:15px;fill:var(--danger)}
 .amb-chip b{font:800 13px/1 var(--f-num)}
@@ -140,6 +150,24 @@ svg{display:block}
 @media (hover:hover){.cell.mv:hover::after{border-color:var(--brass-hi);border-style:solid}}
 .cell.rng::after{border-color:var(--aether);box-shadow:0 0 14px -2px var(--aether),inset 0 0 10px -4px var(--aether)}
 .cell.leapd::after{border:2px dashed var(--bone);box-shadow:0 0 12px -4px var(--bone)}
+.cell.rng2::after{border:1.5px dashed rgba(95,227,210,.6)}
+@media (hover:hover){.cell.rng2:hover::after{border-style:solid;border-color:var(--aether)}}
+/* 모드: 보스전은 0행이 보스 줄, 일반 전투는 0행도 싸우는 칸 */
+.board.mode-boss .cell.r0{display:none}
+.board.mode-normal .boss-row{display:none}
+.board.mode-normal .dist{display:none}
+/* 적 공격 예고: 조준 표식 — 1 = 내 다음 행동 뒤, 2 = 그다음 */
+.cell .fmark{position:absolute;inset:0;border-radius:3px;opacity:0;pointer-events:none;transition:opacity .15s}
+.cell .fmark::before{content:"";position:absolute;left:50%;top:50%;width:44%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;border:2px solid var(--foe)}
+.cell .fmark::after{content:"";position:absolute;left:50%;top:50%;width:64%;height:64%;translate:-50% -50%;background:linear-gradient(var(--foe),var(--foe)) center/2px 100% no-repeat,linear-gradient(var(--foe),var(--foe)) center/100% 2px no-repeat;opacity:.85}
+.cell.fz1 .fmark{opacity:1;background:rgba(255,92,138,.16);box-shadow:inset 0 0 0 2px var(--foe),inset 0 0 18px rgba(255,92,138,.45);animation:fzPulse 1s ease-in-out infinite}
+.cell.fz2 .fmark{opacity:.8;box-shadow:inset 0 0 0 1px rgba(255,92,138,.6)}
+.cell.fz2 .fmark::before{border-style:dashed;border-width:1.5px;opacity:.7}
+.cell.fz2 .fmark::after{opacity:.3}
+.cell.fzf .fmark{box-shadow:inset 0 0 0 3px #FFE3EC,inset 0 0 20px rgba(255,92,138,.6)}
+@keyframes fzPulse{50%{background:rgba(255,92,138,.28)}}
+.cell.fdest:not(.fz1):not(.fz2) .fmark{opacity:1;inset:12%;border:2px dashed rgba(214,200,230,.5);border-radius:5px}
+.cell.fdest:not(.fz1):not(.fz2) .fmark::before,.cell.fdest:not(.fz1):not(.fz2) .fmark::after{display:none}
 
 /* 보스 줄 */
 .boss-row{grid-row:1;grid-column:1/-1;position:relative;z-index:2}
@@ -159,7 +187,7 @@ svg{display:block}
 @keyframes flick{40%{filter:grayscale(.9) brightness(.45)}}
 .stun-tag{position:absolute;left:24%;top:50%;translate:-50% -50%;padding:3px 8px;border-radius:2px;background:rgba(20,12,34,.88);border:1px solid var(--volt);color:var(--volt);font:700 11px/1.2 var(--f-ui);letter-spacing:.04em;white-space:nowrap;z-index:3;pointer-events:none}
 .bcells{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap);pointer-events:none;z-index:2}
-.bcell{position:relative;border-radius:4px;transition:box-shadow .12s}
+.bcell{position:relative;border-radius:4px;transition:box-shadow .12s;pointer-events:auto;cursor:pointer}
 .bcell.rng{box-shadow:inset 0 0 0 2px var(--aether),0 0 18px -3px var(--aether)}
 .bcell.rng::after{content:"";position:absolute;left:50%;top:55%;width:22px;height:22px;margin:-11px 0 0 -11px;border:2px solid var(--aether);border-radius:50%;box-shadow:0 0 8px var(--aether)}
 .searchlight{position:absolute;left:50%;top:42%;width:62%;height:520%;translate:-50% 0;transform-origin:50% 0;pointer-events:none;z-index:4;opacity:.5;mix-blend-mode:screen;
@@ -178,6 +206,27 @@ svg{display:block}
 .beam.v::before{top:-3px;left:-2.5px}.beam.v::after{bottom:-3px;left:-2.5px}
 .board.amb-off .beam{background:#777;box-shadow:none;animation:none;opacity:.5}
 .board.amb-off .beam::before,.board.amb-off .beam::after{background:#777;box-shadow:none}
+
+/* 적 예고 표시: 사수 조준선 · 이동 화살표 · 폭탄 낙하점 */
+.fmarks{position:absolute;inset:0;pointer-events:none;z-index:20}
+.laser{position:absolute;background:var(--foe);border-radius:1px;box-shadow:0 0 6px rgba(255,92,138,.9);opacity:.9}
+.laser.h{left:calc(var(--x) * (var(--cs) + var(--gap)) + 4px);top:calc(var(--y) * (var(--cs) + var(--gap)) + var(--cs) * .42);width:calc(var(--n) * var(--cs) + (var(--n) - 1) * var(--gap) - 8px);height:2px}
+.laser.v{left:calc(var(--x) * (var(--cs) + var(--gap)) + var(--cs) / 2 - 1px);top:calc(var(--y) * (var(--cs) + var(--gap)) + 4px);height:calc(var(--n) * var(--cs) + (var(--n) - 1) * var(--gap) - 8px);width:2px}
+.laser.n1{animation:beamPulse .9s ease-in-out infinite}
+.laser.n2{opacity:.5;box-shadow:none;background:repeating-linear-gradient(90deg,var(--foe) 0 6px,transparent 6px 11px)}
+.laser.v.n2{background:repeating-linear-gradient(180deg,var(--foe) 0 6px,transparent 6px 11px)}
+/* 이동 예고: 갈 칸 가운데에 진행 방향 화살표 (칸 테두리는 점선) */
+.farrow{position:absolute;left:calc(var(--c) * (var(--cs) + var(--gap)) + var(--cs) / 2);top:calc(var(--r) * (var(--cs) + var(--gap)) + var(--cs) / 2);width:22px;height:22px;margin:-11px 0 0 -11px;display:grid;place-items:center;border-radius:50%;background:rgba(14,11,18,.82);border:1px solid rgba(214,200,230,.55)}
+.farrow::before{content:"";width:7px;height:7px;margin-left:-3px;border-top:2px solid #E6DFF0;border-right:2px solid #E6DFF0;rotate:45deg}
+.farrow.up{rotate:-90deg}
+.farrow.down{rotate:90deg}
+.farrow.left{rotate:180deg}
+.farrow.n2{opacity:.5}
+.fbomb{position:absolute;left:calc(var(--c) * (var(--cs) + var(--gap)) + var(--cs) / 2);top:calc(var(--r) * (var(--cs) + var(--gap)) + var(--cs) / 2);width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FF9AB8,#B0213F 60%,#3A0716);border:1.5px solid #FFD6E2;box-shadow:0 0 12px rgba(255,92,138,.9)}
+.fbomb::after{content:"";position:absolute;right:-3px;top:-5px;width:6px;height:7px;border-radius:2px;background:#E8D6A8}
+.fbomb.n1{animation:fzPulse 1s ease-in-out infinite,bombBob 1s ease-in-out infinite}
+.fbomb.n2{opacity:.5;box-shadow:none}
+@keyframes bombBob{50%{translate:0 -3px}}
 
 /* 주인공 */
 .unit{position:absolute;left:0;top:0;width:var(--cs);height:var(--cs);z-index:5;pointer-events:none;
@@ -211,9 +260,52 @@ svg{display:block}
 .unit.frozen .frz-badge{opacity:1}
 .unit .bld-badge{position:absolute;left:-4px;top:-18%;height:18px;padding:0 5px;border-radius:9px;background:var(--blood);color:#FFE3E8;font:800 11px/18px var(--f-num);box-shadow:0 0 10px rgba(192,32,61,.8);opacity:0;transition:opacity .2s}
 .unit.on-blood .bld-badge{opacity:1}
+/* 주인공 SD — 상태는 표정 대신 움직임으로 */
+.unit::before{content:"";position:absolute;left:16%;right:16%;bottom:3%;height:14%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.6),transparent);pointer-events:none}
+.hero-art.sd{left:-15%;right:-15%;bottom:5%;height:134%}
+.hero-art.sd img{filter:drop-shadow(0 0 1px rgba(255,236,200,.95)) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
+.unit[data-pose="aim"] .hero-art.sd{animation:cast .42s ease-out}
+@keyframes cast{25%{scale:1.1 .9}60%{scale:.95 1.07;translate:0 -6%}}
+.unit.won .hero-art{animation:cheer .8s ease-in-out infinite}
+@keyframes cheer{50%{translate:0 -12%}}
+.unit.down .hero-art{filter:grayscale(1) brightness(.55);rotate:-16deg;translate:0 6%;animation:none;transition:rotate .5s,translate .5s,filter .5s}
+
+/* 일반 적 */
+.foes{position:absolute;inset:0;pointer-events:none}
+.unit.foe .foe-art{position:absolute;left:-18%;right:-18%;bottom:7%;height:128%;transform-origin:50% 100%;animation:bob 2.6s ease-in-out infinite}
+.t-rifle .foe-art{animation-delay:-.7s!important}
+.t-bomb .foe-art{animation-delay:-1.4s!important}
+.t-shield .foe-art{left:-22%;right:-22%}
+.t-bomb .foe-art{left:-22%;right:-22%;height:124%}
+.foe-art img,.foe-art svg{width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.foe-art img{filter:drop-shadow(0 0 1px rgba(255,214,200,.8)) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
+.unit.foe.flip .foe-art{transform:scaleX(-1)}
+.unit.foe.hit .foe-art{animation:hurt .42s ease-out}
+.unit.foe.bump .foe-art{animation:jitter .09s steps(2) 3}
+.unit.foe.lunge .foe-art{animation:lunge .34s ease-out}
+@keyframes lunge{30%{scale:1.12 .9}}
+.unit.foe.focus .foe-art img{filter:drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 9px var(--foe))}
+.unit.foe.dead{opacity:0;transition:opacity .5s .2s}
+.unit.foe.dead .foe-art{filter:grayscale(1) brightness(.4);animation:none}
+.foe-due{position:absolute;right:-4px;top:-3px;z-index:2;height:clamp(14px,calc(var(--cs) * .28),18px);min-width:clamp(16px,calc(var(--cs) * .32),20px);padding:0 5px 0 4px;border-radius:9px;display:none;align-items:center;justify-content:center;gap:2px;font:800 clamp(9px,calc(var(--cs) * .17),11px)/1 var(--f-num);color:#E6DFF0;background:#2B2536;border:1px solid #6F6980;box-shadow:0 2px 6px rgba(0,0,0,.6)}
+.foe-due.on{display:flex}
+.foe-due svg{width:clamp(8px,calc(var(--cs) * .15),10px);height:clamp(8px,calc(var(--cs) * .15),10px);fill:currentColor}
+.foe-due.atk{color:#FFD6E2;background:#4A1227;border-color:var(--foe)}
+.foe-due.atk.n1{color:#2A0712;background:var(--foe);box-shadow:0 0 10px rgba(255,92,138,.85)}
+.foe-due.move.n1{color:#15121A;background:#E6DFF0;border-color:#fff}
+.foe-hp{position:absolute;left:50%;bottom:-4px;z-index:2;translate:-50% 0;display:flex;align-items:center;gap:3px;height:clamp(11px,calc(var(--cs) * .21),13px);padding:0 4px;border-radius:7px;background:rgba(10,8,12,.92);border:1px solid #6E2A3C;font:800 clamp(8px,calc(var(--cs) * .15),9.5px)/1 var(--f-num);color:#FFD6E2;white-space:nowrap;font-variant-numeric:tabular-nums}
+.foe-hp>i{position:relative;display:block;width:clamp(12px,calc(var(--cs) * .38),24px);height:4px;border-radius:2px;background:#2A1A22;overflow:hidden}
+.foe-hp>i>i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#B0213F,var(--foe));transition:width .3s}
+.foe-face{display:none}
+.t-shield .foe-face{display:block;position:absolute;z-index:2;width:16px;height:16px;fill:#EAD9AE;filter:drop-shadow(0 0 2px #000) drop-shadow(0 0 5px rgba(234,217,174,.6))}
+.t-shield[data-face="up"] .foe-face{left:50%;top:-5px;translate:-50% 0}
+.t-shield[data-face="down"] .foe-face{left:50%;bottom:9px;translate:-50% 0}
+.t-shield[data-face="left"] .foe-face{left:-7px;top:44%;translate:0 -50%}
+.t-shield[data-face="right"] .foe-face{right:-7px;top:44%;translate:0 -50%}
+.unit.foe.dead .foe-due,.unit.foe.dead .foe-hp,.unit.foe.dead .foe-face{display:none}
 
 /* 이펙트 */
-.fx{position:absolute;inset:0;pointer-events:none;z-index:7}
+.fx{position:absolute;inset:0;pointer-events:none;z-index:30}
 .fx-cell{position:absolute;left:calc(var(--c) * (var(--cs) + var(--gap)));top:calc(var(--r) * (var(--cs) + var(--gap)));width:var(--cs);height:var(--cs);border-radius:4px}
 .fx-boom{background:radial-gradient(circle,#fff 0,#FFE0B8 18%,rgba(255,75,55,.9) 42%,rgba(255,75,55,0) 70%);animation:fxBoom .5s ease-out forwards}
 .fx-boom.amber{background:radial-gradient(circle,#fff 0,#FFF1C9 18%,rgba(255,184,74,.92) 42%,rgba(255,184,74,0) 70%)}
@@ -231,13 +323,24 @@ svg{display:block}
 @keyframes fxRise{0%{opacity:0;transform:translateY(8px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.15)}70%{opacity:1}100%{opacity:0;transform:translateY(-34px) scale(1)}}
 .fx-nail{position:absolute;width:3px;margin-left:-1.5px;border-radius:2px;background:linear-gradient(180deg,rgba(255,240,200,0),#FFE7B0 75%,#fff);transform-origin:top;animation:fxNail .26s ease-in forwards}
 @keyframes fxNail{0%{transform:scaleY(0);opacity:1}70%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+.fx-tracer{position:absolute;border-radius:2px;background:linear-gradient(var(--tg,90deg),rgba(255,230,238,0),#FFD6E2 70%,#fff);box-shadow:0 0 8px var(--foe);animation:fxTracer .24s ease-out forwards}
+.fx-tracer.h{height:3px;margin-top:-1.5px;transform-origin:var(--to,left)}
+.fx-tracer.v{width:3px;margin-left:-1.5px;transform-origin:var(--to,top)}
+@keyframes fxTracer{0%{scale:0 1;opacity:1}60%{scale:1 1;opacity:1}100%{scale:1 1;opacity:0}}
+.fx-tracer.v{animation-name:fxTracerV}
+@keyframes fxTracerV{0%{scale:1 0;opacity:1}60%{scale:1 1;opacity:1}100%{scale:1 1;opacity:0}}
+.fx-shell{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FF9AB8,#B0213F 60%,#3A0716);box-shadow:0 0 10px var(--foe)}
+.fx-boom.rose{background:radial-gradient(circle,#fff 0,#FFE3EC 18%,rgba(255,92,138,.92) 42%,rgba(255,92,138,0) 70%)}
+.fx-say{position:absolute;translate:-50% -100%;z-index:2;max-width:150px;padding:4px 8px;border-radius:4px;background:rgba(18,12,18,.95);border:1px solid #8A3A52;color:#FFE3EC;font:600 11px/1.3 var(--f-ui);white-space:nowrap;pointer-events:none;box-shadow:0 4px 10px rgba(0,0,0,.5);animation:barkIn 1.9s ease forwards}
+.fx-say::after{content:"";position:absolute;left:50%;bottom:-6px;margin-left:-5px;border:5px solid transparent;border-bottom:0;border-top-color:#8A3A52}
+.fx-num small{display:block;margin-top:2px;font:700 9px/1 var(--f-ui);color:#EAD9AE;text-shadow:0 1px 2px #000}
 .board.shake-s{animation:shS .26s}
 .board.shake-m{animation:shM .36s}
 .board.shake-l{animation:shL .46s}
 @keyframes shS{25%{translate:-3px 1px}50%{translate:2px -1px}75%{translate:-1px 2px}}
 @keyframes shM{20%{translate:-6px 3px}40%{translate:5px -4px}60%{translate:-4px 4px}80%{translate:2px -2px}}
 @keyframes shL{15%{translate:-9px 5px}35%{translate:8px -7px}55%{translate:-7px 6px}75%{translate:4px -3px}}
-.toast{position:absolute;left:50%;top:50%;translate:-50% -50%;z-index:9;max-width:92%;padding:8px 14px;border-radius:4px;background:rgba(28,20,32,.96);border:1px solid #7A2A22;color:#FFD3CB;font:600 13px/1.35 var(--f-ui);text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.6);pointer-events:none;animation:toastIn .16s ease-out}
+.toast{position:absolute;left:50%;top:50%;translate:-50% -50%;z-index:40;max-width:92%;padding:8px 14px;border-radius:4px;background:rgba(28,20,32,.96);border:1px solid #7A2A22;color:#FFD3CB;font:600 13px/1.35 var(--f-ui);text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.6);pointer-events:none;animation:toastIn .16s ease-out}
 .toast.ok{border-color:#2F6B47;color:#CFF5DC}
 @keyframes toastIn{from{opacity:0;scale:.92}}
 
@@ -261,6 +364,10 @@ svg{display:block}
 .pip.frz{border-color:var(--volt);background:linear-gradient(180deg,#2B2147,#161028)}
 .pip.stn svg{opacity:.3}
 .pip.stn::after{content:"";position:absolute;left:5px;right:5px;top:50%;height:2px;margin-top:-1px;background:var(--ok);rotate:-24deg;border-radius:1px}
+.fdots{position:absolute;left:0;right:0;bottom:-4px;display:flex;justify-content:center;gap:2px;pointer-events:none}
+.fdots i{width:6px;height:6px;border-radius:50%;border:1px solid #15121A}
+.fdots i.a{background:var(--foe);box-shadow:0 0 4px var(--foe)}
+.fdots i.m{background:#C9C0D3}
 .olw{display:flex;flex-direction:column;align-items:flex-end;gap:3px;justify-self:end;width:100%;max-width:110px}
 .bar.pol{width:100%;height:9px}
 .bar.pol.hot>i{background:linear-gradient(90deg,#6A3DC2,#FF7AD9)}
@@ -342,7 +449,9 @@ svg{display:block}
 .d-range{color:var(--ash)}
 .d-text{color:var(--ash)}
 .d-eff b{font-variant-numeric:tabular-nums}
-.d-eff .v{color:var(--volt)} .d-eff .g{color:var(--ok)} .d-eff .bl{font-style:normal;color:#FF8FA0}
+.d-eff .v{color:var(--volt)} .d-eff .g{color:var(--ok)} .d-eff .bl{font-style:normal;color:#FF8FA0} .d-eff .fo{color:var(--foe)}
+.d-sd{flex:none;width:22px;height:22px;object-fit:contain;object-position:center bottom;margin:-4px -2px -2px 0}
+.d-kind.k-foe{--k:var(--foe)}
 .st{flex:none;font:700 10.5px/1 var(--f-ui);padding:3px 6px;border-radius:2px;white-space:nowrap}
 .st.good{color:var(--ok);background:rgba(139,220,166,.12)}
 .st.bad{color:#FF9C8E;background:rgba(255,75,55,.12)}
@@ -368,11 +477,30 @@ svg{display:block}
 .rules li{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:rgba(21,19,27,.8);font-size:12.5px;line-height:1.45;color:var(--ash)}
 .rules li b{display:block;color:var(--bone);font-size:13px;margin-bottom:1px}
 .rules svg{flex:none;width:18px;height:18px;margin-top:1px;fill:var(--brass)}
-.rules .r-amb svg{fill:var(--danger)} .rules .r-atk svg{fill:var(--warn)} .rules .r-volt svg{fill:var(--volt)} .rules .r-blood svg{fill:#FF6A7E}
+.rules .r-amb svg{fill:var(--danger)} .rules .r-atk svg{fill:var(--warn)} .rules .r-volt svg{fill:var(--volt)} .rules .r-blood svg{fill:#FF6A7E} .rules .r-foe svg{fill:var(--foe)}
 .ctrl{margin:0;font-size:12px;color:var(--mute)}
 .btn-main{min-width:180px;padding:12px 28px;border-radius:4px;border:1px solid var(--brass);background:linear-gradient(180deg,#4A3B1E,#2A2111);color:var(--brass-hi);font:900 16px/1 var(--f-serif);letter-spacing:.12em;cursor:pointer;box-shadow:0 0 24px -6px rgba(214,174,98,.5)}
 .btn-main:hover{background:linear-gradient(180deg,#5A4824,#33281A)}
 .btn-sub{padding:10px 18px;border-radius:4px;border:1px solid var(--line-2);background:var(--panel);color:var(--ash);font:700 13px/1 var(--f-ui);cursor:pointer}
+.btn-sub:hover{color:var(--bone);border-color:var(--brass-lo)}
+.mode-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.btn-mode{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px 12px 11px;border-radius:5px;border:1px solid var(--brass);background:linear-gradient(180deg,#4A3B1E,#2A2111);color:var(--brass-hi);text-align:left;cursor:pointer;box-shadow:0 0 22px -8px rgba(214,174,98,.55);touch-action:manipulation}
+.btn-mode:hover{background:linear-gradient(180deg,#5A4824,#33281A)}
+.btn-mode b{font:900 17px/1.15 var(--f-serif);letter-spacing:.06em}
+.btn-mode span{font:600 11px/1.35 var(--f-ui);color:#CDB98A}
+.btn-mode kbd{position:absolute;right:8px;top:8px;font:700 10px/1 var(--f-ui);padding:2px 5px;border:1px solid var(--brass-lo);border-radius:3px;color:var(--brass)}
+.btn-mode.boss{border-color:#8793A1;background:linear-gradient(180deg,#2E353F,#171B21);color:#EAF4FF;box-shadow:0 0 22px -8px rgba(160,190,220,.4)}
+.btn-mode.boss:hover{background:linear-gradient(180deg,#39424E,#1C2129)}
+.btn-mode.boss span{color:#A7B2BF}
+.btn-mode.boss kbd{border-color:#5E6A78;color:#A7B2BF}
+@media (hover:none){.btn-mode kbd{display:none}}
+.foe-gal{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 8px}
+.foe-gal figure{margin:0;display:flex;flex-direction:column;gap:4px}
+.foe-gal .fg-art{position:relative;aspect-ratio:2/3;border-radius:5px;border:1px solid var(--line-2);background:radial-gradient(80% 60% at 50% 62%,rgba(255,92,138,.18),transparent 70%),#0E0C12;overflow:hidden}
+.foe-gal .fg-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.foe-gal .fg-art .fg-sd{inset:auto 4px 4px auto;width:34%;height:auto;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 2px 3px #000)}
+.foe-gal figcaption{font-size:11.5px;line-height:1.4;color:var(--ash)}
+.foe-gal figcaption b{display:block;font:900 13px/1.3 var(--f-serif);color:var(--bone)}
 .res-kicker{margin:0;font:700 11px/1 var(--f-ui);letter-spacing:.2em;color:var(--mute)}
 .res-title{margin:0;font:900 44px/1.1 var(--f-serif);text-wrap:balance}
 .res-title.win{color:var(--brass-hi)} .res-title.lose{color:#FF6A5A}
@@ -451,10 +579,13 @@ svg{display:block}
 .pt-hero.img{left:38%;top:20%;bottom:auto;height:100%;max-width:none;aspect-ratio:2/3;translate:-50% 0}
 .pt-hero.img::before{display:none}
 .pt-hero.img .pt-art img{object-position:center top;filter:drop-shadow(0 10px 24px rgba(0,0,0,.6))}
-.pt-hero.swap .pt-art,.pt-merchant.swap .pt-art{animation:faceSwap .28s ease-out}
-.pt-merchant{z-index:1;left:72%;top:18%;height:100%;aspect-ratio:2/3;translate:-50% 0;transform:translateX(40px)}
-.pt-merchant.in{transform:none}
-.pt-merchant.on{transform:translateY(-6px) scale(1.02)}
+.pt-hero.swap .pt-art,.pt-merchant.swap .pt-art,.pt-foe.swap .pt-art{animation:faceSwap .28s ease-out}
+.pt-merchant,.pt-foe{z-index:1;left:72%;top:18%;height:100%;aspect-ratio:2/3;translate:-50% 0;transform:translateX(40px)}
+.pt-merchant.in,.pt-foe.in{transform:none}
+.pt-merchant.on,.pt-foe.on{transform:translateY(-6px) scale(1.02)}
+.pt-foe::before{content:"";position:absolute;left:4%;right:4%;top:18%;bottom:0;background:radial-gradient(ellipse at 50% 70%,rgba(255,92,138,.22),transparent 68%)}
+.pt-foe .pt-art img{filter:drop-shadow(0 0 1.5px rgba(255,214,200,.6)) drop-shadow(0 10px 24px rgba(0,0,0,.6))}
+.pt-foe.on{z-index:2}
 .pt-merchant .pt-art svg,.pt-merchant .pt-art img{object-position:center top}
 .pt-merchant .pt-art img{filter:drop-shadow(0 10px 24px rgba(0,0,0,.6))}
 .npc-svg .m-eye{filter:drop-shadow(0 0 3px #F0B44E)}
@@ -492,11 +623,13 @@ svg{display:block}
 .dname.boss{background:linear-gradient(180deg,#6A7582,#39414C);color:#EAF4FF}
 .dname.merchant{background:linear-gradient(180deg,#9A6A3E,#5E3D20);color:#FBE9D2}
 .dname.voice{background:linear-gradient(180deg,#9A1E34,#5A101D);color:#FFE3E8}
+.dname.foe{background:linear-gradient(180deg,#4E3A40,#2A1D22);color:#FFE3EC;box-shadow:0 4px 12px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,92,138,.5)}
 .dtext{margin:0;min-height:3.6em;font:500 16px/1.8 var(--f-serif);color:var(--bone);white-space:pre-wrap}
 .dtext.nar{color:#C9C0D3}
 .dtext.boss{color:#DCE6F2;letter-spacing:.02em}
 .dtext.merchant{color:#F1E4D2}
 .dtext.voice{color:#F2BCC6;font-style:italic}
+.dtext.foe{color:#F4DDE3}
 .sc-place{position:absolute;left:0;top:46px;z-index:6;padding:7px 14px 7px 10px;border-left:2px solid var(--brass);background:linear-gradient(90deg,rgba(12,10,16,.92),rgba(12,10,16,0));font:700 12px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--bone);pointer-events:none;animation:placeIn 3s ease forwards}
 @keyframes placeIn{0%{opacity:0;transform:translateX(-10px)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
 .scene[data-tint="warm"]{background:radial-gradient(120% 75% at 50% 30%,rgba(70,42,16,.5),rgba(10,6,4,.92) 72%),rgba(12,8,4,.38)}
@@ -549,7 +682,7 @@ svg{display:block}
     </div>
     <div class="boss-name">
       <div class="bname" id="bossName">집행 병기 「못박이」</div>
-      <div class="bsub">인류 정부군 · 테스트 보스</div>
+      <div class="bsub" id="bossSub">인류 정부군 · 테스트 보스</div>
     </div>
     <div class="hud-btns">
       <button class="icon-btn" id="btnHelp" type="button" aria-label="규칙과 조작"><svg><use href="#i-help"/></svg></button>
@@ -562,11 +695,11 @@ svg{display:block}
     </div>
   </header>
 
-  <!-- ═════ 보스 의도: 턴 공격 예고 · 기습 칸 수 ═════ -->
+  <!-- ═════ 의도: 보스전 = 턴 공격 예고 / 일반 전투 = 적 행동 예고 · 기습 칸 수 ═════ -->
   <div class="intent col" id="intent">
     <div class="mini" id="intMini" aria-hidden="true"></div>
     <div class="int-txt">
-      <span class="int-label"><svg><use href="#i-hazard"/></svg>턴 공격 예고<span class="int-meta" id="intMeta"></span></span>
+      <span class="int-label"><svg><use href="#i-hazard" id="intIcon"/></svg><span id="intTitle">턴 공격 예고</span><span class="int-meta" id="intMeta"></span></span>
       <span class="int-main"><b id="intName">—</b><span class="int-chips" id="intChips"></span></span>
     </div>
     <div class="amb-chip" id="ambChip"></div>
@@ -606,8 +739,9 @@ svg{display:block}
       <div class="stun-tag" id="stunTag" hidden></div>
       <div class="bark" id="bark" hidden></div>
     </div>
-    <!-- 4×5 플레이어 칸은 스크립트가 생성 -->
+    <!-- 칸은 스크립트가 생성 (보스전은 0행을 숨기고 보스 줄을 덮는다) -->
     <div class="beams" id="beams"></div>
+    <div class="foes" id="foes"></div>
     <div class="unit" id="player">
       <div class="ward"></div>
       <div class="hero-art" id="heroArt">
@@ -639,6 +773,7 @@ svg{display:block}
       <span class="frz-badge" id="frzBadge"></span>
       <span class="bld-badge" id="bldBadge" title="핏빛 타일 위: 공격 카드 피해 배율"></span>
     </div>
+    <div class="fmarks" id="fmarks"></div>
     <div class="fx" id="fx"></div>
     <div class="toast" id="toast" hidden></div>
   </main>
@@ -660,16 +795,19 @@ svg{display:block}
     <div class="detail" id="detail" hidden></div>
     <div class="log" id="log" aria-live="polite"></div>
   </div>
-  <div class="keys col"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 이동 · <kbd>1</kbd>–<kbd>6</kbd> 카드(두 번) · <kbd>Q</kbd> 뽑기 · <kbd>Esc</kbd> 취소 · <kbd>H</kbd> 규칙</div>
+  <div class="keys col"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 이동·조준 · <kbd>1</kbd>–<kbd>6</kbd> 카드 · <kbd>Q</kbd> 뽑기 · <kbd>Esc</kbd> 취소 · <kbd>H</kbd> 규칙</div>
 
   <!-- ═════ 시작 화면 ═════ -->
   <div class="overlay" id="intro">
     <div class="ov-panel">
       <div class="logo" aria-label="I — XII"><span>I</span><i></i><span>XII</span></div>
-      <p class="logo-sub">전투 테스트판 · 5×5 보스전</p>
+      <p class="logo-sub">전투 테스트판 · 5×5 격자 전투</p>
       <ul class="rules" id="introRules"></ul>
       <p class="ctrl">WASD·방향키 또는 옆 칸을 눌러 이동 · 카드 1–6 · Q 뽑기</p>
-      <button class="btn-main" id="btnStart" type="button">시작하기</button>
+      <div class="mode-btns">
+        <button class="btn-mode" id="btnNormal" type="button"><kbd>1</kbd><b>일반 전투</b><span id="modeNormalSub">감시탑 순찰대</span></button>
+        <button class="btn-mode boss" id="btnBoss" type="button"><kbd>2</kbd><b>보스전</b><span id="modeBossSub">집행 병기 「못박이」</span></button>
+      </div>
     </div>
   </div>
 
@@ -707,6 +845,7 @@ svg{display:block}
           <ellipse class="m-eye" cx="106" cy="42" rx="2.4" ry="1.4" fill="#F0B44E"/>
         </svg>
       </div></div>
+      <div class="pt pt-foe" id="ptFoe"><div class="pt-art" id="ptFoeArt"></div></div>
       <div class="sc-stage">
         <div class="pt pt-boss" id="ptBoss"><div class="mon"><div class="mon-screen" id="ptBossArt"></div><div class="mon-bar"><i class="rec"></i><span>감시망 방송 · 집행 병기</span></div></div></div>
         <div class="sc-choices" id="scChoices" hidden></div>
@@ -731,7 +870,7 @@ svg{display:block}
       <h2 class="res-title" id="resTitle"></h2>
       <p class="res-sub" id="resSub"></p>
       <dl class="res-stats" id="resStats"></dl>
-      <div class="res-btns"><button class="btn-main" id="btnAgain" type="button">다시 하기</button><button class="btn-sub" id="btnResCfg" type="button">설정 바꾸기</button></div>
+      <div class="res-btns"><button class="btn-main" id="btnAgain" type="button">다시 하기</button><button class="btn-sub" id="btnSwap" type="button">보스전으로</button><button class="btn-sub" id="btnResCfg" type="button">설정 바꾸기</button></div>
     </div>
   </div>
 
@@ -777,6 +916,9 @@ svg{display:block}
     <symbol id="i-blade" viewBox="0 0 24 24"><path d="M20.5 2.5c-5.8.5-11 4.2-13.2 9.8l-2.1-.9L3.8 13l3.3 1.6L5.5 18 2 21.5l.5.5L6 18.5l3.4-1.6L11 20.2l1.6-1.4-.9-2.1c5.6-2.2 9.3-7.4 9.8-13.2l-1-1z"/></symbol>
     <symbol id="i-shot" viewBox="0 0 24 24"><path d="M12 1 17.5 7.5h-4V23h-3V7.5h-4L12 1z"/></symbol>
     <symbol id="i-mortar" viewBox="0 0 24 24"><path d="M3 22h8l-2-6H5l-2 6zm4-8a9 9 0 0 1 12.8-8.1l-.9 1.8A7 7 0 0 0 9 14H7zm13-9a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M11 1h2v3.1A8 8 0 0 1 19.9 11H23v2h-3.1A8 8 0 0 1 13 19.9V23h-2v-3.1A8 8 0 0 1 4.1 13H1v-2h3.1A8 8 0 0 1 11 4.1V1zm1 5a6 6 0 1 0 0 12 6 6 0 0 0 0-12zm0 4a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></symbol>
+    <symbol id="i-step" viewBox="0 0 24 24"><path d="M9 3 18 12 9 21 6.5 18.5 13 12 6.5 5.5z"/></symbol>
+    <symbol id="i-foe" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 1.5c-4.9 0-8 3.7-8 8.4v6.4L7 22h10l3-5.7V9.9c0-4.7-3.1-8.4-8-8.4zM7 9.5h10v2.3H7zm0 4h10v2.1H7z"/></symbol>
     <symbol id="i-leap" viewBox="0 0 24 24"><path d="M12 2l8 8-1.8 1.8L12 5.6l-6.2 6.2L4 10l8-8zm0 8 8 8-1.8 1.8L12 13.6l-6.2 6.2L4 18l8-8z"/></symbol>
   </defs>
 </svg>
@@ -818,14 +960,19 @@ const DEFAULTS = {
   handRefill: 3, handMax: 6,
   playerHp: 3, bossHp: 150,
   startPhase: 'day',
+  foeCount: 3,          // 일반 전투 적 수 — 셋까지는 사수 · 기사 · 폭탄병 한 명씩, 넘으면 무작위
+  bossAdds: 2,          // 보스전 졸개 수 — 사수 · 폭탄병 · 기사 순
+  foeActCost: 0,        // 일반 적 행동 1회가 누적 코스트(낮밤)에 더하는 값
+  normalAmbush: true,   // 일반 전투에서도 기습 폭격
   god: false,
-  interludes: true,     // 전투 중(첫 밤 · 보스 절반 · 첫 과부하) · 끝난 뒤(승패 엔딩) 대사 장면
+  interludes: true,     // 전투 중(첫 밤 · 보스 절반 · 첫 과부하 · 첫 자폭) · 끝난 뒤(승패 엔딩) 대사 장면
 };
 const LIMITS = {
   costPerLoop: [3, 6], phaseCost: [10, 60], bossAmbushCost: [0, 4], bossAttackCost: [0, 4],
   ambushDay: [4, 12], ambushNight: [3, 12], ambushDmg: [0, 3], nailOl: [0, 100],
   freezeCost: [1, 8], bossStunCost: [1, 8], bloodTiles: [0, 10], bloodMult: [1, 5], bloodOl: [0, 100],
   handRefill: [1, 6], handMax: [3, 8], playerHp: [1, 9], bossHp: [20, 990],
+  foeCount: [1, 5], bossAdds: [0, 3], foeActCost: [0, 2],
 };
 const CFG_KEY = 'i12.battle-test.cfg.v2';
 const SND_KEY = 'i12.battle-test.sound.v1';
@@ -839,6 +986,7 @@ function sanitizeCfg(c) {
   if (!['day', 'night'].includes(c.startPhase)) c.startPhase = DEFAULTS.startPhase;
   c.god = c.god === true;
   c.interludes = c.interludes !== false;
+  c.normalAmbush = c.normalAmbush !== false;
   c.olMax = DEFAULTS.olMax; c.olReset = DEFAULTS.olReset;
   return c;
 }
@@ -849,7 +997,12 @@ const CFG_UI = [
   { k: 'costPerLoop', label: '루프당 코스트', unit: '코' },
   { k: 'handRefill', label: '루프 시작 손패 보충', unit: '장' },
   { k: 'handMax', label: '손패 최대', unit: '장' },
-  { group: '보스 공격' },
+  { group: '일반 적' },
+  { k: 'foeCount', label: '일반 전투 적 수', unit: '명', restart: true },
+  { k: 'bossAdds', label: '보스전 졸개 수', unit: '명', restart: true },
+  { k: 'foeActCost', label: '적 행동 1회 = 코스트', unit: '코' },
+  { k: 'normalAmbush', label: '일반 전투에서도 기습 폭격', type: 'toggle' },
+  { group: '기습 · 보스 공격' },
   { k: 'ambushDay', label: '기습 칸 수 · 오전(낮)', unit: '칸' },
   { k: 'ambushNight', label: '기습 칸 수 · 오후(밤)', unit: '칸' },
   { k: 'ambushDmg', label: '기습 피해', unit: '' },
@@ -857,7 +1010,7 @@ const CFG_UI = [
   { k: 'atkTiming', label: '턴 공격 판정 시점', type: 'seg', opts: [['after', '행동 뒤'], ['pay', '지불 순간']] },
   { group: '시계 · 낮밤' },
   { k: 'phaseCost', label: '낮밤 전환 누적 코스트', unit: '코', step: 5 },
-  { k: 'bossAmbushCost', label: '보스 기습 1회 = 코스트', unit: '코' },
+  { k: 'bossAmbushCost', label: '기습 1회 = 코스트', unit: '코' },
   { k: 'bossAttackCost', label: '보스 턴 공격 1회 = 코스트', unit: '코' },
   { k: 'startPhase', label: '시작 시간대', type: 'seg', opts: [['day', '오전(낮)'], ['night', '오후(밤)']], restart: true },
   { group: '과부하 · 핏빛 타일' },
@@ -874,25 +1027,32 @@ const CFG_UI = [
 ];
 
 /* ═════════════════════════════════════════════
-   2. 보드 좌표 — 0행은 보스, 1~4행이 플레이어 구역
+   2. 보드 좌표 — 보스전: 0행은 보스, 1~4행에서 싸운다 / 일반 전투: 0~4행 전부
    ═════════════════════════════════════════════ */
 const COLS = 5;
 const AMBUSH_AT = 2;                                   // 루프의 2번째 행동이 끝나는 순간 기습 폭발
 const K = (r, c) => r * COLS + c;
 const RC = k => [Math.floor(k / COLS), k % COLS];
 const inCol = c => c >= 0 && c < COLS;
-const inArea = (r, c) => r >= 1 && r <= 4 && inCol(c);
+let TOP = 1;                                           // 걸어 다닐 수 있는 맨 윗줄 — 보스전 1 · 일반 전투 0
+const inBoard = (r, c) => r >= 0 && r <= 4 && inCol(c);
+const inArea = (r, c) => r >= TOP && r <= 4 && inCol(c);
 const DIRS = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
+const DIR_LABEL = { up: '위', down: '아래', left: '왼', right: '오른' };
 const dirOf = (dr, dc) => dr < 0 ? 'up' : dr > 0 ? 'down' : dc < 0 ? 'left' : 'right';
-const AREA = [];
-for (let r = 1; r <= 4; r++) for (let c = 0; c < COLS; c++) AREA.push(K(r, c));
-const colCells = c => [1, 2, 3, 4].map(r => K(r, c));
+let AREA = [];
+function setArea() { AREA = []; for (let r = TOP; r <= 4; r++) for (let c = 0; c < COLS; c++) AREA.push(K(r, c)); }
+const colCells = c => AREA.filter(k => k % COLS === c);
 const rowCells = r => [0, 1, 2, 3, 4].map(c => K(r, c));
+const manh = (a, b) => Math.abs(a.r - b.r) + Math.abs(a.c - b.c);
+const cheb = (a, b) => Math.max(Math.abs(a.r - b.r), Math.abs(a.c - b.c));
+// 받침: 사수가 · 폭탄병이
+const iga = w => { const ch = w.charCodeAt(w.length - 1) - 0xAC00; return ch >= 0 && ch < 11172 && ch % 28 ? '이' : '가'; };
 
 /* ═════════════════════════════════════════════
    3. 데이터 — 사거리 · 카드 · 보스 패턴
    ═════════════════════════════════════════════ */
-// 사거리: 플레이어 기준 [행 변화, 열 변화]. 음수 행 = 보스 쪽(앞)
+// 사거리: 플레이어 기준 [행 변화, 열 변화]. 음수 행 = 앞(위). 쓸 때 고른 방향으로 돌려서 쓴다
 const SHAPES = {
   fan3:   { label: '앞 3칸 부채꼴', cells: [[-1, -1], [-1, 0], [-1, 1]] },
   line2:  { label: '직선 2칸',      cells: [[-1, 0], [-2, 0]] },
@@ -900,6 +1060,7 @@ const SHAPES = {
   far:    { label: '3~4칸 앞',      cells: [[-3, 0], [-4, 0]] },
   halo5:  { label: '앞·양옆 5칸',   cells: [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1]] },
 };
+// 보스전: 위쪽으로 썼을 때 보스 줄(0행)에 닿는 거리
 const reachRows = shape => [1, 2, 3, 4].filter(r => SHAPES[shape].cells.some(([dr]) => r + dr === 0));
 function reachText(shape) {
   const rows = reachRows(shape);
@@ -907,7 +1068,46 @@ function reachText(shape) {
   if (rows.length === 1) return `거리 ${rows[0]}에서만 명중`;
   return `거리 ${rows[0]}~${rows[rows.length - 1]}에서 명중`;
 }
-const hitColumns = (shape, p) => SHAPES[shape].cells.filter(([dr, dc]) => p.r + dr === 0 && inCol(p.c + dc)).map(([, dc]) => p.c + dc);
+// 방향 돌리기 — 위(앞) 기준 모양을 아래 · 왼 · 오른쪽으로
+const ROT = {
+  up:    ([dr, dc]) => [dr, dc],
+  down:  ([dr, dc]) => [-dr, -dc],
+  left:  ([dr, dc]) => [-dc, dr],
+  right: ([dr, dc]) => [dc, -dr],
+};
+const AIM_ORDER = ['up', 'left', 'right', 'down'];
+function shapeCells(shape, p, dir) {
+  return SHAPES[shape].cells.map(ROT[dir]).map(([dr, dc]) => [p.r + dr, p.c + dc]).filter(([r, c]) => inBoard(r, c));
+}
+// 그 방향으로 썼을 때 맞는 것: 범위 안의 적 · 보스 줄(0행)
+function strikeTargets(shape, p, dir) {
+  const cells = shapeCells(shape, p, dir);
+  const has = new Set(cells.map(([r, c]) => K(r, c)));
+  const foes = liveFoes().filter(f => has.has(K(f.r, f.c)));
+  const bcols = S.mode === 'boss' ? cells.filter(([r]) => r === 0).map(([, c]) => c) : [];
+  return { cells, foes, bcols, boss: bcols.length > 0, n: foes.length + (bcols.length ? 1 : 0) };
+}
+function validDirs(def) { return def.shape ? AIM_ORDER.filter(d => strikeTargets(def.shape, S.p, d).n > 0) : []; }
+// 조준: 지금 방향이 쓸 만하면 그대로, 아니면 가장 많이 맞는 방향 (보스는 1.5명 몫)
+function aimFor(def) {
+  const v = validDirs(def);
+  if (!v.length) return null;
+  if (S.aim && v.includes(S.aim)) return S.aim;
+  let best = v[0], bs = -1;
+  for (const d of v) {
+    const t = strikeTargets(def.shape, S.p, d);
+    const s = t.foes.length + (t.boss ? 1.5 : 0);
+    if (s > bs) { bs = s; best = d; }
+  }
+  return best;
+}
+// 칸을 눌렀을 때 그 칸이 들어가는 방향 (지금 조준 우선)
+function dirAtCell(def, r, c) {
+  const inShape = d => shapeCells(def.shape, S.p, d).some(([rr, cc]) => rr === r && cc === c);
+  const aim = aimFor(def);
+  if (aim && inShape(aim)) return aim;
+  return validDirs(def).find(inShape) || null;
+}
 
 const KINDS = {
   melee: { label: '근접',   icon: 'i-blade' },
@@ -950,30 +1150,47 @@ const PATTERNS = [
     make: p => [...rowCells(p.r), ...colCells(p.c)] },
 ];
 
+// 일반 적 — 2코스트마다 이동 또는 공격 1회. 다음 행동은 판에 미리 예고되고, 예고된 칸은 실행 때 바뀌지 않는다.
+// 적마다 순번이 달라 1·3번째 행동 뒤 / 2·4번째 행동 뒤에 번갈아 움직인다. 이름 · 수치는 테스트용
+// native = SD 그림이 원래 바라보는 쪽 (L 왼 · R 오른)
+const FOES = {
+  rifle:  { name: '시계 사수', short: '사수', hp: 12, dmg: 1, atk: '관통 사격', atkShort: '사격', native: 'R',
+            desc: '나와 같은 가로·세로줄에 서면 그 줄을 판 끝까지 꿰뚫어 쏜다. 줄을 맞추되 거리를 벌린다.' },
+  shield: { name: '방패 기사', short: '기사', hp: 20, dmg: 2, atk: '내려찍기', atkShort: '내려찍기', native: 'L', guard: 0.5,
+            desc: '바로 앞 3칸을 내려찍는다. 방패를 든 정면에서 받는 피해는 절반 — 옆이나 뒤를 노릴 것.' },
+  bomb:   { name: '폭탄병',   short: '폭탄병', hp: 10, dmg: 1, atk: '폭탄 투척', atkShort: '투척', native: 'L', blast: 8, blastMe: 1,
+            desc: '2~3칸 떨어진 곳에 폭탄을 던져 십자 5칸을 터뜨린다. 쓰러지면 주변 8칸에서 자폭 — 다른 적도 휘말린다.' },
+};
+const FOE_TYPES = Object.keys(FOES);
+
 /* ═════════════════════════════════════════════
    4. 기습 폭격 생성 — 가로·세로 줄 조각을 합쳐 정확히 n칸
    ═════════════════════════════════════════════ */
 function canEscape(set, p) {
-  return Object.values(DIRS).some(([dr, dc]) => inArea(p.r + dr, p.c + dc) && !set.has(K(p.r + dr, p.c + dc)));
+  return Object.values(DIRS).some(([dr, dc]) => {
+    const r = p.r + dr, c = p.c + dc;
+    return inArea(r, c) && !set.has(K(r, c)) && !foeAt(r, c);
+  });
 }
 function genAmbush(n, day, p, prevKey) {
   const me = K(p.r, p.c);
+  const rows = 5 - TOP;
   for (let t = 0; t < 2000; t++) {
     const set = new Set(), segs = [];
     let over = false;
     for (let i = 0; set.size < n && i < 7; i++) {
       const horiz = Math.random() < 0.5;
-      const full = horiz ? COLS : 4;
+      const full = horiz ? COLS : rows;
       // 낮: 감시망 — 대부분 판 끝까지 이어진 줄 / 밤: 2~3칸 짧은 줄
       const len = day ? (Math.random() < 0.7 ? full : ri(3, full)) : ri(2, Math.min(3, full));
       const through = i === 0 && Math.random() < 0.8;   // 첫 줄은 대개 플레이어를 노린다
       let idx, start;
       if (horiz) {
-        idx = through ? p.r : ri(1, 4);
+        idx = through ? p.r : ri(TOP, 4);
         start = through ? ri(Math.max(0, p.c - len + 1), Math.min(p.c, COLS - len)) : ri(0, COLS - len);
       } else {
         idx = through ? p.c : ri(0, COLS - 1);
-        start = through ? ri(Math.max(1, p.r - len + 1), Math.min(p.r, 5 - len)) : ri(1, 5 - len);
+        start = through ? ri(Math.max(TOP, p.r - len + 1), Math.min(p.r, 5 - len)) : ri(TOP, 5 - len);
       }
       const cells = [];
       for (let j = 0; j < len; j++) cells.push(horiz ? K(idx, start + j) : K(start + j, idx));
@@ -1009,15 +1226,20 @@ class Abort extends Error {}
 // 재시작하면 진행 중이던 연출·판정 흐름을 끊는다
 async function wait(ms) { const t = S.tok; await sleep(ms); if (t !== S.tok) throw new Abort(); }
 
-function newBattle() {
+// mode: 'normal' 일반 전투(적만) · 'boss' 보스전(보스 + 졸개)
+function newBattle(mode = S.mode || 'normal') {
   S.tok++;
+  TOP = mode === 'boss' ? 1 : 0;
+  setArea();
   Object.assign(S, {
+    mode,
     loop: 0, loopCost: CFG.costPerLoop, costLeft: 0, spent: 0,
     total: 0, totalP: 0, totalB: 0, lastSwitch: 0, phaseIdx: 0,
     phase: CFG.startPhase,
     hp: CFG.playerHp, maxHp: CFG.playerHp, shield: 0, ol: 0, freeze: 0,
     boss: { hp: CFG.bossHp, max: CFG.bossHp, ol: 0, stun: 0 },
-    p: { r: 4, c: 2 }, faceL: false,
+    foes: [], foeUid: 0,
+    p: { r: 4, c: 2 }, faceL: false, aim: null, inspect: null,
     deck: [], hand: [], discard: [], uid: 0,
     amb: null, ambFired: false, prevAmbKey: '',
     intent: null, atk: null, prevPat: '',
@@ -1025,17 +1247,117 @@ function newBattle() {
     lastAct: '', chain: 0, lowBarked: false, won: false,
     sel: null, hover: null,
     busy: false, over: false, started: false,
-    stats: { dealt: 0, taken: 0, bloodHits: 0, freezes: 0, stuns: 0, dodged: 0, cards: 0 },
+    stats: { dealt: 0, taken: 0, bloodHits: 0, freezes: 0, stuns: 0, dodged: 0, cards: 0, kills: 0 },
     seen: new Set(), pendingScenes: [],
     logs: [],
   });
   for (const [id, def] of Object.entries(CARDS)) for (let i = 0; i < def.n; i++) S.deck.push({ uid: ++S.uid, id });
   shuffle(S.deck);
+  spawnFoes();
   if (S.phase === 'night') rollBlood();
+  const board = $('#board');
+  board.classList.toggle('mode-boss', mode === 'boss');
+  board.classList.toggle('mode-normal', mode !== 'boss');
+  $('#app').classList.toggle('mode-normal', mode !== 'boss');
+  $('#foes').innerHTML = ''; FOE_EL.clear();
   $('#banner').hidden = true;
   $('#result').hidden = true;
   $('#bark').hidden = true;
   poseTemp = null;
+}
+
+/* ─── 일반 적 ─── */
+const liveFoes = () => S.foes.filter(f => f.hp > 0);
+const foeAt = (r, c) => S.foes.find(f => f.hp > 0 && f.r === r && f.c === c) || null;
+const foeById = uid => S.foes.find(f => f.uid === uid) || null;
+// 몇 번째 행동 뒤에 움직이나: 1 = 내 다음 행동 뒤, 2 = 그다음 행동 뒤
+const dueIn = f => (S.totalP + 1) % 2 === f.ph ? 1 : 2;
+
+function spawnFoes() {
+  const n = S.mode === 'boss' ? CFG.bossAdds : CFG.foeCount;
+  const order = S.mode === 'boss' ? ['rifle', 'bomb', 'shield'] : ['rifle', 'shield', 'bomb'];
+  const rows = [TOP, TOP + 1];
+  const me = S.p;
+  const taken = [];
+  const near = (r, c) => taken.some(t => Math.abs(t.r - r) + Math.abs(t.c - c) <= 1);
+  // 처음부터 불공평하지 않게: 사수는 나와 줄이 어긋나게, 폭탄병은 던지는 거리(2~3) 밖에서 시작
+  const fair = (type, r, c) => type === 'rifle' ? r !== me.r && c !== me.c : type === 'bomb' ? manh({ r, c }, me) >= 4 : true;
+  for (let i = 0; i < n; i++) {
+    const type = i < order.length ? order[i] : pick(FOE_TYPES);
+    const free = AREA.map(RC).filter(([r, c]) => !(r === me.r && c === me.c) && !taken.some(t => t.r === r && t.c === c));
+    const tiers = [
+      free.filter(([r, c]) => rows.includes(r) && !near(r, c) && fair(type, r, c)),
+      free.filter(([r, c]) => rows.includes(r) && fair(type, r, c)),
+      free.filter(([r]) => rows.includes(r)),
+      free,
+    ];
+    const cands = tiers.find(t => t.length);
+    if (!cands) break;
+    const [r, c] = pick(cands);
+    taken.push({ r, c });
+    // 순번: 첫째는 1·3번째 행동 뒤, 둘째는 2·4번째 행동 뒤 … 번갈아
+    S.foes.push({ uid: ++S.foeUid, type, r, c, hp: FOES[type].hp, max: FOES[type].hp, ph: (i + 1) % 2, face: 'down', flip: false, intent: null });
+  }
+  for (const f of S.foes) {
+    planFoe(f);
+    if (dueIn(f) === 1 && f.intent.kind === 'atk') f.intent = { kind: 'wait' };   // 첫 행동 전에 바로 맞는 일은 없게
+  }
+}
+
+const faceToward = (f, p) => {
+  const dr = p.r - f.r, dc = p.c - f.c;
+  if (Math.abs(dr) >= Math.abs(dc)) return dr < 0 ? 'up' : 'down';
+  return dc < 0 ? 'left' : 'right';
+};
+const inFront = (f, p) => f.face === 'up' ? p.r < f.r : f.face === 'down' ? p.r > f.r : f.face === 'left' ? p.c < f.c : p.c > f.c;
+const cellSet = list => new Set(list.filter(([r, c]) => inArea(r, c)).map(([r, c]) => K(r, c)));
+function lineFrom(f, dir) {
+  const [dr, dc] = DIRS[dir], out = [];
+  for (let r = f.r + dr, c = f.c + dc; inArea(r, c); r += dr, c += dc) out.push([r, c]);
+  return cellSet(out);
+}
+const front3 = (f, face) => cellSet([[-1, -1], [-1, 0], [-1, 1]].map(ROT[face]).map(([dr, dc]) => [f.r + dr, f.c + dc]));
+const plusAt = p => cellSet([[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]].map(([dr, dc]) => [p.r + dr, p.c + dc]));
+// 이동 계획용 빈칸: 내 칸 · 다른 적 · 다른 적이 가기로 한 칸은 피한다
+function freeForPlan(r, c, f) {
+  if (!inArea(r, c) || (S.p.r === r && S.p.c === c)) return false;
+  return !S.foes.some(g => g !== f && g.hp > 0 && ((g.r === r && g.c === c) || (g.intent && g.intent.kind === 'move' && g.intent.to.r === r && g.intent.to.c === c)));
+}
+function moveIntent(f, score) {
+  let best = null, bs = score({ r: f.r, c: f.c });       // 제자리보다 나아질 때만 움직인다
+  for (const [dir, [dr, dc]] of shuffle(Object.entries(DIRS))) {
+    const r = f.r + dr, c = f.c + dc;
+    if (!freeForPlan(r, c, f)) continue;
+    const s = score({ r, c });
+    if (s > bs) { bs = s; best = { kind: 'move', dir, to: { r, c } }; }
+  }
+  return best || { kind: 'wait' };
+}
+
+// 다음 행동 계획 — 계획하는 순간 내 위치를 기준으로 칸이 정해진다
+function planFoe(f) {
+  const p = S.p, T = FOES[f.type];
+  let it;
+  if (f.type === 'rifle') {
+    if (f.r === p.r || f.c === p.c) {
+      const dir = f.r === p.r ? (p.c < f.c ? 'left' : 'right') : (p.r < f.r ? 'up' : 'down');
+      it = { kind: 'atk', dir, cells: lineFrom(f, dir) };
+    } else {
+      it = moveIntent(f, q => (q.r === p.r || q.c === p.c ? 10 : 0) - Math.abs(manh(q, p) - 3));
+    }
+  } else if (f.type === 'shield') {
+    f.face = faceToward(f, p);
+    if (cheb(f, p) === 1) it = { kind: 'atk', dir: f.face, cells: front3(f, f.face) };
+    else it = moveIntent(f, q => -manh(q, p));
+  } else {
+    const d = manh(f, p);
+    if (d >= 2 && d <= 3) it = { kind: 'atk', dir: null, cells: plusAt(p), center: { r: p.r, c: p.c } };
+    else it = moveIntent(f, q => -Math.abs(manh(q, p) - 2.5));
+  }
+  f.intent = it;
+  if (f.type !== 'shield') f.face = faceToward(f, p);
+  const hx = p.c - f.c;
+  if (hx) f.flip = hx > 0 ? T.native === 'L' : T.native === 'R';
 }
 
 /* ═════════════════════════════════════════════
@@ -1069,29 +1391,52 @@ function drawUpTo(n) { while (S.hand.length < Math.min(n, CFG.handMax)) if (!dra
 function rollBlood() { S.blood = new Set(shuffle(AREA.slice()).slice(0, CFG.bloodTiles)); }
 function pickPattern() { return pick(PATTERNS.filter(p => p.id !== S.prevPat)); }
 
+const ambushOn = () => S.mode === 'boss' || CFG.normalAmbush;
+
 async function startLoop() {
   S.loop++;
   S.loopCost = CFG.costPerLoop; S.costLeft = S.loopCost; S.spent = 0;
-  S.atk = null; S.ambFired = false;
+  S.atk = null; S.ambFired = false; S.amb = null; S.intent = null;
   drawUpTo(CFG.handRefill);
   if (S.phase === 'night') rollBlood();
   const day = S.phase === 'day';
-  S.amb = genAmbush(day ? CFG.ambushDay : CFG.ambushNight, day, S.p, S.prevAmbKey);
-  S.prevAmbKey = S.amb.key;
-  const pat = pickPattern();
-  S.prevPat = pat.id;
-  S.intent = { pat, q: pat.roll ? pat.roll() : {} };
-  log(`루프 ${S.loop} — 기습 ${S.amb.cells.size}칸 예고 · 턴 공격 「${pat.name}」`, 'dim');
+  const parts = [];
+  if (ambushOn()) {
+    S.amb = genAmbush(day ? CFG.ambushDay : CFG.ambushNight, day, S.p, S.prevAmbKey);
+    S.prevAmbKey = S.amb.key;
+    parts.push(`기습 ${S.amb.cells.size}칸 예고`);
+  }
+  if (S.mode === 'boss') {
+    const pat = pickPattern();
+    S.prevPat = pat.id;
+    S.intent = { pat, q: pat.roll ? pat.roll() : {} };
+    parts.push(`턴 공격 「${pat.name}」`);
+  }
+  log(`루프 ${S.loop}${parts.length ? ' — ' + parts.join(' · ') : ''}`, 'dim');
   SFX.arm(); render(); FX.flash($('#board'), 'arming', 520);
   await wait(220);
+}
+
+// 도약 착지점: 적은 뛰어넘을 수 있지만 적 위에는 내릴 수 없다 — 닿는 가장 먼 빈칸
+function leapTarget(dir, max) {
+  const [dr, dc] = DIRS[dir];
+  let t = null;
+  for (let d = 1; d <= max; d++) {
+    const r = S.p.r + dr * d, c = S.p.c + dc * d;
+    if (!inArea(r, c)) break;
+    if (!foeAt(r, c)) t = { r, c, dist: d };
+  }
+  return t;
 }
 
 function validate(a) {
   if (a.type === 'move') {
     const [dr, dc] = DIRS[a.dir];
     const r = S.p.r + dr, c = S.p.c + dc;
-    if (r < 1 && inCol(c)) return '보스가 버틴 줄로는 들어갈 수 없어요';
+    if (S.mode === 'boss' && r < TOP && inCol(c)) return '보스가 버틴 줄로는 들어갈 수 없어요';
     if (!inArea(r, c)) return '보드 끝이에요';
+    const f = foeAt(r, c);
+    if (f) return `${FOES[f.type].name}${iga(FOES[f.type].name)} 막고 있어요`;
     return null;
   }
   if (a.type === 'draw') {
@@ -1103,11 +1448,14 @@ function validate(a) {
     const inst = S.hand[a.i];
     if (!inst) return '카드가 없어요';
     const def = CARDS[inst.id];
-    if (def.shape && !hitColumns(def.shape, S.p).length) return `사거리 밖 — ${reachText(def.shape)}`;
+    if (def.shape) {
+      const v = validDirs(def);
+      if (!v.length) return S.mode === 'boss' ? `사거리 밖 — 보스는 ${reachText(def.shape)}` : '사거리 밖 — 어느 방향에도 닿는 적이 없어요';
+      if (a.dir && !v.includes(a.dir)) return `${DIR_LABEL[a.dir]}쪽에는 닿는 적이 없어요`;
+    }
     if (def.leap) {
       if (!a.dir) return '도약할 방향을 고르세요 — WASD 또는 점선 칸';
-      const [dr, dc] = DIRS[a.dir];
-      if (!inArea(S.p.r + dr, S.p.c + dc)) return '그 방향으로는 도약할 수 없어요';
+      if (!leapTarget(a.dir, a.dist || def.leap)) return '그 방향으로는 도약할 수 없어요';
     }
     return null;
   }
@@ -1116,6 +1464,10 @@ function validate(a) {
 
 function act(a) {
   if (!S.started || S.busy || S.over) return;
+  if (a.type === 'card' && S.hand[a.i]) {
+    const def = CARDS[S.hand[a.i].id];
+    if (def.shape && !a.dir) a.dir = aimFor(def) || undefined;   // 방향을 안 골랐으면 지금 조준대로
+  }
   if (S.freeze <= 0) {
     const err = validate(a);
     if (err) { toast(err); SFX.deny(); return; }
@@ -1135,23 +1487,109 @@ async function doAct(a) {
   const last = S.costLeft <= 0;
   render();
   // (설정) 턴 공격을 '지불 순간'에 판정하는 모드
-  if (last && CFG.atkTiming === 'pay') { await fireAttack(downAtPay); if (S.over) return; }
+  if (last && CFG.atkTiming === 'pay' && S.intent) { await fireAttack(downAtPay); if (S.over) return; }
   // ② 행동 처리 (마비 중이면 코스트만 날아간다)
   if (frozen) await fizzle(a); else await resolve(a);
   if (S.over) return;
-  // ③ 행동이 끝난 뒤 발동 — 2번째 행동 뒤 기습(→ 턴 공격 범위 공개), 마지막 행동 뒤 턴 공격
+  // ③ 일반 적 — 이번 행동으로 순번이 된 적이 예고대로 이동 또는 공격하고, 다음 행동을 예고
+  await foesAct();
+  if (S.over) return;
+  // ④ 2번째 행동 뒤 기습(→ 턴 공격 범위 공개), 마지막 행동 뒤 턴 공격
   const bossDown = downAtPay || S.boss.stun > 0;   // 방금 행동으로 과부하시켰다면 곧바로 멈춘다
   if (S.spent === AMBUSH_AT && !S.ambFired) {
     await fireAmbush(bossDown);
     if (S.over) return;
-    revealAttack();
-    await wait(160);
+    if (S.intent) { revealAttack(); await wait(160); }
   }
-  if (last && CFG.atkTiming === 'after') { await fireAttack(bossDown); if (S.over) return; }
-  // ④ 전투 중 대사 장면(첫 과부하 등) → 낮밤 전환 → ⑤ 루프 종료
+  if (last && CFG.atkTiming === 'after' && S.intent) { await fireAttack(bossDown); if (S.over) return; }
+  // ⑤ 전투 중 대사 장면(첫 과부하 등) → 낮밤 전환 → ⑥ 루프 종료
   await flushInterludes();
   await checkPhase();
   if (last) { await endLoop(); await startLoop(); }
+}
+
+async function foesAct() {
+  const due = liveFoes().filter(f => S.totalP % 2 === f.ph);
+  if (!due.length) return;
+  for (const f of due) {
+    if (f.hp <= 0) continue;
+    await foeExecute(f);
+    if (S.over) return;
+  }
+  for (const f of due) if (f.hp > 0) planFoe(f);
+  render();
+}
+
+async function foeExecute(f) {
+  const it = f.intent, T = FOES[f.type];
+  if (!it || it.kind === 'wait') return;
+  addCost('b', CFG.foeActCost);
+  if (it.kind === 'move') {
+    const { r, c } = it.to;
+    if (!inArea(r, c) || foeAt(r, c) || (S.p.r === r && S.p.c === c)) {
+      log(`${T.name} — 길이 막혀 제자리`, 'dim');
+      FX.flash(foeEl(f), 'bump', 300);
+      await wait(150);
+      return;
+    }
+    f.r = r; f.c = c;
+    SFX.fstep(); render();
+    await wait(170);
+    return;
+  }
+  if (Math.random() < 0.45) foeSay(f, 'atk');
+  await FX.foeAttack(f, it);
+  if (it.cells.has(K(S.p.r, S.p.c))) await damagePlayer(T.dmg, { src: `${T.name} ${T.atk}` });
+  else { S.stats.dodged++; log(`${T.name} ${T.atk} — 회피`, 'ok'); }
+}
+
+// 적 쓰러짐 — 폭탄병은 그 자리에서 자폭(주변 8칸, 다른 적 · 보스도 맞고 연쇄)
+async function foeDown(f) {
+  if (f.gone) return;
+  f.gone = true; f.hp = 0; f.intent = null;
+  S.stats.kills++;
+  if (S.inspect === f.uid) S.inspect = null;
+  log(`${FOES[f.type].name} 쓰러짐`, 'ok');
+  foeSay(f, 'die');
+  FX.foeDie(f); render();
+  await wait(260);
+  if (f.type === 'bomb') await bombBlast(f);
+}
+async function bombBlast(f) {
+  const T = FOES.bomb;
+  const cells = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    const r = f.r + dr, c = f.c + dc;
+    if ((dr || dc) && inBoard(r, c)) cells.push([r, c]);
+  }
+  const set = new Set(cells.map(([r, c]) => K(r, c)));
+  log('폭탄병 자폭 — 주변 8칸 폭발', 'warn');
+  queueInterlude('blast1');
+  await FX.blast(cells);
+  const bcols = S.mode === 'boss' ? cells.filter(([r]) => r === 0).map(([, c]) => c) : [];
+  if (bcols.length && S.boss.hp > 0) {
+    S.boss.hp = Math.max(0, S.boss.hp - T.blast);
+    S.stats.dealt += T.blast;
+    FX.bossHit(bcols, T.blast, false);
+    log(`자폭에 보스가 휘말림 — ${T.blast} 피해`, 'ok');
+  }
+  const caught = liveFoes().filter(g => set.has(K(g.r, g.c)));
+  for (const g of caught) {
+    g.hp = Math.max(0, g.hp - T.blast);
+    S.stats.dealt += T.blast;
+    FX.foeHit(g, T.blast, {});
+    log(`자폭에 ${FOES[g.type].name}${iga(FOES[g.type].name)} 휘말림 — ${T.blast} 피해`, 'ok');
+  }
+  render();
+  if (set.has(K(S.p.r, S.p.c))) { await damagePlayer(T.blastMe, { src: '폭탄병 자폭' }); if (S.over) return; }
+  for (const g of caught) if (g.hp <= 0) { await foeDown(g); if (S.over) return; }
+}
+
+// 승리: 보스전은 보스 HP 0 · 일반 전투는 적 전멸
+async function checkWin() {
+  if (S.over) return true;
+  if (S.mode === 'boss' ? S.boss.hp <= 0 : !liveFoes().length) { await victory(); return true; }
+  return false;
 }
 
 async function fireAmbush(bossDown) {
@@ -1262,11 +1700,10 @@ async function resolve(a) {
 }
 
 async function doMove(dir, dist) {
-  const [dr, dc] = DIRS[dir];
-  let r = S.p.r, c = S.p.c;
-  for (let i = 0; i < dist && inArea(r + dr, c + dc); i++) { r += dr; c += dc; }
+  const [, dc] = DIRS[dir];
+  const t = leapTarget(dir, dist);                    // 한 칸 이동도 같은 규칙 (적 칸에는 못 선다)
   if (dc) S.faceL = dc < 0;
-  S.p = { r, c };
+  if (t) S.p = { r: t.r, c: t.c };
   SFX.step(); FX.flash($('#player'), 'hop', 200);
   render();
   await wait(dist > 1 ? 210 : 150);
@@ -1288,19 +1725,42 @@ async function playCard(a) {
     const onBlood = S.blood.has(K(S.p.r, S.p.c));
     const mult = onBlood ? CFG.bloodMult : 1;
     const dmg = def.dmg * mult;
-    const cols = hitColumns(def.shape, S.p);
+    const dir = a.dir || aimFor(def) || 'up';
+    const tg = strikeTargets(def.shape, S.p, dir);
+    if (dir === 'left' || dir === 'right') S.faceL = dir === 'left';
+    S.aim = dir;
     flashPose('aim', 750);
-    await FX.cardStrike(def, onBlood);
-    S.boss.hp = Math.max(0, S.boss.hp - dmg);
-    S.stats.dealt += dmg;
+    await FX.cardStrike(tg.cells, onBlood);
+    const parts = [], downs = [];
+    let dealt = 0;
+    if (tg.boss) {
+      S.boss.hp = Math.max(0, S.boss.hp - dmg);
+      dealt += dmg;
+      FX.bossHit(tg.bcols, dmg, onBlood);
+      parts.push(`보스 ${dmg}`);
+    }
+    for (const f of tg.foes) {
+      const T = FOES[f.type];
+      const guarded = !!T.guard && inFront(f, S.p);          // 방패 기사 정면이면 절반
+      const d = guarded ? Math.ceil(dmg * T.guard) : dmg;
+      f.hp = Math.max(0, f.hp - d);
+      dealt += d;
+      FX.foeHit(f, d, { big: onBlood, guarded });
+      parts.push(`${T.short} ${d}${guarded ? '(방패)' : ''}`);
+      if (f.hp <= 0) downs.push(f);
+    }
+    S.stats.dealt += dealt;
     if (onBlood) S.stats.bloodHits++;
-    FX.bossHit(cols, dmg, onBlood); SFX.hit(onBlood);
-    log(onBlood ? `${def.name} — 핏빛 ×${mult}! 보스에 ${dmg} 피해` : `${def.name} — 보스에 ${dmg} 피해`, onBlood ? 'blood' : '');
+    SFX.hit(onBlood);
+    log(`${def.name}${onBlood ? ` 핏빛 ×${mult}!` : ''} — ${parts.join(' · ') || '빗나감'}`, onBlood ? 'blood' : '');
     render();
-    if (S.boss.hp <= 0) { await victory(); return; }
-    if (!S.lowBarked && S.boss.hp <= S.boss.max * 0.3) { S.lowBarked = true; bark('low'); }
-    if (S.boss.hp <= S.boss.max * 0.5) queueInterlude('half');
-    if (def.bossOl) addBossOl(def.bossOl);
+    for (const f of downs) { await foeDown(f); if (S.over) return; }
+    if (await checkWin()) return;
+    if (tg.boss) {
+      if (!S.lowBarked && S.boss.hp <= S.boss.max * 0.3) { S.lowBarked = true; bark('low'); }
+      if (S.boss.hp <= S.boss.max * 0.5) queueInterlude('half');
+      if (def.bossOl) addBossOl(def.bossOl);
+    }
     const ol = (def.ol || 0) + (def.rapid ? def.rapid * chain : 0) + (onBlood ? CFG.bloodOl : 0);
     if (ol) addOverload(ol, onBlood ? '핏빛 타일 반동' : def.rapid && chain ? `${def.name} ${chain + 1}연사` : def.name);
     render();
@@ -1339,17 +1799,17 @@ async function switchPhase() {
 async function endLoop() { S.amb = null; S.atk = null; render(); await wait(200); }
 
 async function victory() {
-  S.over = true; S.won = true; S.sel = null; S.hover = null;
+  S.over = true; S.won = true; S.sel = null; S.hover = null; S.inspect = null;
   SFX.win(); render(); bark('win');
-  await FX.bossDown();
-  if (CFG.interludes) await playSceneAsync(EPILOGUE_WIN);
+  if (S.mode === 'boss') await FX.bossDown(); else await wait(500);
+  if (CFG.interludes) await playSceneAsync(S.mode === 'boss' ? EPILOGUE_WIN : PATROL_WIN);
   showResult(true);
 }
 async function defeat() {
-  S.over = true; S.sel = null; S.hover = null;
+  S.over = true; S.sel = null; S.hover = null; S.inspect = null;
   SFX.lose(); render(); bark('lose');
   await FX.playerDown();
-  if (CFG.interludes) await playSceneAsync(EPILOGUE_LOSE);
+  if (CFG.interludes) await playSceneAsync(S.mode === 'boss' ? EPILOGUE_LOSE : PATROL_LOSE);
   showResult(false);
 }
 
@@ -1370,8 +1830,11 @@ const FACES = {
 const FACE_FALLBACK = { wounded: ['pain', 'overload'], pain: ['overload'] };
 // 조연 초상화 (세로 2:3, 배경 투명). 없으면 실루엣
 const NPC_FACES = { merchant: { idle: { file: 'shopkeeper', label: '기본' }, hmph: { file: 'shopkeeper-hmph', label: '흥' } } };
+// 격자 위 SD (발끝이 그림 아래에 닿게 자른 그림) · 적 스탠딩 일러스트(대사 초상화 · 도감)
+const SD_FILES = { hero: 'hero-sd', rifle: 'enemy-rifle-sd', shield: 'enemy-shield-sd', bomb: 'enemy-bomb-sd' };
+const FOE_ART_FILES = { rifle: 'enemy-rifle', shield: 'enemy-shield', bomb: 'enemy-bomb' };
 const ASSET_SLOTS = { cardBg: 'assets/card-bg', boss: 'assets/boss' };
-const ASSET = { face: {}, npc: { merchant: {} }, cardBg: null, boss: null };
+const ASSET = { face: {}, npc: { merchant: {} }, sd: {}, foeArt: {}, cardBg: null, boss: null };
 function npcUrl(who, face) { const set = ASSET.npc[who] || {}; return set[face] || set.idle || null; }
 function faceUrl(face) {
   for (const f of [face, ...(FACE_FALLBACK[face] || []), 'idle']) if (ASSET.face[f]) return ASSET.face[f];
@@ -1394,27 +1857,37 @@ function probe(base) {
 }
 async function loadAssets() {
   const faceKeys = Object.keys(FACES);
-  const npcJobs = [];
+  const jobs = [];
   for (const [who, faces] of Object.entries(NPC_FACES)) for (const [face, f] of Object.entries(faces)) {
-    npcJobs.push(probe('assets/' + f.file).then(url => { if (url) ASSET.npc[who][face] = url; }));
+    jobs.push(probe('assets/' + f.file).then(url => { if (url) ASSET.npc[who][face] = url; }));
   }
+  for (const [k, file] of Object.entries(SD_FILES)) jobs.push(probe('assets/' + file).then(url => { if (url) ASSET.sd[k] = url; }));
+  for (const [k, file] of Object.entries(FOE_ART_FILES)) jobs.push(probe('assets/' + file).then(url => { if (url) ASSET.foeArt[k] = url; }));
   const [faceUrls, cardBg, boss] = await Promise.all([
     Promise.all(faceKeys.map(k => probe('assets/' + FACES[k].file))),
     probe(ASSET_SLOTS.cardBg), probe(ASSET_SLOTS.boss),
-    Promise.all(npcJobs),
+    Promise.all(jobs),
   ]);
   faceKeys.forEach((k, i) => { if (faceUrls[i]) ASSET.face[k] = faceUrls[i]; });
   ASSET.cardBg = cardBg; ASSET.boss = boss;
   const img = url => `<img src="${url}" alt="" draggable="false">`;
-  if (ASSET.face.idle) {
-    // 보드 캐릭터 · 대사 초상화를 그림으로 교체 (표정은 renderPose / setPortrait가 고른다)
+  if (ASSET.sd.hero) {
+    // 격자 위 주인공은 SD — 상태는 표정 대신 움직임(조준 · 마비 · 피격 · 승패)으로 보여준다
+    $('#heroArt').innerHTML = `<img id="heroSd" src="${ASSET.sd.hero}" alt="" draggable="false">`;
+    $('#heroArt').classList.add('sd');
+  } else if (ASSET.face.idle) {
+    // SD가 없으면 스탠딩 그림을 격자에 올리고 표정을 바꾼다
     $('#heroArt').innerHTML = '<img id="heroImg" alt="" draggable="false">';
     $('#heroArt').classList.add('img');
+  }
+  if (ASSET.face.idle) {
+    // 대사 초상화 (표정은 setPortrait가 고른다)
     $('#ptHeroArt').innerHTML = '<img id="ptHeroImg" alt="" draggable="false">';
     $('#ptHero').classList.add('img');
-    renderPose();
     setPortrait('hero', SC.face);
   }
+  renderPose();
+  refreshFoeArt();
   if (ASSET.npc.merchant.idle) { $('#ptMerchantArt').innerHTML = '<img id="ptMerchantImg" alt="" draggable="false">'; setPortrait('merchant', 'idle'); }
   if (cardBg) { document.documentElement.style.setProperty('--card-art', `url("${cardBg}")`); $('#app').classList.add('has-card-art'); }
   if (boss) { $('#bossArt').innerHTML = img(boss); $('#ptBossArt').innerHTML = img(boss); }
@@ -1435,9 +1908,11 @@ function currentPose() {
   return 'idle';
 }
 function renderPose() {
-  const img = $('#heroImg');
+  const pose = currentPose();
+  $('#player').dataset.pose = pose;                  // SD: CSS가 자세로 표현
+  const img = $('#heroImg');                         // 스탠딩 그림을 격자에 쓸 때만 표정 교체
   if (!img) return;
-  const url = faceUrl(currentPose());
+  const url = faceUrl(pose);
   if (url && img.getAttribute('src') !== url) img.setAttribute('src', url);
 }
 
@@ -1445,23 +1920,53 @@ function renderPose() {
    8. 렌더링
    ═════════════════════════════════════════════ */
 const CELLS = {}, BCELLS = [];
+const FOE_EL = new Map();
 let TICKS = [];
-let handSig = '', beamSig = '';
+let handSig = '', beamSig = '', markSig = '';
 
 function buildBoard() {
   const board = $('#board'), beams = $('#beams');
-  for (const k of AREA) {
-    const [r, c] = RC(k);
+  for (let r = 0; r <= 4; r++) for (let c = 0; c < COLS; c++) {
     const el = document.createElement('div');
-    el.className = 'cell';
+    el.className = 'cell' + (r === 0 ? ' r0' : '');
     el.style.gridRow = r + 1; el.style.gridColumn = c + 1;
-    el.innerHTML = `<i class="pool"></i>${c === 0 ? `<span class="dist">${r}</span>` : ''}`;
+    el.innerHTML = `<i class="pool"></i><i class="fmark"></i>${c === 0 && r > 0 ? `<span class="dist">${r}</span>` : ''}`;
     el.addEventListener('click', () => onCell(r, c));
+    el.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') onCellHover(r, c); });
     board.insertBefore(el, beams);
-    CELLS[k] = el;
+    CELLS[K(r, c)] = el;
   }
+  board.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') onCellHover(-1, -1); });
   const bc = $('#bcells');
-  for (let c = 0; c < COLS; c++) { const d = document.createElement('div'); d.className = 'bcell'; bc.appendChild(d); BCELLS.push(d); }
+  for (let c = 0; c < COLS; c++) {
+    const d = document.createElement('div');
+    d.className = 'bcell';
+    d.addEventListener('click', () => onCell(0, c));                 // 보스 줄을 눌러 위로 쏘기
+    d.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') onCellHover(0, c); });
+    bc.appendChild(d); BCELLS.push(d);
+  }
+}
+
+// 적 SD — 그림이 없으면 간단한 실루엣
+const FOE_SVG = {
+  rifle: '<svg viewBox="0 0 100 120"><ellipse cx="50" cy="114" rx="26" ry="5" fill="#000" opacity=".5"/><path d="M30 112 C32 80 38 64 50 62 C62 64 68 80 70 112Z" fill="#2B2328" stroke="#C9A45E" stroke-width="2"/><rect x="30" y="22" width="40" height="40" rx="14" fill="#1E1A20" stroke="#C9A45E" stroke-width="2"/><circle cx="50" cy="42" r="11" fill="#E8D6A8"/><path d="M50 34v8l6 4" stroke="#2B2328" stroke-width="2" fill="none"/><rect x="24" y="14" width="52" height="10" rx="3" fill="#2B2328" stroke="#C9A45E" stroke-width="2"/><path d="M36 84 H96" stroke="#6B4A2E" stroke-width="5" stroke-linecap="round"/></svg>',
+  shield: '<svg viewBox="0 0 100 120"><ellipse cx="50" cy="114" rx="30" ry="5" fill="#000" opacity=".5"/><path d="M26 112 C28 78 36 62 48 60 C60 62 66 78 68 112Z" fill="#2A2A2E" stroke="#B8903E" stroke-width="2"/><rect x="30" y="22" width="36" height="38" rx="12" fill="#2E2E33" stroke="#B8903E" stroke-width="2"/><path d="M36 38h24M36 44h24" stroke="#0E0E10" stroke-width="3"/><path d="M60 50 H94 V100 L77 112 L60 100Z" fill="#35353B" stroke="#D6AE62" stroke-width="2.5"/><circle cx="77" cy="78" r="9" fill="none" stroke="#D6AE62" stroke-width="3"/></svg>',
+  bomb: '<svg viewBox="0 0 100 120"><ellipse cx="50" cy="114" rx="30" ry="5" fill="#000" opacity=".5"/><rect x="54" y="30" width="18" height="46" rx="6" fill="#9A2A2A" stroke="#5A1414" stroke-width="2"/><rect x="72" y="36" width="16" height="40" rx="6" fill="#B03030" stroke="#5A1414" stroke-width="2"/><path d="M24 112 C26 80 34 64 46 62 C58 64 64 80 66 112Z" fill="#3A2C26" stroke="#A8845A" stroke-width="2"/><rect x="24" y="24" width="36" height="36" rx="6" fill="#2E2622" stroke="#A8845A" stroke-width="2"/><path d="M42 32v14M35 39h14" stroke="#E8DCC8" stroke-width="3"/><rect x="10" y="74" width="12" height="10" rx="2" fill="#B03030"/></svg>',
+};
+const foeArtHTML = type => ASSET.sd[type] ? `<img src="${ASSET.sd[type]}" alt="" draggable="false">` : FOE_SVG[type];
+function foeEl(f) {
+  let el = FOE_EL.get(f.uid);
+  if (!el) {
+    el = document.createElement('div');
+    el.className = `unit foe t-${f.type}`;
+    el.innerHTML = `<div class="foe-art">${foeArtHTML(f.type)}</div><svg class="foe-face"><use href="#i-shield"/></svg><span class="foe-due"></span><span class="foe-hp"><i><i></i></i><b></b></span>`;
+    $('#foes').appendChild(el);
+    FOE_EL.set(f.uid, el);
+  }
+  return el;
+}
+function refreshFoeArt() {
+  for (const f of S.foes) foeEl(f).querySelector('.foe-art').innerHTML = foeArtHTML(f.type);
 }
 
 function buildClock() {
@@ -1508,8 +2013,23 @@ function renderHud() {
   $('#clockTime').textContent = ck.label;
   $('#clockNext').textContent = `전환까지 ${ck.left}코`;
   $('#app').dataset.phase = S.phase;
-  setBar($('#bossHp'), S.boss.hp / S.boss.max, `<span>HP</span><span>${S.boss.hp} / ${S.boss.max}</span>`);
-  setBar($('#bossOl'), S.boss.ol / CFG.olMax, `<span>과부하</span><span>${S.boss.ol} / ${CFG.olMax}</span>`);
+  const alive = liveFoes().length, total = S.foes.length;
+  const ol = $('#bossOl');
+  if (S.mode === 'boss') {
+    $('#bossName').textContent = '집행 병기 「못박이」';
+    $('#bossSub').textContent = total ? `인류 정부군 · 졸개 ${alive} / ${total}` : '인류 정부군 · 테스트 보스';
+    setBar($('#bossHp'), S.boss.hp / S.boss.max, `<span>HP</span><span>${S.boss.hp} / ${S.boss.max}</span>`);
+    ol.classList.remove('kills');
+    setBar(ol, S.boss.ol / CFG.olMax, `<span>과부하</span><span>${S.boss.ol} / ${CFG.olMax}</span>`);
+  } else {
+    // 일반 전투: 남은 적 HP 합 · 처치 수
+    const hp = S.foes.reduce((s, f) => s + f.hp, 0), max = S.foes.reduce((s, f) => s + f.max, 0) || 1;
+    $('#bossName').textContent = '감시탑 순찰대';
+    $('#bossSub').textContent = `일반 전투 · 남은 적 ${alive} / ${total}`;
+    setBar($('#bossHp'), hp / max, `<span>적 HP 합계</span><span>${hp} / ${max}</span>`);
+    ol.classList.add('kills');
+    setBar(ol, total ? (total - alive) / total : 0, `<span>처치</span><span>${total - alive} / ${total}</span>`);
+  }
   const tag = $('#stunTag');
   tag.hidden = !(S.boss.stun > 0);
   tag.textContent = `과부하 정지 · ${S.boss.stun}코`;
@@ -1518,15 +2038,26 @@ function renderHud() {
   snd.setAttribute('aria-label', SFX.muted ? '소리 켜기' : '소리 끄기');
 }
 
-function miniGrid(cells) {
+function miniGrid(cells, cells2) {
   let h = '';
-  for (const k of AREA) h += `<i class="${cells.has(k) ? 'on' : ''}${k === K(S.p.r, S.p.c) ? ' me' : ''}"></i>`;
+  const me = K(S.p.r, S.p.c);
+  for (const k of AREA) {
+    const [r, c] = RC(k);
+    h += `<i class="${cells.has(k) ? 'on' : cells2 && cells2.has(k) ? 'on2' : ''}${k === me ? ' me' : foeAt(r, c) ? ' foe' : ''}"></i>`;
+  }
   return h;
 }
 
 function renderIntent() {
   const n = S.amb ? S.amb.cells.size : (S.phase === 'day' ? CFG.ambushDay : CFG.ambushNight);
-  $('#ambChip').innerHTML = `<svg><use href="#i-cross"/></svg><span>기습 <b>${n}</b>칸</span><span>${S.phase === 'day' ? '오전' : '오후'}</span>`;
+  const ph = S.phase === 'day' ? '오전' : '오후';
+  $('#ambChip').innerHTML = ambushOn()
+    ? `<svg><use href="#i-cross"/></svg><span>기습 <b>${n}</b>칸</span><span>${ph}</span>`
+    : `<svg><use href="#i-cross"/></svg><span>기습 없음</span><span>${ph}</span>`;
+  $('#intMini').classList.toggle('foe-mode', S.mode !== 'boss');
+  if (S.mode !== 'boss') { renderFoeIntent(); return; }
+  $('#intIcon').setAttribute('href', '#i-hazard');
+  $('#intTitle').textContent = '턴 공격 예고';
   const it = S.intent;
   if (!it) { $('#intName').textContent = '교전 대기'; $('#intMeta').innerHTML = ''; $('#intChips').innerHTML = ''; $('#intMini').innerHTML = miniGrid(new Set()); $('#intent').classList.remove('live'); return; }
   const pat = it.pat;
@@ -1540,54 +2071,151 @@ function renderIntent() {
   $('#intent').classList.toggle('live', !!S.atk);
 }
 
+// 일반 전투의 의도 패널: 바로 다음 행동 뒤에 움직이는 적들
+function renderFoeIntent() {
+  $('#intIcon').setAttribute('href', '#i-target');
+  $('#intTitle').textContent = '적 행동 예고';
+  const alive = liveFoes();
+  const acting = alive.filter(f => f.intent && f.intent.kind !== 'wait');
+  const soon = acting.filter(f => dueIn(f) === 1);
+  const group = soon.length ? soon : acting;
+  const z1 = new Set(), z2 = new Set();
+  for (const f of acting) if (f.intent.kind === 'atk') for (const k of f.intent.cells) (dueIn(f) === 1 ? z1 : z2).add(k);
+  $('#intMini').innerHTML = miniGrid(z1, z2);
+  $('#intMeta').innerHTML = `<span class="chip c-dim">남은 적 ${alive.length}</span>`;
+  if (!alive.length) { $('#intName').textContent = '적 전멸'; $('#intChips').innerHTML = ''; $('#intent').classList.remove('live'); return; }
+  $('#intName').textContent = !group.length ? '모두 대기' : soon.length ? '다음 행동 뒤' : '2번째 행동 뒤';
+  $('#intChips').innerHTML = group.map(f => {
+    const T = FOES[f.type], atk = f.intent.kind === 'atk';
+    return `<span class="chip ${atk ? 'c-foe' : 'c-dim'}">${T.short} ${atk ? T.atkShort : '이동'}</span>`;
+  }).join('');
+  $('#intent').classList.toggle('live', soon.some(f => f.intent.kind === 'atk'));
+}
+
+function selectedDef() { return S.sel !== null && S.hand[S.sel] ? CARDS[S.hand[S.sel].id] : null; }
+
 function preview() {
   const i = S.sel !== null ? S.sel : S.hover;
-  const out = { cells: new Set(), bcols: new Set(), leap: new Map() };
+  const out = { cells: new Set(), alt: new Set(), bcols: new Set(), leap: new Map(), dir: null };
   if (i === null || !S.hand[i] || !S.started || S.over) return out;
   const def = CARDS[S.hand[i].id];
-  if (def.shape) for (const [dr, dc] of SHAPES[def.shape].cells) {
-    const r = S.p.r + dr, c = S.p.c + dc;
-    if (!inCol(c)) continue;
-    if (r === 0) out.bcols.add(c); else if (inArea(r, c)) out.cells.add(K(r, c));
+  if (def.shape) {
+    // 조준한 방향은 밝게, 적이 닿는 다른 방향은 점선으로
+    const dir = aimFor(def) || S.aim || 'up';
+    out.dir = dir;
+    for (const d of validDirs(def)) {
+      if (d === dir) continue;
+      for (const [r, c] of shapeCells(def.shape, S.p, d)) if (inArea(r, c)) out.alt.add(K(r, c));
+    }
+    for (const [r, c] of shapeCells(def.shape, S.p, dir)) {
+      if (S.mode === 'boss' && r === 0) out.bcols.add(c); else if (inArea(r, c)) out.cells.add(K(r, c));
+    }
   }
   if (def.leap) for (const [dir, [dr, dc]] of Object.entries(DIRS)) {
     for (let d = 1; d <= def.leap; d++) {
       const r = S.p.r + dr * d, c = S.p.c + dc * d;
       if (!inArea(r, c)) break;
-      out.leap.set(K(r, c), { dir, dist: d });
+      if (!foeAt(r, c)) out.leap.set(K(r, c), { dir, dist: d });   // 적은 뛰어넘되 적 위엔 못 선다
     }
   }
   return out;
 }
 
+// 적 공격 예고 칸: 1 = 내 다음 행동 뒤, 2 = 그다음 (겹치면 빠른 쪽)
+function foeZones() {
+  const m = new Map();
+  for (const f of liveFoes()) {
+    if (!f.intent || f.intent.kind !== 'atk') continue;
+    const n = dueIn(f);
+    for (const k of f.intent.cells) { const z = m.get(k); if (!z || n < z.n) m.set(k, { n, focus: false }); }
+  }
+  const fi = S.inspect && foeById(S.inspect);
+  if (fi && fi.intent && fi.intent.kind === 'atk') for (const k of fi.intent.cells) { const z = m.get(k); if (z) z.focus = true; }
+  return m;
+}
+
 function renderBoard() {
   const pv = preview();
   const showMv = S.started && !S.over && S.sel === null && S.hover === null;
+  const fz = S.started && !S.over ? foeZones() : new Map();
+  const dests = new Set();
+  if (S.started && !S.over) for (const f of liveFoes()) if (f.intent && f.intent.kind === 'move') dests.add(K(f.intent.to.r, f.intent.to.c));
   for (const k of AREA) {
     const [r, c] = RC(k);
     const el = CELLS[k];
+    const z = fz.get(k);
     el.classList.toggle('amb', !!(S.amb && S.amb.cells.has(k)));
     el.classList.toggle('atk', !!(S.atk && S.atk.has(k)));
     el.classList.toggle('blood', S.blood.has(k));
     el.classList.toggle('rng', pv.cells.has(k));
+    el.classList.toggle('rng2', pv.alt.has(k) && !pv.cells.has(k));
     el.classList.toggle('leapd', pv.leap.has(k));
-    el.classList.toggle('mv', showMv && Math.abs(r - S.p.r) + Math.abs(c - S.p.c) === 1);
+    el.classList.toggle('fz1', !!z && z.n === 1);
+    el.classList.toggle('fz2', !!z && z.n === 2);
+    el.classList.toggle('fzf', !!z && z.focus);
+    el.classList.toggle('fdest', dests.has(k));
+    el.classList.toggle('mv', showMv && Math.abs(r - S.p.r) + Math.abs(c - S.p.c) === 1 && !foeAt(r, c));
   }
   BCELLS.forEach((b, c) => b.classList.toggle('rng', pv.bcols.has(c)));
   const board = $('#board');
   board.classList.toggle('amb-off', ambCancelled());
   board.classList.toggle('atk-off', !!S.atk && atkCancelled());
   renderBeams();
+  renderFoes();
+  renderFoeMarks();
   const pl = $('#player');
   pl.style.setProperty('--r', S.p.r); pl.style.setProperty('--c', S.p.c);
+  pl.style.zIndex = 10 + S.p.r;                      // 아래 줄에 선 캐릭터가 앞에 보이게
   pl.classList.toggle('face-l', S.faceL);
   pl.classList.toggle('frozen', S.freeze > 0);
   pl.classList.toggle('warded', S.shield > 0);
+  pl.classList.toggle('won', S.over && S.won);
+  pl.classList.toggle('down', S.over && !S.won);
   $('#frzBadge').textContent = S.freeze > 0 ? S.freeze : '';
   pl.classList.toggle('on-blood', S.started && S.blood.has(K(S.p.r, S.p.c)));
   renderPose();
   $('#bldBadge').textContent = `×${CFG.bloodMult}`;
   $('#bossRow').classList.toggle('stunned', S.boss.stun > 0);
+}
+
+function renderFoes() {
+  for (const f of S.foes) {
+    const el = foeEl(f);
+    el.style.setProperty('--r', f.r); el.style.setProperty('--c', f.c);
+    el.style.zIndex = 10 + f.r;
+    el.classList.toggle('flip', !!f.flip);
+    el.classList.toggle('dead', f.hp <= 0);
+    el.classList.toggle('focus', S.inspect === f.uid);
+    el.dataset.face = f.face;
+    const it = f.intent, n = dueIn(f);
+    const due = el.querySelector('.foe-due');
+    const show = f.hp > 0 && S.started && !S.over && it && it.kind !== 'wait';
+    due.className = `foe-due ${it ? it.kind : 'wait'} n${n}${show ? ' on' : ''}`;
+    due.innerHTML = show ? `<svg><use href="#${it.kind === 'atk' ? 'i-target' : 'i-step'}"/></svg>${n}` : '';
+    due.title = show ? `${n}번째 행동 뒤 ${it.kind === 'atk' ? FOES[f.type].atk : '이동'}` : '';
+    el.querySelector('.foe-hp > i > i').style.width = `${f.hp / f.max * 100}%`;
+    el.querySelector('.foe-hp b').textContent = f.hp;
+  }
+}
+
+// 사수 조준선 · 이동 화살표 · 폭탄 낙하점
+function renderFoeMarks() {
+  const parts = [];
+  if (S.started && !S.over) for (const f of liveFoes()) {
+    const it = f.intent;
+    if (!it) continue;
+    const n = dueIn(f);
+    if (it.kind === 'move') parts.push(`<i class="farrow ${it.dir} n${n}" style="--r:${it.to.r};--c:${it.to.c}"></i>`);
+    else if (it.kind === 'atk' && f.type === 'rifle' && it.cells.size) {
+      const cells = [...it.cells].map(RC);
+      const r0 = Math.min(...cells.map(x => x[0])), c0 = Math.min(...cells.map(x => x[1]));
+      parts.push(DIRS[it.dir][0]
+        ? `<i class="laser v n${n}" style="--x:${f.c};--y:${r0};--n:${cells.length}"></i>`
+        : `<i class="laser h n${n}" style="--x:${c0};--y:${f.r};--n:${cells.length}"></i>`);
+    } else if (it.kind === 'atk' && f.type === 'bomb') parts.push(`<i class="fbomb n${n}" style="--r:${it.center.r};--c:${it.center.c}"></i>`);
+  }
+  const html = parts.join('');
+  if (html !== markSig) { markSig = html; $('#fmarks').innerHTML = html; }
 }
 
 function renderBeams() {
@@ -1599,32 +2227,42 @@ function renderBeams() {
     : `<i class="beam v" style="--x:${s.idx};--y:${s.start};--n:${s.len}"></i>`).join('') : '';
 }
 
-function pipTitle(j, n) {
-  if (j === AMBUSH_AT) return `${j}번째 행동이 끝나면 기습 폭발`;
-  if (j === n) return CFG.atkTiming === 'pay' ? `${j}번째 코스트를 지불하는 순간 턴 공격` : `${j}번째 행동이 끝나면 턴 공격`;
-  return `${j}번째 코스트`;
+// 그 코스트 칸의 행동이 끝났을 때 움직이는 적 (예고가 있는 다음 두 행동까지만)
+function foesAfter(j) {
+  if (j <= S.spent || !S.started || S.over) return [];
+  const t = S.totalP + (j - S.spent);
+  return liveFoes().filter(f => f.intent && f.intent.kind !== 'wait' && S.totalP + dueIn(f) === t);
+}
+function pipTitle(j, n, fs) {
+  const t = [];
+  if (j === AMBUSH_AT && ambushOn()) t.push(`${j}번째 행동이 끝나면 기습 폭발`);
+  if (j === n && S.mode === 'boss') t.push(CFG.atkTiming === 'pay' ? `${j}번째 코스트를 지불하는 순간 턴 공격` : `${j}번째 행동이 끝나면 턴 공격`);
+  if (fs.length) t.push(fs.map(f => `${FOES[f.type].short} ${f.intent.kind === 'atk' ? FOES[f.type].atkShort : '이동'}`).join(' · '));
+  return t.join(' / ') || `${j}번째 코스트`;
 }
 function renderStatus() {
   let h = '';
   for (let i = 0; i < S.maxHp; i++) h += `<svg class="heart${i < S.hp ? '' : ' empty'}"><use href="#i-heart"/></svg>`;
   $('#hearts').innerHTML = h;
   $('#shield').innerHTML = S.shield > 0 ? `<svg><use href="#i-shield"/></svg>${S.shield}` : '';
-  // 코스트 칸
+  // 코스트 칸 — 기습 · 턴 공격 표식, 아래 점은 그 행동 뒤에 움직이는 적 (분홍 = 공격, 회색 = 이동)
   const n = S.loopCost;
   let p = '';
   for (let j = 1; j <= n; j++) {
     const spent = j <= S.spent, ahead = j - S.spent;
     const cls = ['pip'];
     let icon = '';
-    if (j === AMBUSH_AT) { cls.push('m-amb'); icon = 'i-cross'; }
-    if (j === n) { cls.push('m-atk'); icon = 'i-hazard'; }
+    if (j === AMBUSH_AT && ambushOn()) { cls.push('m-amb'); icon = 'i-cross'; }
+    if (j === n && S.mode === 'boss') { cls.push('m-atk'); icon = 'i-hazard'; }
     if (spent) cls.push('spent');
     else {
       if (ahead === 1 && S.started && !S.over) cls.push('next');
       if (ahead <= S.freeze) cls.push('frz');
       if (icon && ahead <= S.boss.stun) cls.push('stn');
     }
-    p += `<span class="${cls.join(' ')}" title="${pipTitle(j, n)}">${icon ? `<svg><use href="#${icon}"/></svg>` : `<i>${j}</i>`}</span>`;
+    const fs = foesAfter(j);
+    const dots = fs.length ? `<span class="fdots">${fs.map(f => `<i class="${f.intent.kind === 'atk' ? 'a' : 'm'}"></i>`).join('')}</span>` : '';
+    p += `<span class="${cls.join(' ')}" title="${pipTitle(j, n, fs)}">${icon ? `<svg><use href="#${icon}"/></svg>` : `<i>${j}</i>`}${dots}</span>`;
   }
   $('#pips').innerHTML = p;
   const ob = $('#olBar');
@@ -1643,23 +2281,27 @@ function coach() {
   const me = K(S.p.r, S.p.c);
   if (S.freeze > 0) return { t: `시스템 정지 — 눌러도 코스트만 빠진다 (남은 ${S.freeze}코)`, tone: 'volt' };
   const next = S.spent + 1;
-  if (S.amb && !S.ambFired) {
-    const inRed = S.amb.cells.has(me);
-    if (next === AMBUSH_AT) {
-      if (ambCancelled()) return { t: '기습 차례 — 보스 정지로 무력화', tone: 'ok' };
-      return inRed ? { t: '다음 행동 뒤 기습 폭발 — 빨간 줄 밖에서 끝내기', tone: 'danger' } : { t: '다음 행동 뒤 기습 폭발 — 여기서 끝내면 안전', tone: 'ok' };
-    }
-    return inRed ? { t: '빨간 줄 위 — 2번째 행동까지 대피하세요', tone: 'danger' } : { t: '안전 지대 — 기습은 2번째 행동 뒤에 폭발', tone: 'ok' };
+  // 다음 행동이 끝나는 순간 터지는 것들 — 지금 칸이 그 안이면 무엇이 오는지 알려준다
+  const soonAll = [], soonHit = [];
+  const add = (name, hit) => { soonAll.push(name); if (hit) soonHit.push(name); };
+  if (S.amb && !S.ambFired && next === AMBUSH_AT && !ambCancelled()) add('기습', S.amb.cells.has(me));
+  if (S.atk && S.costLeft === 1 && CFG.atkTiming === 'after' && !atkCancelled()) add('턴 공격', S.atk.has(me));
+  for (const f of liveFoes()) if (f.intent && f.intent.kind === 'atk' && dueIn(f) === 1) add(`${FOES[f.type].short} ${FOES[f.type].atkShort}`, f.intent.cells.has(me));
+  if (soonHit.length) return { t: `다음 행동 뒤 ${soonHit.join('·')} — 이 칸 밖에서 끝내기`, tone: 'danger' };
+  if (S.atk && S.costLeft === 1 && CFG.atkTiming === 'pay' && !atkCancelled()) {
+    return S.atk.has(me) ? { t: '다음 행동 순간 턴 공격 — 주황 범위 안!', tone: 'warn' } : { t: '다음 행동 순간 턴 공격 — 여기는 안전', tone: 'ok' };
   }
-  if (S.atk) {
-    const inAtk = S.atk.has(me);
-    if (S.costLeft === 1) {
-      if (atkCancelled()) return { t: '턴 공격 차례 — 보스 정지로 무력화', tone: 'ok' };
-      if (CFG.atkTiming === 'pay') return inAtk ? { t: '다음 행동 순간 턴 공격 — 주황 범위 안!', tone: 'warn' } : { t: '다음 행동 순간 턴 공격 — 여기는 안전', tone: 'ok' };
-      return inAtk ? { t: '마지막 행동 뒤 턴 공격 — 주황 밖에서 끝내기', tone: 'warn' } : { t: '마지막 행동 뒤 턴 공격 — 여기서 끝내면 안전', tone: 'ok' };
-    }
-    return inAtk ? { t: '주황 범위 안 — 턴 공격 전에 벗어나세요', tone: 'warn' } : { t: '주황 범위 밖 — 공격할 타이밍', tone: 'ok' };
-  }
+  if (soonAll.length) return { t: `다음 행동 뒤 ${soonAll.join('·')} — 여기서 끝내면 안전`, tone: 'ok' };
+  if (S.amb && !S.ambFired && next === AMBUSH_AT && ambCancelled()) return { t: '기습 차례 — 보스 정지로 무력화', tone: 'ok' };
+  if (S.atk && S.costLeft === 1 && atkCancelled()) return { t: '턴 공격 차례 — 보스 정지로 무력화', tone: 'ok' };
+  // 더 뒤에 오는 것들
+  if (S.amb && !S.ambFired && S.amb.cells.has(me)) return { t: '빨간 줄 위 — 2번째 행동까지 대피하세요', tone: 'danger' };
+  const later = liveFoes().filter(f => f.intent && f.intent.kind === 'atk' && dueIn(f) === 2 && f.intent.cells.has(me));
+  if (later.length) return { t: `${later.map(f => FOES[f.type].short).join('·')} 조준 중 — 2번째 행동 뒤 공격`, tone: 'warn' };
+  if (S.atk && S.atk.has(me)) return { t: '주황 범위 안 — 턴 공격 전에 벗어나세요', tone: 'warn' };
+  if (S.amb && !S.ambFired) return { t: '안전 지대 — 기습은 2번째 행동 뒤에 폭발', tone: 'ok' };
+  if (S.atk) return { t: '주황 범위 밖 — 공격할 타이밍', tone: 'ok' };
+  if (liveFoes().length) return { t: '적 공격 범위 밖 — 공격할 타이밍', tone: 'ok' };
   return { t: '', tone: '' };
 }
 
@@ -1690,13 +2332,14 @@ function miniRange(def) {
 function renderHand() {
   const frozen = S.freeze > 0;
   const onBlood = S.blood.has(K(S.p.r, S.p.c));
-  const sig = [S.hand.map(h => h.uid).join(','), S.p.r, S.p.c, frozen, onBlood, S.sel, S.over, S.started, S.lastAct, S.chain, CFG.bloodMult, CFG.bloodOl].join('|');
+  const foeSig = S.foes.map(f => f.hp > 0 ? `${f.r}${f.c}` : '-').join('');
+  const sig = [S.hand.map(h => h.uid).join(','), S.p.r, S.p.c, foeSig, S.mode, frozen, onBlood, S.sel, S.over, S.started, S.lastAct, S.chain, CFG.bloodMult, CFG.bloodOl].join('|');
   if (sig !== handSig) {
     handSig = sig;
     $('#hand').innerHTML = S.hand.map((inst, i) => {
       const def = CARDS[inst.id];
       const kind = KINDS[def.kind];
-      const reach = def.shape ? hitColumns(def.shape, S.p).length > 0 : true;
+      const reach = def.shape ? validDirs(def).length > 0 : true;
       const cls = ['card', 'k-' + def.kind];
       if (S.sel === i) cls.push('sel');
       if (frozen) cls.push('frz');
@@ -1731,6 +2374,12 @@ function fitHand() {
 function renderFoot() {
   const i = S.sel !== null ? S.sel : S.hover;
   const det = $('#detail'), lg = $('#log');
+  const fi = S.inspect && foeById(S.inspect);
+  if ((i === null || !S.hand[i]) && fi && fi.hp > 0 && S.started && !S.over) {
+    det.innerHTML = foeDetailHTML(fi);
+    det.hidden = false; lg.hidden = true;
+    return;
+  }
   if (i === null || !S.hand[i] || S.over || !S.started) {
     det.hidden = true; lg.hidden = false;
     lg.innerHTML = S.logs.slice(-3).map(l => `<p class="${l.cls ? 'l-' + l.cls : ''}">${l.t}</p>`).join('');
@@ -1740,22 +2389,45 @@ function renderFoot() {
   det.hidden = false; lg.hidden = true;
 }
 
+// 적을 누르거나(터치) 올리면(마우스) 나오는 정보
+function foeDetailHTML(f) {
+  const T = FOES[f.type], it = f.intent, n = dueIn(f);
+  const next = !it || it.kind === 'wait' ? '대기' : it.kind === 'atk' ? `<b class="fo">${T.atk}</b> · 피해 ${T.dmg}` : `${DIR_LABEL[it.dir]}쪽으로 이동`;
+  const sd = ASSET.sd[f.type] ? `<img class="d-sd" src="${ASSET.sd[f.type]}" alt="">` : '';
+  const guard = T.guard ? (inFront(f, S.p) ? '<span class="st bad">지금 정면 · 피해 ½</span>' : '<span class="st good">옆·뒤 · 피해 그대로</span>') : '';
+  return `<div class="d-row">${sd}<b class="d-name">${T.name}</b><span class="d-range">HP ${f.hp}/${f.max} · ${f.ph ? '1·3' : '2·4'}번째 행동 뒤에 움직임</span></div>
+    <div class="d-row d-flav"><span class="d-text">${T.desc}</span></div>
+    <div class="d-row"><span class="d-eff">다음 · <b>${n}</b>번째 행동 뒤 ${next}</span>${guard}</div>`;
+}
+
+// 방향으로 쏜 카드에 맞는 대상 짧게: "보스·사수·기사(방패)"
+function targetsText(t) {
+  const names = [];
+  if (t.boss) names.push('보스');
+  for (const f of t.foes) names.push(FOES[f.type].short + (FOES[f.type].guard && inFront(f, S.p) ? '(방패)' : ''));
+  return names.length > 2 ? `${names.slice(0, 2).join('·')} 외 ${names.length - 2}` : names.join('·');
+}
+
 function detailHTML(i) {
   const inst = S.hand[i], def = CARDS[inst.id], kind = KINDS[def.kind];
   const frozen = S.freeze > 0;
   const onBlood = S.blood.has(K(S.p.r, S.p.c));
   let range = '자신', state = '<span class="st good">사용 가능</span>';
   const eff = [];
+  let multi = false;
   if (def.shape) {
-    const ok = hitColumns(def.shape, S.p).length > 0;
-    range = `${SHAPES[def.shape].label} · ${reachText(def.shape)}`;
-    state = ok ? '<span class="st good">지금 명중</span>' : `<span class="st bad">사거리 밖 · 지금 거리 ${S.p.r}</span>`;
-    const blood = onBlood && ok;
+    const v = validDirs(def);
+    const dir = aimFor(def);
+    multi = v.length > 1;
+    range = `${SHAPES[def.shape].label}${dir ? ` · ${DIR_LABEL[dir]}쪽` : ''}${multi ? ` · 방향 ${v.length}곳` : ''}`;
+    state = dir ? `<span class="st good">명중 ${targetsText(strikeTargets(def.shape, S.p, dir))}</span>`
+      : `<span class="st bad">사거리 밖${S.mode === 'boss' ? ` · 보스는 ${reachText(def.shape)}` : ''}</span>`;
+    const blood = onBlood && !!dir;
     const mult = blood ? CFG.bloodMult : 1;
     eff.push(`피해 <b>${def.dmg * mult}</b>${blood ? ` <em class="bl">핏빛 ×${mult}</em>` : ''}`);
     const ol = nextOl(def, inst.id) + (blood ? CFG.bloodOl : 0);
     if (ol) eff.push(`내 과부하 <b class="v">+${ol}</b>`);
-    if (def.bossOl) eff.push(`보스 과부하 <b class="g">+${def.bossOl}</b>`);
+    if (def.bossOl && S.mode === 'boss') eff.push(`보스 과부하 <b class="g">+${def.bossOl}</b>`);
   } else if (def.leap) {
     range = `상하좌우 최대 ${def.leap}칸`;
     state = '<span class="st good">방향을 고르세요</span>';
@@ -1769,7 +2441,7 @@ function detailHTML(i) {
   const touch = lastPointer !== 'mouse';
   const use = touch
     ? `<button class="btn-use" type="button" id="btnUse">${def.leap && !frozen ? '칸을 눌러 도약' : '사용 · 1코'}</button>`
-    : `<span class="hint">${def.leap && !frozen ? 'WASD로 방향 선택' : '클릭 또는 Space로 사용'}</span>`;
+    : `<span class="hint">${def.leap && !frozen ? 'WASD로 방향 선택' : multi && !frozen ? 'WASD·칸으로 방향 → 클릭/Space' : '클릭 또는 Space로 사용'}</span>`;
   return `<div class="d-row"><span class="d-kind k-${def.kind}"><svg><use href="#${kind.icon}"/></svg>${kind.label}</span><b class="d-name">${def.name}</b><span class="d-range">${range}</span></div>
     <div class="d-row d-flav"><span class="d-text">${def.text}</span></div>
     <div class="d-row"><span class="d-eff">${eff.join(' · ')}</span>${state}${use}</div>`;
@@ -1850,13 +2522,106 @@ const FX = {
     SFX.stun();
     await wait(360);
   },
-  async cardStrike(def, onBlood) {
+  async cardStrike(cells, onBlood) {
     SFX.card();
-    const cells = SHAPES[def.shape].cells.map(([dr, dc]) => [S.p.r + dr, S.p.c + dc]).filter(([r, c]) => inCol(c) && r >= 0 && r <= 4);
-    cells.sort((a, b) => b[0] - a[0]);
-    cells.forEach(([r, c], i) => setTimeout(() => this.at(r, c, onBlood ? 'fx-zap blood' : 'fx-zap', 420), i * 40));
+    const list = cells.slice().sort((a, b) => manh({ r: a[0], c: a[1] }, S.p) - manh({ r: b[0], c: b[1] }, S.p));   // 가까운 칸부터
+    list.forEach(([r, c], i) => setTimeout(() => this.at(r, c, onBlood ? 'fx-zap blood' : 'fx-zap', 420), i * 40));
     this.flash($('#player'), 'hop', 200);
-    await wait(130 + cells.length * 40);
+    await wait(130 + list.length * 40);
+  },
+  foeHit(f, dmg, o) {
+    this.flash(foeEl(f), 'hit', 440);
+    const d = document.createElement('div');
+    d.className = 'fx-num' + (o.big ? ' big' : '');
+    d.innerHTML = `−${dmg}${o.guarded ? '<small>방패 ½</small>' : ''}`;
+    d.style.left = `calc(${f.c} * (var(--cs) + var(--gap)) + var(--cs) / 2)`;
+    d.style.top = `calc(${f.r} * (var(--cs) + var(--gap)) + var(--cs) * .32)`;
+    $('#fx').appendChild(d);
+    setTimeout(() => d.remove(), 1000);
+    if (o.guarded) SFX.block();
+  },
+  foeDie(f) { SFX.foeDie(); this.at(f.r, f.c, 'fx-boom rose', 560); },
+  // 적 공격 연출 — 사수: 총구 섬광 + 탄환 궤적 / 기사: 내려찍기 / 폭탄병: 포물선 투척
+  async foeAttack(f, it) {
+    const el = foeEl(f);
+    this.flash(el, 'lunge', 360);
+    const cells = [...it.cells].map(RC);
+    if (f.type === 'rifle') {
+      SFX.shot();
+      this.at(f.r, f.c, 'fx-zap blood', 300);
+      if (cells.length) this.tracer(f, it.dir, cells.length);
+      cells.sort((a, b) => manh({ r: a[0], c: a[1] }, f) - manh({ r: b[0], c: b[1] }, f));
+      cells.forEach(([r, c], i) => setTimeout(() => this.at(r, c, 'fx-boom rose', 420), 60 + i * 30));
+      this.shake('s');
+      await wait(300);
+    } else if (f.type === 'shield') {
+      await wait(90);
+      SFX.heavy();
+      cells.forEach(([r, c]) => this.at(r, c, 'fx-boom amber', 560));
+      this.shake('m');
+      await wait(360);
+    } else {
+      SFX.toss();
+      await this.shell(f, it.center);
+      SFX.boom();
+      cells.forEach(([r, c], i) => setTimeout(() => this.at(r, c, 'fx-boom rose', 520), i * 30));
+      this.shake('m');
+      await wait(340);
+    }
+  },
+  tracer(f, dir, n) {
+    const d = document.createElement('div');
+    const [dr, dc] = DIRS[dir];
+    const horiz = !dr;
+    d.className = 'fx-tracer ' + (horiz ? 'h' : 'v');
+    const step = 'var(--cs) + var(--gap)';
+    const cx = `calc(${f.c} * (${step}) + var(--cs) / 2)`, cy = `calc(${f.r} * (${step}) + var(--cs) * .42)`;
+    const len = `calc(${n} * (${step}))`;
+    if (horiz) {
+      d.style.top = cy; d.style.width = len;
+      d.style.left = dc > 0 ? cx : `calc(${cx} - ${len})`;
+      d.style.setProperty('--to', dc > 0 ? 'left' : 'right');
+      d.style.setProperty('--tg', dc > 0 ? '90deg' : '270deg');
+    } else {
+      d.style.left = `calc(${f.c} * (${step}) + var(--cs) / 2)`; d.style.height = len;
+      d.style.top = dr > 0 ? `calc(${f.r} * (${step}) + var(--cs) / 2)` : `calc(${f.r} * (${step}) + var(--cs) / 2 - ${len})`;
+      d.style.setProperty('--to', dr > 0 ? 'top' : 'bottom');
+      d.style.setProperty('--tg', dr > 0 ? '180deg' : '0deg');
+    }
+    $('#fx').appendChild(d);
+    setTimeout(() => d.remove(), 320);
+  },
+  async shell(f, to) {
+    const a = CELLS[K(f.r, f.c)], b = CELLS[K(to.r, to.c)];
+    const d = document.createElement('div');
+    d.className = 'fx-shell';
+    const x0 = a.offsetLeft + a.offsetWidth / 2, y0 = a.offsetTop + a.offsetHeight * 0.3;
+    const x1 = b.offsetLeft + b.offsetWidth / 2, y1 = b.offsetTop + b.offsetHeight / 2;
+    d.style.left = x0 + 'px'; d.style.top = y0 + 'px';
+    $('#fx').appendChild(d);
+    const lift = Math.max(30, Math.abs(x1 - x0) * 0.35 + 20);
+    if (d.animate) d.animate([
+      { transform: 'translate(0,0) scale(.8)' },
+      { transform: `translate(${(x1 - x0) / 2}px,${(y1 - y0) / 2 - lift}px) scale(1.15)` },
+      { transform: `translate(${x1 - x0}px,${y1 - y0}px) scale(.9)` },
+    ], { duration: RM.matches ? 133 : 380, easing: 'ease-in-out', fill: 'forwards' });
+    try { await wait(380); } finally { d.remove(); }
+  },
+  async blast(cells) {
+    SFX.boom(); SFX.heavy();
+    cells.forEach(([r, c], i) => setTimeout(() => this.at(r, c, 'fx-boom', 600), i * 25));
+    this.shake('l');
+    this.flash($('#app'), 'hurt-vig', 560);
+    await wait(420);
+  },
+  say(f, text) {
+    const d = document.createElement('div');
+    d.className = 'fx-say';
+    d.textContent = text;
+    d.style.left = `calc(${f.c} * (var(--cs) + var(--gap)) + var(--cs) / 2)`;
+    d.style.top = `calc(${f.r} * (var(--cs) + var(--gap)) - var(--cs) * .28)`;
+    $('#fx').appendChild(d);
+    setTimeout(() => d.remove(), 1950);
   },
   bossHit(cols, dmg, onBlood) {
     this.flash($('#bossRow'), 'hit', 340);
@@ -1949,6 +2714,10 @@ const SFX = (() => {
     get muted() { return muted; },
     toggle() { muted = !muted; writeJSON(SND_KEY, { muted }); if (out) out.gain.value = muted ? 0 : 0.5; return muted; },
     step()   { tone(420, 0.07, { type: 'triangle', v: 0.07, f2: 560 }); },
+    fstep()  { tone(210, 0.08, { type: 'triangle', v: 0.06, f2: 170 }); hiss(0.05, { v: 0.04, f: 900 }); },
+    shot()   { hiss(0.14, { v: 0.26, f: 2600, type: 'bandpass', q: 0.9 }); tone(900, 0.07, { type: 'square', v: 0.05, f2: 180 }); },
+    toss()   { hiss(0.3, { v: 0.07, f: 1400, type: 'bandpass', q: 2 }); tone(300, 0.3, { type: 'sine', v: 0.04, f2: 700 }); },
+    foeDie() { tone(260, 0.35, { type: 'sawtooth', v: 0.05, f2: 60 }); hiss(0.2, { v: 0.1, f: 1200 }); },
     draw()   { hiss(0.12, { v: 0.08, f: 3000, type: 'highpass' }); tone(880, 0.08, { v: 0.05, type: 'triangle', at: 0.03 }); },
     card()   { hiss(0.16, { v: 0.1, f: 1800, type: 'bandpass', q: 1.2 }); },
     hit(big) { tone(big ? 90 : 140, big ? 0.35 : 0.18, { type: 'square', v: 0.09, f2: 50 }); hiss(big ? 0.4 : 0.2, { v: 0.16, f: big ? 900 : 1400 }); },
@@ -1964,7 +2733,11 @@ const SFX = (() => {
     stun()   { tone(600, 0.6, { type: 'sawtooth', v: 0.06, f2: 60 }); },
     fizzle() { tone(160, 0.12, { type: 'sawtooth', v: 0.05, f2: 120 }); hiss(0.08, { v: 0.05, f: 3000, type: 'highpass' }); },
     deny()   { tone(180, 0.08, { type: 'square', v: 0.045 }); tone(140, 0.1, { type: 'square', v: 0.045, at: 0.08 }); },
-    blip(who) { if (who === 'boss') tone(180, 0.04, { type: 'square', v: 0.016 }); else if (who === 'hero') tone(720 + Math.random() * 90, 0.035, { type: 'triangle', v: 0.02 }); },
+    blip(who) {
+      if (who === 'boss') tone(180, 0.04, { type: 'square', v: 0.016 });
+      else if (who === 'hero') tone(720 + Math.random() * 90, 0.035, { type: 'triangle', v: 0.02 });
+      else if (who in FOES) tone(250 + Math.random() * 50, 0.04, { type: 'square', v: 0.012 });
+    },
     page()   { hiss(0.12, { v: 0.035, f: 2600, type: 'bandpass', q: 0.7 }); },
     chime()  { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.9, { v: 0.07, at: i * 0.12 })); },
     hurt()   { tone(220, 0.25, { type: 'square', v: 0.09, f2: 90 }); },
@@ -1978,16 +2751,21 @@ const SFX = (() => {
    11. 대사 장면 — 전투 전 이야기 · 전투 중 보스 대사
    ═════════════════════════════════════════════ */
 // 화자 이름표. 이름과 대사는 전부 테스트용 임시 문구
+// pt = 초상화 칸 (상점 주인 · 적은 오른쪽 한 칸을 번갈아 쓴다) · cls = 이름표 · 글씨 스타일
 const SPEAKERS = {
-  nar:      { name: '' },
-  hero:     { name: '기계 신' },
-  boss:     { name: '집행 병기 「못박이」' },
-  merchant: { name: '상점 주인' },
-  voice:    { name: '신도들의 속삭임' },
+  nar:      { name: '', cls: 'nar' },
+  hero:     { name: '기계 신', pt: 'hero' },
+  boss:     { name: '집행 병기 「못박이」', pt: 'boss', cls: 'boss' },
+  merchant: { name: '상점 주인', pt: 'merchant', cls: 'merchant' },
+  voice:    { name: '신도들의 속삭임', cls: 'voice' },
+  rifle:    { name: FOES.rifle.name, pt: 'foe', cls: 'foe' },
+  shield:   { name: FOES.shield.name, pt: 'foe', cls: 'foe' },
+  bomb:     { name: FOES.bomb.name, pt: 'foe', cls: 'foe' },
 };
-const PORTRAITS = { hero: '#ptHero', merchant: '#ptMerchant', boss: '#ptBoss' };
+const PORTRAITS = { hero: '#ptHero', merchant: '#ptMerchant', boss: '#ptBoss', foe: '#ptFoe' };
 // 대사 = { who, face?, text } · 선택지 = { choice: [{ label, then: [...] }] } · 챕터 카드 = { card: { num, title } }
-// 연출(한 단계에 함께 써도 됨) = { tint: 'warm' | 'cold' | 'blood' | '' } · { place: '장소 자막' } · { fx: 'shake' | 'flash' | 'red' | 'tick' } · { exit: 'merchant' }
+// 연출(한 단계에 함께 써도 됨) = { tint: 'warm' | 'cold' | 'blood' | '' } · { place: '장소 자막' } · { fx: 'shake' | 'flash' | 'red' | 'tick' } · { exit: 'merchant' | 'foe' }
+// 조건 = { when: () => 참일 때만 } · who: 적 대사는 rifle · shield · bomb (스탠딩 일러스트가 오른쪽에)
 // face: 주인공 idle · aim · overload · smug · surprised · wounded · pain · angry (FACES) / 상점 주인 idle · hmph (NPC_FACES)
 const PROLOGUE = [
   { card: { num: 'I', title: '감시탑 아래에서' } },
@@ -2059,7 +2837,53 @@ const PROLOGUE = [
       { who: 'hero', face: 'aim', text: '……그럼 할 수 없지. 대가는 네 부품으로 받아 갈게.' },
     ] },
   ] },
+  // ── 졸개 (보스전 졸개 수가 1 이상일 때)
+  { when: () => S.foes.length > 0, who: 'nar', text: '탐조등 뒤로 감시탑 순찰대가 줄지어 들어선다.' },
+  { when: () => S.foes.some(f => f.type === 'bomb'), who: 'bomb', text: '정화의 시간이다아…!' },
+  { when: () => S.foes.some(f => f.type === 'bomb'), who: 'hero', face: 'angry', text: '떼로 몰려오시겠다? …좋아, 폭탄 멘 녀석은 저 쇳덩이 옆에서 터뜨려 줄게.' },
+  { when: () => S.foes.length > 0 && !S.foes.some(f => f.type === 'bomb'), who: 'hero', face: 'angry', text: '떼로 몰려오시겠다? …좋아, 한꺼번에 상대해 주지.' },
   { who: 'boss', text: '교전 개시. 기습 좌표, 송신.' },
+];
+
+// 일반 전투 — 감시탑 순찰대 (적 설명을 겸한 짧은 장면)
+const PATROL_INTRO = [
+  { tint: 'cold', place: '성당 뒤 골목 · 오전 11:52' },
+  { who: 'nar', text: '무너진 골목 끝에서, 쇠 징을 박은 군화 소리가 규칙적으로 다가온다.' },
+  { who: 'merchant', text: '쉿. 감시탑 순찰대야. 정부군이 폐허를 훑을 때 풀어놓는 놈들.' },
+  { who: 'rifle', text: '시각 11시 52분. 미등록 개체 발견. 사격 허가를 요청한다.' },
+  { who: 'merchant', text: '시계 가면이 사수야. 같은 줄에 서면 판 끝까지 꿰뚫어 쏴. 줄을 맞춰 주지 마.' },
+  { who: 'shield', text: '전열, 전진. 방패를 앞으로.' },
+  { who: 'merchant', text: '방패 기사는 바로 앞 세 칸을 내려찍어. 정면에서 치면 방패에 막혀 반밖에 안 들어가니까, 옆이나 뒤로 돌아.' },
+  { who: 'bomb', text: '정화… 정화한다아…!' },
+  { who: 'merchant', face: 'hmph', text: '폭탄 멘 녀석은 두세 칸 떨어진 데로 폭탄을 던져. 쓰러뜨리면 그 자리에서 터지니까 붙어서 잡지 마.' },
+  { who: 'hero', face: 'smug', text: '……다른 놈들 옆에서 터뜨리면?' },
+  { who: 'merchant', text: '같이 날아가겠지. 눈치 하나는 빠르네.' },
+  { who: 'merchant', text: '저놈들은 두 코스트마다 움직여. 머리 위 숫자가 1이면, 네 다음 행동이 끝나자마자 온다.' },
+  { who: 'merchant', text: '표시된 칸만 맞으니까 그 칸 밖에서 행동을 끝내. 카드는 쓸 때 방향을 고를 수 있고.' },
+  { who: 'merchant', face: 'hmph', text: '난 여기까지. 장사꾼은 싸움에 안 끼거든.' },
+  { exit: 'merchant' },
+  { who: 'hero', face: 'aim', text: '좋아. 시간 맞춰 줄게.' },
+  { who: 'rifle', text: '사격 개시.' },
+];
+const PATROL_WIN = [
+  { tint: 'warm', place: '성당 뒤 골목 · 교전 종료' },
+  { who: 'nar', text: '마지막 순찰병이 쓰러지자, 골목에 다시 먼지만 내려앉았다.' },
+  { who: 'hero', face: 'surprised', text: '저 가면의 톱니… 성당에 쓰러져 있던 사람들 가슴의 문양이랑 똑같아.' },
+  { who: 'merchant', face: 'hmph', text: '궁금한 건 나중에. 순찰대가 안 돌아온 걸 탑이 눈치채기 전에 움직이자.' },
+  { who: 'hero', face: 'smug', text: '이 녀석들 장비, 팔면 값 좀 나가?' },
+  { who: 'merchant', face: 'hmph', text: '……외상값부터 갚고 말해.' },
+];
+const PATROL_LOSE = [
+  { tint: 'blood', fx: 'red' },
+  { who: 'nar', text: '총성이 골목을 가르고, 시야가 천천히 기울어진다.' },
+  { who: 'hero', face: 'wounded', text: '이런… 순찰병 따위한테…' },
+  { who: 'rifle', text: '목표 침묵. 시각 기록.' },
+  { who: 'voice', text: '아니요, 신이시여. 시간은 아직 당신의 것입니다.' },
+  { fx: 'tick' },
+  { who: 'nar', text: '째깍, 째깍. 시곗바늘이 거꾸로 돌기 시작했다.' },
+  { tint: 'warm', fx: 'flash', place: '무너진 성당 · 오전 11:48' },
+  { who: 'nar', text: '……눈을 뜨자 녹슨 제단 위였다.' },
+  { who: 'hero', face: 'pain', text: '…또, 여기야.' },
 ];
 // 전투 중 짧은 장면 — 전투마다 한 번씩
 const INTERLUDES = {
@@ -2086,6 +2910,25 @@ const INTERLUDES = {
     { who: 'hero', face: 'overload', text: '으… 몸이… 안 움직여…!' },
     { who: 'voice', text: '신이시여, 너무 서두르지 마소서. 톱니가 타 버립니다.' },
     { who: 'boss', text: '이단 우상, 기능 정지 확인. 처분하라.' },
+  ],
+  // 일반 전투용 (보스 대신 순찰대가 말한다) — 키 뒤에 _n
+  night1_n: [
+    { tint: 'blood', place: '성당 뒤 골목 · 오후 12:00' },
+    { who: 'nar', text: '종이 울리자, 골목 바닥의 핏자국이 일제히 붉게 끓어올랐다.' },
+    { who: 'voice', text: '신이시여, 우리의 피를 쓰소서.' },
+    { who: 'hero', face: 'pain', text: '…뜨거워. 이 피, 전부 나를 부르고 있어.' },
+    { who: 'shield', text: '야간 규정. 전열 유지. 놈이 핏자국을 밟게 두지 마라.' },
+  ],
+  freeze1_n: [
+    { tint: 'blood', fx: 'red' },
+    { who: 'hero', face: 'overload', text: '으… 몸이… 안 움직여…!' },
+    { who: 'voice', text: '신이시여, 너무 서두르지 마소서. 톱니가 타 버립니다.' },
+    { who: 'rifle', text: '목표 정지 확인. 조준 고정.' },
+  ],
+  blast1: [
+    { tint: 'blood', fx: 'shake' },
+    { who: 'hero', face: 'surprised', text: '…자폭?! 옆에 있던 놈까지 휘말렸어.' },
+    { who: 'hero', face: 'smug', text: '저 녀석, 잘만 쓰면 꽤 쓸모 있겠는데.' },
   ],
 };
 const EPILOGUE_WIN = [
@@ -2128,6 +2971,12 @@ const BARKS = {
   win:    ['시스템… 종…료…'],
   lose:   ['처분 완료. 기록을 삭제한다.'],
 };
+// 일반 적 말풍선 (공격할 때 가끔 · 쓰러질 때)
+const FOE_BARKS = {
+  rifle:  { atk: ['조준 완료.', '사격.', '시각 기록.'], die: ['시각… 정지…'] },
+  shield: { atk: ['방패, 전진!', '짓눌러라.'], die: ['전열… 붕괴…'] },
+  bomb:   { atk: ['정화한다!', '불꽃을!'], die: ['하, 하하… 같이 가자아!'] },
+};
 
 const SC = { queue: [], full: '', shown: 0, who: 'nar', face: 'idle', typing: false, choosing: null, carding: false, auto: false, log: [], onEnd: null, t: 0, autoT: 0, cardT: 0, placeT: 0 };
 
@@ -2147,6 +2996,7 @@ function playScene(script, onEnd) {
   setPortrait('hero', 'idle');
   setPortrait('merchant', 'idle');
   for (const sel of Object.values(PORTRAITS)) $(sel).classList.remove('in', 'on', 'off', 'swap');   // 그림 모드(img)는 유지
+  $('#ptFoeArt').dataset.type = '';
   $('#scene').dataset.tint = '';
   $('#scene').classList.remove('duo');
   $('#scPlace').hidden = true;
@@ -2166,6 +3016,7 @@ function sceneNext() {
   for (;;) {
     const step = SC.queue.shift();
     if (!step) { endScene(); return; }
+    if (step.when && !step.when()) continue;
     // 연출 단계는 곧바로 적용하고 다음으로 (대사 · 선택지 · 챕터 카드에서 멈춘다)
     if (step.tint !== undefined) $('#scene').dataset.tint = step.tint;
     if (step.place) showPlace(step.place);
@@ -2193,13 +3044,15 @@ function sceneFx(kind) {
   if (kind === 'red')   { FX.flash($('#scene'), 'sc-red', 820); SFX.hurt(); }
   if (kind === 'tick')  SFX.arm();
 }
-function updateDuo() { $('#scene').classList.toggle('duo', $('#ptMerchant').classList.contains('in')); }
+function updateDuo() { $('#scene').classList.toggle('duo', $('#ptMerchant').classList.contains('in') || $('#ptFoe').classList.contains('in')); }
 
 // 전투 중 대사 장면: 조건이 맞으면 대기열에 넣고, 행동이 끝난 뒤 안전한 시점에 재생
+// 일반 전투에서는 '키_n' 장면이 있으면 그걸 쓴다 (보스 대사 대신 순찰대)
 function queueInterlude(key) {
-  if (!CFG.interludes || !S.started || S.seen.has(key) || !INTERLUDES[key]) return;
+  const k = S.mode !== 'boss' && INTERLUDES[key + '_n'] ? key + '_n' : key;
+  if (!CFG.interludes || !S.started || S.seen.has(key) || !INTERLUDES[k]) return;
   S.seen.add(key);
-  S.pendingScenes.push(key);
+  S.pendingScenes.push(k);
 }
 async function flushInterludes() {
   while (S.pendingScenes.length && !S.over) await playSceneAsync(INTERLUDES[S.pendingScenes.shift()]);
@@ -2207,23 +3060,36 @@ async function flushInterludes() {
 
 function showLine(step) {
   const who = SPEAKERS[step.who] ? step.who : 'nar';
-  const name = SPEAKERS[who].name;
+  const sp = SPEAKERS[who], name = sp.name, pt = sp.pt || null;
+  // 오른쪽 칸은 한 명만 — 상점 주인이 말하면 적이 빠지고, 적이 말하면 상점 주인이 빠진다
+  if (pt === 'merchant') $('#ptFoe').classList.remove('in');
+  if (pt === 'foe') { $('#ptMerchant').classList.remove('in'); setFoePortrait(who); }
   for (const [key, sel] of Object.entries(PORTRAITS)) {
     const el = $(sel);
-    if (who === key) el.classList.add('in');                  // 처음 말할 때 등장
-    el.classList.toggle('on', who === key);
-    el.classList.toggle('off', who !== key);
+    if (pt === key) el.classList.add('in');                   // 처음 말할 때 등장
+    el.classList.toggle('on', pt === key);
+    el.classList.toggle('off', pt !== key);
   }
   updateDuo();
   const nm = $('#dname');
   nm.textContent = name;
   nm.hidden = !name;
-  nm.className = 'dname' + (who === 'hero' || who === 'nar' ? '' : ' ' + who);
-  $('#dtext').className = 'dtext' + (who === 'hero' ? '' : ' ' + who);
+  nm.className = 'dname' + (sp.cls && who !== 'nar' ? ' ' + sp.cls : '');
+  $('#dtext').className = 'dtext' + (sp.cls ? ' ' + sp.cls : '');
   if (who === 'hero' || who === 'merchant') setPortrait(who, step.face || 'idle');
   SC.log.push({ who, name, text: step.text });
   SC.who = who;
   typeText(step.text);
+}
+
+// 적 초상화: 스탠딩 일러스트 (없으면 SD)
+function setFoePortrait(type) {
+  const url = ASSET.foeArt[type] || ASSET.sd[type];
+  const box = $('#ptFoeArt');
+  if (box.dataset.type === type) return;
+  box.dataset.type = type;
+  box.innerHTML = url ? `<img src="${url}" alt="" draggable="false">` : FOE_SVG[type];
+  FX.flash($('#ptFoe'), 'swap', 280);
 }
 
 function setPortrait(who, face) {
@@ -2333,10 +3199,15 @@ function endScene() {
   if (cb) cb();
 }
 
+function foeSay(f, kind) {
+  const lines = FOE_BARKS[f.type] && FOE_BARKS[f.type][kind];
+  if (lines) FX.say(f, pick(lines));
+}
+
 let barkTimer = 0;
 function bark(kind) {
   const lines = BARKS[kind];
-  if (!lines) return;
+  if (!lines || S.mode !== 'boss') return;           // 보스 말풍선은 보스 줄에 붙어 있다
   const el = $('#bark');
   el.textContent = pick(lines);
   el.hidden = false;
@@ -2353,35 +3224,82 @@ document.addEventListener('pointerdown', e => { lastPointer = e.pointerType || '
 
 function selectedLeap() { return S.sel !== null && S.hand[S.sel] && CARDS[S.hand[S.sel].id].leap ? CARDS[S.hand[S.sel].id] : null; }
 
+// 칸 누르기: 도약 칸 → 도약 / 카드 범위 칸 → 조준한 방향이면 발사, 다른 방향이면 그쪽으로 조준 / 적 → 정보 / 옆 칸 → 이동
 function onCell(r, c) {
   if (!S.started || S.over) return;
-  if (selectedLeap()) {
+  const def = selectedDef();
+  if (def && def.leap) {
     const t = preview().leap.get(K(r, c));
     if (t) { act({ type: 'card', i: S.sel, dir: t.dir, dist: t.dist }); return; }
   }
+  if (def && def.shape && S.freeze <= 0) {
+    const d = dirAtCell(def, r, c);
+    if (d) {
+      if (d === aimFor(def)) { act({ type: 'card', i: S.sel, dir: d }); return; }
+      S.aim = d; SFX.step(); render();
+      return;
+    }
+  }
+  if (r < TOP) return;                                // 보스 줄: 카드로 겨눌 때만
+  const f = foeAt(r, c);
+  if (f) {
+    // 마우스로 올려 보던 적을 클릭하면 정보를 고정, 아니면 켜고 끄기
+    if (hoverInspect && S.inspect === f.uid) hoverInspect = false;
+    else { S.inspect = S.inspect === f.uid ? null : f.uid; hoverInspect = false; }
+    render();
+    return;
+  }
   const dr = r - S.p.r, dc = c - S.p.c;
   if (Math.abs(dr) + Math.abs(dc) === 1) { act({ type: 'move', dir: dirOf(dr, dc) }); return; }
-  if (S.sel !== null) { S.sel = null; render(); }
+  if (S.sel !== null || S.inspect) { S.sel = null; S.inspect = null; hoverInspect = false; render(); }
+}
+
+// 마우스 올리기: 카드를 고른 상태면 그 칸 쪽으로 조준, 아니면 적 정보
+let hoverInspect = false;
+function onCellHover(r, c) {
+  if (!S.started || S.over) return;
+  const def = selectedDef();
+  if (def && def.shape && S.freeze <= 0 && r >= 0) {
+    const d = dirAtCell(def, r, c);
+    if (d && d !== aimFor(def)) { S.aim = d; renderBoard(); renderFoot(); }
+    return;
+  }
+  const f = r >= TOP ? foeAt(r, c) : null;
+  if (f && S.hover === null && S.sel === null) {
+    if (S.inspect !== f.uid) { S.inspect = f.uid; hoverInspect = true; renderBoard(); renderFoot(); }
+  } else if (hoverInspect && S.inspect) {
+    S.inspect = null; hoverInspect = false; renderBoard(); renderFoot();
+  }
 }
 
 function useSelected() {
   if (S.sel === null || !S.hand[S.sel]) return;
   if (selectedLeap() && S.freeze <= 0) { toast('도약할 방향을 고르세요 — WASD 또는 점선 칸'); return; }
-  act({ type: 'card', i: S.sel });
+  const def = CARDS[S.hand[S.sel].id];
+  act({ type: 'card', i: S.sel, dir: def.shape ? aimFor(def) || undefined : undefined });
+}
+
+function selectCard(i) {
+  S.sel = i; S.hover = null;
+  const def = CARDS[S.hand[i].id];
+  if (def.shape) S.aim = aimFor(def) || S.aim;
+  render();
 }
 
 function onCardClick(i) {
   if (!S.started || S.over || !S.hand[i]) return;
   const def = CARDS[S.hand[i].id];
   if (lastPointer === 'mouse') {
-    // 마우스: 올려서 미리보기, 클릭하면 바로 사용 (도약은 방향 선택이 필요해 선택만)
-    if (def.leap && S.freeze <= 0) { S.sel = S.sel === i ? null : i; render(); return; }
-    act({ type: 'card', i });
+    // 마우스: 올려서 미리보기, 클릭하면 바로 사용
+    // 도약 · 여러 방향에 적이 닿는 카드는 먼저 선택 → 칸을 눌러 방향을 정해 사용
+    if (def.leap && S.freeze <= 0) { if (S.sel === i) { S.sel = null; render(); } else selectCard(i); return; }
+    if (def.shape && S.freeze <= 0 && S.sel !== i && validDirs(def).length > 1) { selectCard(i); return; }
+    act({ type: 'card', i, dir: def.shape ? aimFor(def) || undefined : undefined });
     return;
   }
-  // 터치: 한 번 눌러 미리보기, 한 번 더 누르면 사용
+  // 터치: 한 번 눌러 미리보기(조준), 한 번 더 누르면 사용
   if (S.sel === i) useSelected();
-  else { S.sel = i; render(); }
+  else selectCard(i);
 }
 
 const CODE_DIR = { KeyW: 'up', KeyA: 'left', KeyS: 'down', KeyD: 'right', ArrowUp: 'up', ArrowLeft: 'left', ArrowDown: 'down', ArrowRight: 'right' };
@@ -2399,24 +3317,36 @@ document.addEventListener('keydown', e => {
   const ae = document.activeElement;
   const onControl = ae && ae !== document.body && /^(BUTTON|INPUT|SELECT|TEXTAREA)$/.test(ae.tagName);
   if (!$('#result').hidden) { if (e.key === 'Enter' && !onControl) { e.preventDefault(); restart(); } return; }
-  if (!S.started) { if ((e.key === 'Enter' || e.code === 'Space') && !onControl) { e.preventDefault(); startStory(); } return; }
+  if (!S.started) {
+    if (!$('#intro').hidden && !onControl) {
+      if (e.code === 'Digit2' || e.code === 'Numpad2') { startStory('boss'); return; }
+      if (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === 'Enter' || e.code === 'Space') { e.preventDefault(); startStory('normal'); }
+    }
+    return;
+  }
   // 한글 자판 상태에서도 되도록 물리 키(e.code)로 판정
   const dir = CODE_DIR[e.code];
   if (dir) {
     e.preventDefault();
-    if (selectedLeap()) act({ type: 'card', i: S.sel, dir });
+    const def = selectedDef();
+    if (def && def.leap) act({ type: 'card', i: S.sel, dir });
+    else if (def && def.shape && S.freeze <= 0) {
+      // 카드를 고른 동안 방향키 = 조준 (이동하려면 Esc로 선택 취소)
+      if (validDirs(def).includes(dir)) { S.aim = dir; SFX.step(); render(); }
+      else { toast(`${DIR_LABEL[dir]}쪽에는 닿는 적이 없어요 — 이동은 Esc 뒤에`); SFX.deny(); }
+    }
     else act({ type: 'move', dir });
     return;
   }
   const dm = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
   if (dm) {
     const i = +dm[1] - 1;
-    if (i < S.hand.length) { if (S.sel === i) useSelected(); else { S.sel = i; S.hover = null; render(); } }
+    if (i < S.hand.length) { if (S.sel === i) useSelected(); else selectCard(i); }
     return;
   }
   if ((e.code === 'Space' || e.key === 'Enter') && !onControl) { e.preventDefault(); useSelected(); return; }
   if (e.code === 'KeyQ') { act({ type: 'draw' }); return; }
-  if (e.key === 'Escape') { if (S.sel !== null) { S.sel = null; render(); } return; }
+  if (e.key === 'Escape') { if (S.sel !== null || S.inspect) { S.sel = null; S.inspect = null; render(); } return; }
   if (e.code === 'KeyH' || e.key === '?') { openSheet('help'); return; }
   if (e.code === 'KeyM') { toggleSound(); return; }
 });
@@ -2437,7 +3367,8 @@ function bindInput() {
   db.addEventListener('mousedown', e => e.preventDefault());
   db.addEventListener('click', () => act({ type: 'draw' }));
   $('#detail').addEventListener('click', e => { if (e.target.closest('#btnUse')) useSelected(); });
-  $('#btnStart').addEventListener('click', startStory);
+  $('#btnNormal').addEventListener('click', () => startStory('normal'));
+  $('#btnBoss').addEventListener('click', () => startStory('boss'));
   $('#scene').addEventListener('click', e => {
     if (e.target.closest('.sc-tools, .sc-logp')) return;
     const choice = e.target.closest('.sc-choices button');
@@ -2449,7 +3380,8 @@ function bindInput() {
   $('#scLogClose').addEventListener('click', () => toggleSceneLog(false));
   $('#scAutoBtn').addEventListener('click', e => { e.currentTarget.blur(); toggleAuto(); });
   $('#scSkipBtn').addEventListener('click', e => { e.currentTarget.blur(); endScene(); });
-  $('#btnAgain').addEventListener('click', restart);
+  $('#btnAgain').addEventListener('click', () => restart());
+  $('#btnSwap').addEventListener('click', () => restart(S.mode === 'boss' ? 'normal' : 'boss'));
   $('#btnResCfg').addEventListener('click', () => openSheet('cfg'));
   $('#btnHelp').addEventListener('click', () => openSheet('help'));
   $('#btnCfg').addEventListener('click', () => openSheet('cfg'));
@@ -2472,17 +3404,29 @@ function toggleSound() { SFX.init(); const m = SFX.toggle(); renderHud(); toast(
 function rulesHTML() {
   return `
     <li><svg><use href="#i-deck"/></svg><div><b>모든 행동은 1코스트</b>이동·카드·추가 뽑기. 한 루프에 ${CFG.costPerLoop}코스트, 턴 종료 버튼은 없다.</div></li>
-    <li class="r-amb"><svg><use href="#i-cross"/></svg><div><b>2번째 행동 뒤 = 기습 폭격</b>2번째 행동을 마쳤을 때 빨간 줄 위에 있으면 맞는다.</div></li>
-    <li class="r-atk"><svg><use href="#i-hazard"/></svg><div><b>코스트 소진 = 턴 공격</b>기습이 터지면 주황 범위가 드러난다. 마지막 행동을 주황 밖에서 끝내기.</div></li>
+    <li class="r-foe"><svg><use href="#i-foe"/></svg><div><b>적은 2코스트마다 이동 또는 공격</b>다음 행동이 판에 미리 뜬다. 머리 위 숫자 1 = 내 다음 행동 뒤. 적마다 순번이 엇갈린다.</div></li>
+    <li><svg><use href="#i-blade"/></svg><div><b>카드는 쓸 때 방향을 고른다</b>상하좌우 중 적이 닿는 쪽으로. 방패 기사는 정면에서 맞으면 피해 절반.</div></li>
+    <li class="r-amb"><svg><use href="#i-cross"/></svg><div><b>2번째 행동 뒤 = 기습 폭격</b>빨간 줄 위에서 2번째 행동을 마치면 맞는다. 보스전은 마지막 행동 뒤 턴 공격(주황)도.</div></li>
     <li class="r-volt"><svg><use href="#i-bolt"/></svg><div><b>과부하 ${CFG.olMax} = ${CFG.freezeCost}코스트 마비</b>게이지는 ${CFG.olReset}으로. 보스를 과부하시키면 ${CFG.bossStunCost}코스트 동안 공격이 멈춘다.</div></li>
     <li class="r-blood"><svg><use href="#i-moon"/></svg><div><b>누적 ${CFG.phaseCost}코스트마다 낮밤 전환</b>오전 기습 ${CFG.ambushDay}칸 · 오후 기습 ${CFG.ambushNight}칸 + 핏빛 타일(피해 ×${CFG.bloodMult}, 과부하 +${CFG.bloodOl}).</div></li>`;
 }
+function renderIntro() {
+  $('#introRules').innerHTML = rulesHTML();
+  const n = CFG.foeCount, a = CFG.bossAdds;
+  $('#modeNormalSub').innerHTML = `감시탑 순찰대<br>적 ${n}명${CFG.normalAmbush ? ' · 기습 있음' : ''}`;
+  $('#modeBossSub').innerHTML = `집행 병기 「못박이」<br>${a ? `졸개 ${a}명 · ` : ''}턴 공격`;
+}
 
-function startStory() {
+const modeName = m => m === 'boss' ? '보스전' : '일반 전투';
+
+function startStory(mode = 'normal') {
   if (S.started || !$('#scene').hidden) return;
   SFX.init();
   $('#intro').hidden = true;
-  playScene(PROLOGUE, () => { startBattle(); bark('start'); });
+  newBattle(mode);                                   // 시작 화면에서 바꾼 설정까지 반영해 새로 만든다
+  handSig = ''; beamSig = ''; markSig = '';
+  render();
+  playScene(mode === 'boss' ? PROLOGUE : PATROL_INTRO, () => { startBattle(); bark('start'); });
 }
 
 function startBattle() {
@@ -2490,33 +3434,35 @@ function startBattle() {
   SFX.init();
   $('#intro').hidden = true;
   S.started = true;
-  log('인류 정부군 집행 병기 「못박이」 — 교전 개시', 'dim');
+  log(S.mode === 'boss' ? '인류 정부군 집행 병기 「못박이」 — 교전 개시' : `감시탑 순찰대 ${S.foes.length}명 — 교전 개시`, 'dim');
   run(() => startLoop());
 }
 
-function restart() {
+function restart(mode) {
   closeSheets();
-  newBattle();
-  handSig = ''; beamSig = '';
+  newBattle(mode || S.mode);
+  handSig = ''; beamSig = ''; markSig = '';
+  $('#intro').hidden = true;
   S.started = true;
-  log('전투 재시작', 'dim');
+  log(`전투 재시작 — ${modeName(S.mode)}`, 'dim');
   render();
   run(() => startLoop());
 }
 
 function showResult(win) {
-  const st = S.stats;
+  const st = S.stats, boss = S.mode === 'boss';
   const t = $('#resTitle');
   t.textContent = win ? '승리' : '패배';
   t.className = 'res-title ' + (win ? 'win' : 'lose');
-  $('#resSub').textContent = win ? '집행 병기 「못박이」의 회로가 멈췄다.' : '기계 신의 몸이 버티지 못했다.';
+  $('#resSub').textContent = win ? (boss ? '집행 병기 「못박이」의 회로가 멈췄다.' : '감시탑 순찰대를 모두 쓰러뜨렸다.') : '기계 신의 몸이 버티지 못했다.';
   const rows = [
-    ['버틴 루프', S.loop], ['누적 코스트', `${S.total} (나 ${S.totalP} · 보스 ${S.totalB})`],
+    ['버틴 루프', S.loop], ['누적 코스트', `${S.total} (나 ${S.totalP} · ${boss ? '보스·적' : '적'} ${S.totalB})`],
     ['준 피해', st.dealt], ['받은 피해', st.taken],
-    ['회피', st.dodged], ['핏빛 강타', st.bloodHits],
-    ['내 과부하 정지', st.freezes], ['보스 과부하 정지', st.stuns],
+    ['회피', st.dodged], ['처치', `${st.kills} / ${S.foes.length}`],
+    ['핏빛 강타', st.bloodHits], ['과부하 정지', boss ? `나 ${st.freezes} · 보스 ${st.stuns}` : st.freezes],
   ];
   $('#resStats').innerHTML = rows.map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
+  $('#btnSwap').textContent = boss ? '일반 전투로' : '보스전으로';
   $('#result').hidden = false;
 }
 
@@ -2524,20 +3470,33 @@ function helpHTML() {
   const slot = (url, name) => url ? `<b class="ok">적용됨</b> <code>${url}</code>` : `<span class="dim">기본 그림 사용 중 — <code>assets/${name}.webp</code>(또는 png)를 넣으면 교체</span>`;
   const faces = Object.entries(FACES).map(([k, f]) => `${f.label} <code>${f.file}</code> ${ASSET.face[k] ? '<b class="ok">✓</b>' : '<span class="dim">없음</span>'}`).join('<br>');
   const cardRows = Object.values(CARDS).map(d => {
-    const range = d.shape ? `${SHAPES[d.shape].label}<br><span class="dim">${reachText(d.shape)}</span>` : d.leap ? `최대 ${d.leap}칸` : '자신';
+    const range = d.shape ? `${SHAPES[d.shape].label}<br><span class="dim">보스: ${reachText(d.shape)}</span>` : d.leap ? `최대 ${d.leap}칸` : '자신';
     const eff = [d.dmg ? `피해 ${d.dmg}` : '', d.shield ? `실드 +${d.shield}` : '', d.cool ? `과부하 −${d.cool}` : '', d.ol ? `내 과부하 +${d.ol}` : '', d.bossOl ? `보스 과부하 +${d.bossOl}` : '', d.rapid ? `연사 시 +${d.rapid}씩 가중` : '', d.persist ? '상주' : ''].filter(Boolean).join(' · ');
     return `<tr><td>${d.name}</td><td>${KINDS[d.kind].label} · ${d.n}장</td><td>${range}</td><td>${eff}</td></tr>`;
   }).join('');
   const patRows = PATTERNS.map(p => `<tr><td>${p.name}</td><td>${p.desc}</td><td>피해 ${p.dmg}${p.nail ? ` · 과부하 +${CFG.nailOl}` : ''}</td></tr>`).join('');
+  const gal = FOE_TYPES.map(k => {
+    const T = FOES[k], art = ASSET.foeArt[k], sd = ASSET.sd[k];
+    return `<figure><div class="fg-art">${art ? `<img src="${art}" alt="${T.name} 스탠딩">` : ''}${sd ? `<img class="fg-sd" src="${sd}" alt="${T.name} SD">` : ''}</div>
+      <figcaption><b>${T.name}</b>HP ${T.hp} · 피해 ${T.dmg}<br>${T.atk}</figcaption></figure>`;
+  }).join('');
+  const foeRows = FOE_TYPES.map(k => { const T = FOES[k]; return `<tr><td>${T.name}</td><td>HP ${T.hp}</td><td>${T.desc}${T.blast ? ` 자폭 피해: 적 · 보스 ${T.blast}, 나 ${T.blastMe}.` : ''}</td></tr>`; }).join('');
   return `
   <section><h4>한 루프의 흐름</h4>
     <ol>
-      <li>루프 시작 — 코스트 ${CFG.costPerLoop} 충전, 손패 ${CFG.handRefill}장까지 보충, <b>빨간 기습 줄</b>과 턴 공격 패턴 예고</li>
-      <li>1~2번째 행동 — 빨간 줄 밖으로 대피</li>
-      <li><b>2번째 행동이 끝나는 순간</b> 기습 폭발 → <b>주황 턴 공격 범위</b> 공개</li>
-      <li>남은 행동 — 주황 범위 밖으로 자리 잡기</li>
-      <li>${CFG.atkTiming === 'pay' ? '<b>마지막 코스트를 지불하는 순간</b>(그 행동 전)' : '<b>마지막 행동이 끝나는 순간</b>'} 턴 공격 → 다음 루프</li>
+      <li>루프 시작 — 코스트 ${CFG.costPerLoop} 충전, 손패 ${CFG.handRefill}장까지 보충, <b>빨간 기습 줄</b>(보스전은 턴 공격 패턴도) 예고</li>
+      <li>행동할 때마다 — 순번이 된 <b>일반 적</b>이 예고대로 이동 또는 공격하고, 다음 행동을 새로 예고</li>
+      <li><b>2번째 행동이 끝나는 순간</b> 기습 폭발 → (보스전) <b>주황 턴 공격 범위</b> 공개</li>
+      <li>남은 행동 — 적 조준 표식 · 주황 범위 밖으로 자리 잡기</li>
+      <li>(보스전) ${CFG.atkTiming === 'pay' ? '<b>마지막 코스트를 지불하는 순간</b>(그 행동 전)' : '<b>마지막 행동이 끝나는 순간</b>'} 턴 공격 → 다음 루프</li>
     </ol>
+  </section>
+  <section><h4>일반 적</h4>
+    <p>적은 <b>2코스트마다</b> 이동 또는 공격을 한 번 한다. 순번이 엇갈려 어떤 적은 1·3번째 행동 뒤, 어떤 적은 2·4번째 행동 뒤에 움직인다.
+    다음 행동은 판에 미리 뜬다 — <b>분홍 조준 표식</b>은 공격할 칸(진하면 내 다음 행동 뒤, 점선이면 그다음), 화살표는 이동할 칸. 표시된 칸은 실행 때 바뀌지 않으니 그 밖에서 행동을 끝내면 피한다.</p>
+    <p>일반 전투는 적을 모두 쓰러뜨리면 승리, 보스전은 보스만 쓰러뜨리면 승리. 일반 적은 기습 폭격에 맞지 않는다. 적을 누르면(마우스는 올리면) 정보가 나온다.</p>
+    <div class="foe-gal">${gal}</div>
+    <div class="tbl-wrap"><table class="ctbl"><thead><tr><th>적</th><th>체력</th><th>행동</th></tr></thead><tbody>${foeRows}</tbody></table></div>
   </section>
   <section><h4>과부하</h4>
     <p>특정 카드를 연사하거나 장력 가속 못총에 맞으면 과부하가 찬다. ${CFG.olMax}이 되면 ${CFG.olReset}으로 줄고 <b>${CFG.freezeCost}코스트 동안 마비</b> — 무엇을 눌러도 코스트만 빠지고 제자리다. 그 사이 기습과 턴 공격은 그대로 들어온다.</p>
@@ -2548,31 +3507,43 @@ function helpHTML() {
     <p><b>오전(낮)</b> 인류 정부군 우세 — 감시망으로 기습 줄이 판 끝까지 뻗어 ${CFG.ambushDay}칸.<br><b>오후(밤)</b> 광신의 시간 — 기습 ${CFG.ambushNight}칸, 핏빛 타일 ${CFG.bloodTiles}칸이 매 루프 깔린다. 그 위에서 공격 카드를 쓰면 피해 ×${CFG.bloodMult}, 과부하 +${CFG.bloodOl}.</p>
   </section>
   <section><h4>카드 (테스트용)</h4>
-    <p>모든 카드는 1코스트. 사거리가 보스 줄(맨 위)에 닿아야 쓸 수 있다. 칸 왼쪽 위 숫자가 보스와의 거리.</p>
+    <p>모든 카드는 1코스트. 쓸 때 <b>상하좌우 중 방향</b>을 고르고, 그 방향 범위에 적(보스전은 보스 줄도)이 있어야 쓸 수 있다. 범위 안의 적은 모두 맞는다.
+    조준한 방향은 청록 실선, 적이 닿는 다른 방향은 점선 — 점선 칸을 누르면(마우스는 올리면) 그쪽으로 조준, 조준한 범위를 누르면 사용. 키보드는 카드 선택 뒤 WASD로 조준.
+    보스전 칸 왼쪽 위 숫자가 보스와의 거리.</p>
     <div class="tbl-wrap"><table class="ctbl"><thead><tr><th>이름</th><th>종류</th><th>사거리</th><th>효과</th></tr></thead><tbody>${cardRows}</tbody></table></div>
   </section>
   <section><h4>보스 턴 공격 패턴</h4>
     <div class="tbl-wrap"><table class="ctbl"><thead><tr><th>패턴</th><th>범위</th><th>효과</th></tr></thead><tbody>${patRows}</tbody></table></div>
   </section>
   <section><h4>이야기</h4>
-    <p>시작하면 프롤로그(챕터 I — 감시탑 아래에서)가 흐르고 전투가 시작된다. 전투 중에는 첫 밤 · 보스 체력 절반 · 첫 과부하 때 짧은 장면이, 전투가 끝나면 승리 · 패배 엔딩이 나온다. 전부 테스트용 임시 문구이고, ⚙에서 끄거나 미리 볼 수 있다.</p>
+    <p><b>일반 전투</b>는 순찰대 등장 장면(적 설명 겸)으로, <b>보스전</b>은 프롤로그(챕터 I — 감시탑 아래에서)로 시작한다. 전투 중에는 첫 밤 · 보스 체력 절반 · 첫 과부하 · 첫 자폭 때 짧은 장면이, 전투가 끝나면 승리 · 패배 엔딩이 나온다. 전부 테스트용 임시 문구이고, ⚙에서 끄거나 미리 볼 수 있다.</p>
   </section>
   <section><h4>조작</h4>
-    <p><b>이동</b> WASD·방향키, 또는 옆 칸 터치 · <b>카드</b> 1–6으로 선택 후 한 번 더(또는 Space), 마우스는 클릭 즉시 사용, 터치는 두 번 · <b>뽑기</b> Q · <b>취소</b> Esc · <b>소리</b> M</p>
+    <p><b>이동</b> WASD·방향키, 또는 옆 칸 터치 · <b>카드</b> 1–6으로 선택 후 한 번 더(또는 Space), 마우스는 클릭 즉시 사용(적이 여러 방향이면 선택 → 칸 클릭), 터치는 두 번 · <b>조준</b> 카드 선택 중 WASD 또는 점선 칸 · <b>뽑기</b> Q · <b>취소</b> Esc · <b>소리</b> M</p>
   </section>
   <section><h4>이미지 슬롯</h4>
-    <p><b>주인공 표정</b> (없는 표정은 비슷한 표정으로 대신)<br>${faces}</p>
+    <p><b>주인공 SD</b>(격자) — ${slot(ASSET.sd.hero, 'hero-sd')}</p>
+    <p><b>주인공 표정</b> (대사 초상화 · 없는 표정은 비슷한 표정으로 대신)<br>${faces}</p>
+    <p><b>일반 적</b> — ${FOE_TYPES.map(k => `${FOES[k].name}: SD ${ASSET.sd[k] ? '<b class="ok">✓</b>' : '<span class="dim">없음</span>'} · 스탠딩 ${ASSET.foeArt[k] ? '<b class="ok">✓</b>' : '<span class="dim">없음</span>'} <code>${FOE_ART_FILES[k]}(-sd)</code>`).join('<br>')}</p>
     <p>상점 주인 — ${slot(ASSET.npc.merchant.idle, 'shopkeeper')} (없으면 실루엣)<br>카드 배경 — ${slot(ASSET.cardBg, 'card-bg')}<br>보스(선택) — ${slot(ASSET.boss, 'boss')}</p>
     <p class="dim">webp · png · jpg를 인식한다. 배경은 투명해야 한다.</p>
   </section>`;
 }
 
 const TEST_ACTIONS = [
-  ['flip', '낮밤 즉시 전환'], ['ol', '내 과부하 +50'], ['bol', '보스 과부하 +50'],
-  ['bhp', '보스 HP −50'], ['heal', 'HP 전부 회복'], ['restart', '전투 재시작'], ['reset', '설정 기본값', 'danger'],
+  ['flip', '낮밤 즉시 전환'], ['ol', '내 과부하 +50'], ['heal', 'HP 전부 회복'],
+  ['kill', '적 하나 처치'], ['bol', '보스 과부하 +50'], ['bhp', '보스 HP −50'],
+  ['restart', '전투 재시작'], ['normal', '일반 전투로 재시작'], ['boss', '보스전으로 재시작'],
+  ['reset', '설정 기본값', 'danger'],
 ];
-const SCENE_PREVIEWS = [['prologue', '프롤로그'], ['night1', '첫 밤'], ['half', '보스 체력 절반'], ['stun1', '보스 첫 과부하'], ['freeze1', '내 첫 과부하'], ['win', '승리 엔딩'], ['lose', '패배 엔딩']];
-function sceneScript(key) { return key === 'prologue' ? PROLOGUE : key === 'win' ? EPILOGUE_WIN : key === 'lose' ? EPILOGUE_LOSE : INTERLUDES[key]; }
+const SCENE_PREVIEWS = [
+  ['patrol', '일반 전투 시작'], ['patrolWin', '일반 전투 승리'], ['patrolLose', '일반 전투 패배'], ['blast1', '첫 자폭'],
+  ['prologue', '프롤로그(보스전)'], ['night1', '첫 밤'], ['half', '보스 체력 절반'], ['stun1', '보스 첫 과부하'], ['freeze1', '내 첫 과부하'],
+  ['win', '보스전 승리'], ['lose', '보스전 패배'],
+];
+function sceneScript(key) {
+  return { prologue: PROLOGUE, win: EPILOGUE_WIN, lose: EPILOGUE_LOSE, patrol: PATROL_INTRO, patrolWin: PATROL_WIN, patrolLose: PATROL_LOSE }[key] || INTERLUDES[key];
+}
 function previewScene(key) {
   if (S.busy) { toast('행동 처리 중이에요 — 잠시 뒤 다시'); return; }
   closeSheets();
@@ -2606,19 +3577,29 @@ function setCfg(k, v) {
   if (k === 'phaseCost') buildClock();
   handSig = '';
   buildCfgSheet();
+  renderIntro();
   render();
 }
 function testAction(a) {
   if (a === 'restart') { restart(); return; }
+  if (a === 'normal' || a === 'boss') { restart(a); return; }
   if (a === 'reset') {
     Object.assign(CFG, DEFAULTS); saveCfg();
-    buildClock(); buildCfgSheet(); handSig = ''; render();
-    toast('설정을 기본값으로 되돌렸어요 · HP는 재시작 때 적용', 'ok');
+    buildClock(); buildCfgSheet(); renderIntro(); handSig = ''; render();
+    toast('설정을 기본값으로 되돌렸어요 · HP·적 수는 재시작 때 적용', 'ok');
     return;
   }
   if (!S.started || S.over) { toast('전투 중에만 쓸 수 있어요'); return; }
   if (S.busy) { toast('행동 처리 중이에요 — 잠시 뒤 다시'); return; }
+  if ((a === 'bol' || a === 'bhp') && S.mode !== 'boss') { toast('보스전에서만 쓸 수 있어요'); return; }
   if (a === 'flip') { closeSheets(); run(async () => { S.lastSwitch = S.total; await switchPhase(); }); return; }
+  if (a === 'kill') {
+    const f = liveFoes()[0];
+    if (!f) { toast('남은 적이 없어요'); return; }
+    closeSheets();
+    run(async () => { await foeDown(f); if (!S.over) await checkWin(); if (!S.over) await flushInterludes(); });
+    return;
+  }
   if (a === 'ol') addOverload(50, '테스트');
   if (a === 'bol') addBossOl(50);
   if (a === 'heal') S.hp = S.maxHp;
@@ -2646,9 +3627,9 @@ function closeSheets() {
 buildBoard();
 buildClock();
 bindInput();
-newBattle();
-if (location.hash === '#debug') window.I12 = { S, CFG, CARDS, render, act, restart };   // 개발용: 상태 확인·조작
-$('#introRules').innerHTML = rulesHTML();
+newBattle('normal');
+if (location.hash === '#debug') window.I12 = { S, CFG, CARDS, FOES, render, act, restart, startStory, planFoe, liveFoes, validDirs, aimFor };   // 개발용: 상태 확인·조작
+renderIntro();
 buildScene();
 render();
 loadAssets();
