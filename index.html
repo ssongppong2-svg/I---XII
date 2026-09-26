@@ -444,14 +444,22 @@ svg{display:block}
 .sc-tools button:hover{color:var(--bone);border-color:var(--brass-lo)}
 .sc-tools button.on{color:var(--brass-hi);border-color:var(--brass);background:rgba(58,46,22,.9)}
 .sc-stage{position:relative;z-index:2;flex:1;min-height:0}
-.pt{position:absolute;opacity:0;transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.3,1),filter .3s ease;pointer-events:none}
+.pt{position:absolute;opacity:0;transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.3,1),filter .3s ease,left .45s cubic-bezier(.2,.8,.3,1);pointer-events:none}
 .pt.in{opacity:1}
 .pt.off{filter:brightness(.42) saturate(.55)}
 .pt-hero{z-index:1;left:-3%;bottom:150px;height:min(42vh,420px);max-width:70%;aspect-ratio:100/130;transform:translateX(-40px)}
 .pt-hero.img{left:38%;top:20%;bottom:auto;height:100%;max-width:none;aspect-ratio:2/3;translate:-50% 0}
 .pt-hero.img::before{display:none}
 .pt-hero.img .pt-art img{object-position:center top;filter:drop-shadow(0 10px 24px rgba(0,0,0,.6))}
-.pt-hero.swap .pt-art{animation:faceSwap .28s ease-out}
+.pt-hero.swap .pt-art,.pt-merchant.swap .pt-art{animation:faceSwap .28s ease-out}
+.pt-merchant{z-index:1;left:72%;top:18%;height:100%;aspect-ratio:2/3;translate:-50% 0;transform:translateX(40px)}
+.pt-merchant.in{transform:none}
+.pt-merchant.on{transform:translateY(-6px) scale(1.02)}
+.pt-merchant .pt-art svg,.pt-merchant .pt-art img{object-position:center top}
+.pt-merchant .pt-art img{filter:drop-shadow(0 10px 24px rgba(0,0,0,.6))}
+.npc-svg .m-eye{filter:drop-shadow(0 0 3px #F0B44E)}
+.pt-hero.on,.pt-merchant.on{z-index:2}
+.scene.duo .pt-hero.img{left:30%}
 @keyframes faceSwap{from{opacity:.6;transform:translateY(5px)}}
 .pt-hero.in{transform:none}
 .pt-hero.on{transform:translateY(-6px) scale(1.02)}
@@ -482,9 +490,23 @@ svg{display:block}
 .dbox::after{right:7px;top:7px;border-left:0;border-bottom:0}
 .dname{position:absolute;left:16px;top:-16px;padding:6px 16px;border-radius:3px;background:linear-gradient(180deg,#EDC983,#B88D42);color:#1B150B;font:900 14px/1.2 var(--f-serif);letter-spacing:.05em;box-shadow:0 4px 12px rgba(0,0,0,.55)}
 .dname.boss{background:linear-gradient(180deg,#6A7582,#39414C);color:#EAF4FF}
+.dname.merchant{background:linear-gradient(180deg,#9A6A3E,#5E3D20);color:#FBE9D2}
+.dname.voice{background:linear-gradient(180deg,#9A1E34,#5A101D);color:#FFE3E8}
 .dtext{margin:0;min-height:3.6em;font:500 16px/1.8 var(--f-serif);color:var(--bone);white-space:pre-wrap}
 .dtext.nar{color:#C9C0D3}
 .dtext.boss{color:#DCE6F2;letter-spacing:.02em}
+.dtext.merchant{color:#F1E4D2}
+.dtext.voice{color:#F2BCC6;font-style:italic}
+.sc-place{position:absolute;left:0;top:46px;z-index:6;padding:7px 14px 7px 10px;border-left:2px solid var(--brass);background:linear-gradient(90deg,rgba(12,10,16,.92),rgba(12,10,16,0));font:700 12px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--bone);pointer-events:none;animation:placeIn 3s ease forwards}
+@keyframes placeIn{0%{opacity:0;transform:translateX(-10px)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+.scene[data-tint="warm"]{background:radial-gradient(120% 75% at 50% 30%,rgba(70,42,16,.5),rgba(10,6,4,.92) 72%),rgba(12,8,4,.38)}
+.scene[data-tint="cold"]{background:radial-gradient(120% 75% at 50% 18%,rgba(46,78,110,.46),rgba(4,8,14,.92) 72%),rgba(4,8,14,.36)}
+.scene[data-tint="blood"]{background:radial-gradient(120% 75% at 50% 42%,rgba(120,12,34,.52),rgba(12,2,6,.94) 72%),rgba(22,2,8,.4)}
+.sc-wrap.sc-shake{animation:shM .42s}
+.scene.sc-flash::after,.scene.sc-red::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;animation:scFlash .75s ease-out forwards}
+.scene.sc-flash::after{background:radial-gradient(circle at 50% 28%,rgba(236,246,255,.95),rgba(200,226,255,.35) 60%,transparent)}
+.scene.sc-red::after{background:radial-gradient(circle at 50% 50%,rgba(255,40,64,.55),rgba(120,0,24,.42) 72%)}
+@keyframes scFlash{from{opacity:1}to{opacity:0}}
 .dnext{position:absolute;right:18px;bottom:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--brass-hi);opacity:0;animation:nextBob .9s ease-in-out infinite}
 .dbox.done .dnext{opacity:1}
 .dbox.choosing .dnext{opacity:0}
@@ -502,6 +524,8 @@ svg{display:block}
 .lg-item.nar p{color:#C9C0D3}
 .lg-item.pick b{color:var(--aether)}
 .lg-item.pick p{color:var(--aether)}
+.lg-item.voice b,.lg-item.voice p{color:#F2BCC6}
+.lg-item.voice p{font-style:italic}
 /* 전투 중 보스 말풍선 */
 .bark{position:absolute;left:57%;top:50%;translate:0 -50%;z-index:9;max-width:41%;padding:6px 10px;border-radius:4px;background:rgba(12,14,18,.96);border:1px solid #7C8896;color:#E8F2FF;font:600 12px/1.35 var(--f-ui);pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.5);animation:barkIn 2.3s ease forwards}
 .bark::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:0;border-right-color:#7C8896}
@@ -657,7 +681,32 @@ svg{display:block}
         <button type="button" id="scAutoBtn">자동</button>
         <button type="button" id="scSkipBtn">건너뛰기 ▸▸</button>
       </div>
+      <div class="sc-place" id="scPlace" hidden></div>
       <div class="pt pt-hero" id="ptHero"><div class="pt-art" id="ptHeroArt"></div></div>
+      <div class="pt pt-merchant" id="ptMerchant"><div class="pt-art" id="ptMerchantArt">
+        <svg class="npc-svg" viewBox="0 0 200 300" aria-hidden="true">
+          <!-- 상점 주인 이미지가 오기 전까지 쓰는 그림자 실루엣 (키 크고 늘씬한 늑대 수인 · 호박색 눈) -->
+          <defs>
+            <radialGradient id="mGlow" cx=".5" cy=".22" r=".5"><stop offset="0" stop-color="#F2D38F" stop-opacity=".15"/><stop offset="1" stop-color="#F2D38F" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect width="200" height="300" fill="url(#mGlow)"/>
+          <g fill="#0F0D12" stroke="rgba(242,211,143,.42)" stroke-width="1.3" stroke-linejoin="round">
+            <path d="M132 170 C168 166 186 198 178 232 C172 254 154 262 144 254 C156 244 162 226 154 210 C148 198 138 192 128 190 Z"/>
+            <path d="M70 70 C84 62 116 62 130 70 L150 296 L50 296 Z"/>
+            <path d="M70 76 C56 104 54 150 62 184 L74 182 C68 150 70 110 80 86 Z"/>
+            <path d="M128 76 C146 92 146 70 124 56 L116 64 C128 72 130 82 120 84 Z"/>
+            <path d="M86 34 C86 24 114 24 114 34 L117 52 C113 64 87 64 83 52 Z"/>
+            <path d="M86 26 L80 2 L96 20 Z"/>
+            <path d="M114 26 L122 2 L104 20 Z"/>
+            <ellipse cx="100" cy="30" rx="30" ry="6"/>
+            <path d="M86 30 L88 12 C95 9 105 9 112 12 L114 30 Z"/>
+          </g>
+          <path d="M97 70 L99 296" stroke="#5A1E28" stroke-width="5" opacity=".8"/>
+          <circle cx="107" cy="21" r="3.6" fill="none" stroke="#B8903E" stroke-width="1.4"/>
+          <ellipse class="m-eye" cx="94" cy="42" rx="2.4" ry="1.4" fill="#F0B44E"/>
+          <ellipse class="m-eye" cx="106" cy="42" rx="2.4" ry="1.4" fill="#F0B44E"/>
+        </svg>
+      </div></div>
       <div class="sc-stage">
         <div class="pt pt-boss" id="ptBoss"><div class="mon"><div class="mon-screen" id="ptBossArt"></div><div class="mon-bar"><i class="rec"></i><span>감시망 방송 · 집행 병기</span></div></div></div>
         <div class="sc-choices" id="scChoices" hidden></div>
@@ -701,6 +750,8 @@ svg{display:block}
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
       <div class="sheet-head"><h3 id="cfgTitle">테스트 설정</h3><button class="icon-btn x" type="button" data-close aria-label="닫기">×</button></div>
       <div class="cfg-actions" id="cfgActions"></div>
+      <h4 class="cfg-g">장면 미리보기</h4>
+      <div class="cfg-actions" id="cfgScenes"></div>
       <p class="cfg-note">숫자는 바로 저장돼요. 루프·공격 관련은 다음 루프부터, <b>재시작</b> 표시는 전투 재시작 때 적용됩니다.</p>
       <div id="cfgBody"></div>
     </div>
@@ -768,6 +819,7 @@ const DEFAULTS = {
   playerHp: 3, bossHp: 150,
   startPhase: 'day',
   god: false,
+  interludes: true,     // 전투 중(첫 밤 · 보스 절반 · 첫 과부하) · 끝난 뒤(승패 엔딩) 대사 장면
 };
 const LIMITS = {
   costPerLoop: [3, 6], phaseCost: [10, 60], bossAmbushCost: [0, 4], bossAttackCost: [0, 4],
@@ -786,6 +838,7 @@ function sanitizeCfg(c) {
   if (!['pay', 'after'].includes(c.atkTiming)) c.atkTiming = DEFAULTS.atkTiming;
   if (!['day', 'night'].includes(c.startPhase)) c.startPhase = DEFAULTS.startPhase;
   c.god = c.god === true;
+  c.interludes = c.interludes !== false;
   c.olMax = DEFAULTS.olMax; c.olReset = DEFAULTS.olReset;
   return c;
 }
@@ -817,6 +870,7 @@ const CFG_UI = [
   { k: 'playerHp', label: '내 HP', unit: '칸', restart: true },
   { k: 'bossHp', label: '보스 HP', unit: '', step: 10, restart: true },
   { k: 'god', label: '무적 모드 (HP가 줄지 않음)', type: 'toggle' },
+  { k: 'interludes', label: '전투 중 · 끝난 뒤 대사 장면', type: 'toggle' },
 ];
 
 /* ═════════════════════════════════════════════
@@ -972,6 +1026,7 @@ function newBattle() {
     sel: null, hover: null,
     busy: false, over: false, started: false,
     stats: { dealt: 0, taken: 0, bloodHits: 0, freezes: 0, stuns: 0, dodged: 0, cards: 0 },
+    seen: new Set(), pendingScenes: [],
     logs: [],
   });
   for (const [id, def] of Object.entries(CARDS)) for (let i = 0; i < def.n; i++) S.deck.push({ uid: ++S.uid, id });
@@ -1093,7 +1148,8 @@ async function doAct(a) {
     await wait(160);
   }
   if (last && CFG.atkTiming === 'after') { await fireAttack(bossDown); if (S.over) return; }
-  // ④ 낮밤 전환 → ⑤ 루프 종료
+  // ④ 전투 중 대사 장면(첫 과부하 등) → 낮밤 전환 → ⑤ 루프 종료
+  await flushInterludes();
   await checkPhase();
   if (last) { await endLoop(); await startLoop(); }
 }
@@ -1170,6 +1226,7 @@ function addOverload(n, src) {
     S.lastAct = ''; S.chain = 0;
     log(`과부하 ${CFG.olMax}! 시스템 정지 — ${CFG.freezeCost}코스트 동안 마비`, 'volt');
     FX.freeze(); bark('freeze');
+    queueInterlude('freeze1');
   }
 }
 function addBossOl(n) {
@@ -1181,6 +1238,7 @@ function addBossOl(n) {
     S.stats.stuns++;
     log(`보스 과부하! ${CFG.bossStunCost}코스트 동안 기습·턴 공격 정지`, 'ok');
     FX.stun(); bark('stun');
+    queueInterlude('stun1');
   }
 }
 
@@ -1241,6 +1299,7 @@ async function playCard(a) {
     render();
     if (S.boss.hp <= 0) { await victory(); return; }
     if (!S.lowBarked && S.boss.hp <= S.boss.max * 0.3) { S.lowBarked = true; bark('low'); }
+    if (S.boss.hp <= S.boss.max * 0.5) queueInterlude('half');
     if (def.bossOl) addBossOl(def.bossOl);
     const ol = (def.ol || 0) + (def.rapid ? def.rapid * chain : 0) + (onBlood ? CFG.bloodOl : 0);
     if (ol) addOverload(ol, onBlood ? '핏빛 타일 반동' : def.rapid && chain ? `${def.name} ${chain + 1}연사` : def.name);
@@ -1273,6 +1332,8 @@ async function switchPhase() {
   log(S.phase === 'night' ? '오후 12:00 — 광신의 시간. 핏빛 타일이 깔렸다' : '오전 12:00 — 감시망 가동. 기습이 판 끝까지 뻗는다', S.phase === 'night' ? 'blood' : 'day');
   SFX.chime(); render(); bark(S.phase);
   await FX.phaseBanner(S.phase);
+  if (S.phase === 'night') queueInterlude('night1');
+  await flushInterludes();
 }
 
 async function endLoop() { S.amb = null; S.atk = null; render(); await wait(200); }
@@ -1281,12 +1342,14 @@ async function victory() {
   S.over = true; S.won = true; S.sel = null; S.hover = null;
   SFX.win(); render(); bark('win');
   await FX.bossDown();
+  if (CFG.interludes) await playSceneAsync(EPILOGUE_WIN);
   showResult(true);
 }
 async function defeat() {
   S.over = true; S.sel = null; S.hover = null;
   SFX.lose(); render(); bark('lose');
   await FX.playerDown();
+  if (CFG.interludes) await playSceneAsync(EPILOGUE_LOSE);
   showResult(false);
 }
 
@@ -1305,8 +1368,11 @@ const FACES = {
   angry:     { file: 'hero-angry',     label: '분노' },
 };
 const FACE_FALLBACK = { wounded: ['pain', 'overload'], pain: ['overload'] };
+// 조연 초상화 (세로 2:3, 배경 투명). 없으면 실루엣
+const NPC_FACES = { merchant: { idle: { file: 'shopkeeper', label: '기본' }, hmph: { file: 'shopkeeper-hmph', label: '흥' } } };
 const ASSET_SLOTS = { cardBg: 'assets/card-bg', boss: 'assets/boss' };
-const ASSET = { face: {}, cardBg: null, boss: null };
+const ASSET = { face: {}, npc: { merchant: {} }, cardBg: null, boss: null };
+function npcUrl(who, face) { const set = ASSET.npc[who] || {}; return set[face] || set.idle || null; }
 function faceUrl(face) {
   for (const f of [face, ...(FACE_FALLBACK[face] || []), 'idle']) if (ASSET.face[f]) return ASSET.face[f];
   return null;
@@ -1328,9 +1394,14 @@ function probe(base) {
 }
 async function loadAssets() {
   const faceKeys = Object.keys(FACES);
+  const npcJobs = [];
+  for (const [who, faces] of Object.entries(NPC_FACES)) for (const [face, f] of Object.entries(faces)) {
+    npcJobs.push(probe('assets/' + f.file).then(url => { if (url) ASSET.npc[who][face] = url; }));
+  }
   const [faceUrls, cardBg, boss] = await Promise.all([
     Promise.all(faceKeys.map(k => probe('assets/' + FACES[k].file))),
     probe(ASSET_SLOTS.cardBg), probe(ASSET_SLOTS.boss),
+    Promise.all(npcJobs),
   ]);
   faceKeys.forEach((k, i) => { if (faceUrls[i]) ASSET.face[k] = faceUrls[i]; });
   ASSET.cardBg = cardBg; ASSET.boss = boss;
@@ -1342,8 +1413,9 @@ async function loadAssets() {
     $('#ptHeroArt').innerHTML = '<img id="ptHeroImg" alt="" draggable="false">';
     $('#ptHero').classList.add('img');
     renderPose();
-    setPortrait(SC.face);
+    setPortrait('hero', SC.face);
   }
+  if (ASSET.npc.merchant.idle) { $('#ptMerchantArt').innerHTML = '<img id="ptMerchantImg" alt="" draggable="false">'; setPortrait('merchant', 'idle'); }
   if (cardBg) { document.documentElement.style.setProperty('--card-art', `url("${cardBg}")`); $('#app').classList.add('has-card-art'); }
   if (boss) { $('#bossArt').innerHTML = img(boss); $('#ptBossArt').innerHTML = img(boss); }
 }
@@ -1907,22 +1979,76 @@ const SFX = (() => {
    ═════════════════════════════════════════════ */
 // 화자 이름표. 이름과 대사는 전부 테스트용 임시 문구
 const SPEAKERS = {
-  nar:  { name: '' },
-  hero: { name: '기계 신' },
-  boss: { name: '집행 병기 「못박이」' },
+  nar:      { name: '' },
+  hero:     { name: '기계 신' },
+  boss:     { name: '집행 병기 「못박이」' },
+  merchant: { name: '상점 주인' },
+  voice:    { name: '신도들의 속삭임' },
 };
+const PORTRAITS = { hero: '#ptHero', merchant: '#ptMerchant', boss: '#ptBoss' };
 // 대사 = { who, face?, text } · 선택지 = { choice: [{ label, then: [...] }] } · 챕터 카드 = { card: { num, title } }
-// face: idle · aim · overload · smug · surprised · wounded · pain · angry (FACES 참고)
+// 연출(한 단계에 함께 써도 됨) = { tint: 'warm' | 'cold' | 'blood' | '' } · { place: '장소 자막' } · { fx: 'shake' | 'flash' | 'red' | 'tick' } · { exit: 'merchant' }
+// face: 주인공 idle · aim · overload · smug · surprised · wounded · pain · angry (FACES) / 상점 주인 idle · hmph (NPC_FACES)
 const PROLOGUE = [
   { card: { num: 'I', title: '감시탑 아래에서' } },
-  { who: 'nar',  text: '오전 12시 정각. 감시탑의 탐조등이 무너진 성당을 천천히 훑는다.' },
-  { who: 'nar',  text: '핏자국이 말라붙은 제단 아래, 멈춰 있던 톱니 하나가 다시 돌기 시작했다.' },
-  { who: 'hero', face: 'surprised', text: '……여기가 어디지. 기도 소리가 하나도 들리지 않아.' },
+  // ── 깨어남
+  { tint: 'warm', place: '무너진 성당 · 오전 11:48' },
+  { who: 'nar', text: '종소리는 오래전에 멎었다. 깨진 스테인드글라스 사이로 먼지가 느리게 가라앉는다.' },
+  { who: 'nar', text: '제단 위, 녹슨 시계 하나가 열두 시를 몇 분 앞두고 멈춰 있다.' },
+  { who: 'voice', text: '……깨어나소서.' },
+  { who: 'voice', text: '우리의 톱니여, 우리의 시간이여. 부디 깨어나소서.' },
+  { fx: 'tick' },
+  { who: 'nar', text: '째깍. 멈춰 있던 초침이 한 칸 움직였다.' },
+  { who: 'hero', face: 'surprised', text: '……!' },
+  { who: 'hero', text: '여기가… 어디지. 방금 누가 날 불렀는데.' },
+  { who: 'nar', text: '주위를 둘러봐도, 바닥에 쓰러진 것은 오래전에 식어 버린 사람들뿐이다.' },
+  { who: 'hero', face: 'pain', text: '이 사람들… 다 같은 옷을 입고 있어. 가슴마다 톱니 문양이….' },
+  { who: 'voice', text: '신이시여, 우리를 잊지 마소서.' },
+  { fx: 'shake' },
+  { who: 'hero', face: 'overload', text: '윽…! 머릿속에서 기도 소리가 한꺼번에 울려…!' },
+  // ── 상점 주인
+  { who: 'nar', text: '그때, 무너진 기둥 너머에서 무언가를 뒤적이는 소리가 났다.' },
+  { who: 'merchant', text: '……뭐야. 여기 아직 움직이는 게 있었어?' },
+  { who: 'hero', face: 'angry', text: '누구야, 넌.' },
+  { who: 'merchant', face: 'hmph', text: '흥. 보면 몰라? 장사꾼이지. 폐허에서 쓸 만한 걸 줍는.' },
+  { who: 'merchant', text: '그 옷에 그 톱니… 너, 설마 이 교단이 떠받들던 그거야? 기계 신?' },
+  { who: 'hero', text: '기계… 신? 나는 아무것도 기억이 안 나.' },
+  { who: 'merchant', text: '그래? 잘됐네. 기억해 봤자 기분만 나빠질 테니까.' },
+  { who: 'nar', text: '늑대 수인은 귀찮다는 듯 모자를 눌러쓰면서도, 쓰러진 신도들의 눈을 하나씩 감겨 주었다.' },
+  { who: 'merchant', text: '어제 오전에 인류 정부군이 왔어. 감시탑이 이 성당을 이단 거점으로 찍었거든.' },
+  { who: 'merchant', text: '낮에는 저 탑이 도시 전체를 봐. 탐조등에 걸리면 줄 단위로 폭격이 떨어지지.' },
+  { who: 'merchant', text: '밤이 되면… 뭐, 너라면 금방 알게 될 거야. 여기 흘린 피가 전부 너한테 반응할 테니까.' },
+  { choice: [
+    { label: '밤이 되면 어떻게 되는데?', then: [
+      { who: 'merchant', text: '핏자국 위에서 싸우면 네 힘이 세 배로 불어나. 대신 네 몸도 그만큼 달아오르고.' },
+      { who: 'merchant', text: '과부하가 끝까지 차면 한동안 꼼짝도 못 해. 그때 얻어맞으면… 뭐, 알아서 해.' },
+      { who: 'hero', face: 'pain', text: '친절한 건지 겁주는 건지 모르겠네.' },
+      { who: 'merchant', face: 'hmph', text: '흥. 둘 다.' },
+    ] },
+    { label: '넌 왜 도망 안 쳤어?', then: [
+      { who: 'merchant', text: '장사꾼은 사람 몰리는 데를 따라가는 법이거든. 전쟁터든, 장례식이든.' },
+      { who: 'hero', face: 'smug', text: '그럼 나한테도 팔 게 있다는 거네?' },
+      { who: 'merchant', face: 'hmph', text: '……눈치는 빠르네.' },
+    ] },
+  ] },
+  { who: 'merchant', text: '이거 받아. 이 교단 사람들이 쓰던 성물 카드야. 기도문을 새긴 양피지지.' },
+  { who: 'nar', text: '낡은 양피지 몇 장이 손에 쥐어진다. 기름 냄새와, 희미한 피 냄새가 났다.' },
+  { who: 'hero', face: 'smug', text: '공짜야?' },
+  { who: 'merchant', text: '외상. 살아남으면 받으러 갈게. 죽으면… 그냥 내가 손해 보고.' },
+  // ── 감시망
+  { tint: 'cold', place: '성당 앞 광장 · 오전 11:59', fx: 'flash' },
+  { who: 'nar', text: '새하얀 빛이 성당 안을 가로질렀다. 감시탑의 탐조등이다.' },
   { who: 'boss', text: '감시망에 미등록 개체 포착. 분류 — 이단의 우상.' },
-  { who: 'hero', face: 'overload', text: '윽… 머릿속에서 톱니가 비명을 질러. 저 목소리, 뭐야…!' },
+  { who: 'merchant', text: '……귀찮게 됐네. 저건 「못박이」. 정부군 집행 병기야.' },
+  { who: 'merchant', text: '오전엔 저 녀석 감시망이 판 끝까지 닿아. 빨간 줄이 보이면 두 번째 행동을 마치기 전에 빠져.' },
+  { who: 'merchant', text: '주황색은 턴 공격이야. 코스트를 다 쓸 때 날아오니까, 마지막 행동은 주황 밖에서 끝내.' },
+  { who: 'merchant', face: 'hmph', text: '난 빠질게. 장사꾼은 싸움에 안 끼거든.' },
+  { exit: 'merchant' },
+  { who: 'hero', face: 'surprised', text: '잠깐, 두고 가는 거야?!' },
+  { who: 'nar', text: '대답 대신, 발치로 작은 병 하나가 굴러왔다. 냉각 성수다. …귀찮아해도, 친절하긴 한 모양이다.' },
   { who: 'boss', text: '장력 가속 못총, 장전 완료. 오전 규정에 따라 즉시 처분한다.' },
   { who: 'hero', face: 'angry', text: '처분? 방금 깨어난 신한테 하는 인사치고는 꽤 무례하네.' },
-  { who: 'nar',  text: '바닥의 핏자국이 희미하게 맥동한다. 밤이 오면, 이 피는 다시 끓어오를 것이다.' },
+  { who: 'voice', text: '신이시여… 저들을 멈추소서.' },
   { choice: [
     { label: '총을 겨눈다', then: [
       { who: 'hero', face: 'aim', text: '좋아. 너희가 부순 것들, 하나씩 돌려받을게.' },
@@ -1934,6 +2060,61 @@ const PROLOGUE = [
     ] },
   ] },
   { who: 'boss', text: '교전 개시. 기습 좌표, 송신.' },
+];
+// 전투 중 짧은 장면 — 전투마다 한 번씩
+const INTERLUDES = {
+  night1: [
+    { tint: 'blood', place: '성당 앞 광장 · 오후 12:00' },
+    { who: 'nar', text: '종이 울리자, 광장 바닥의 핏자국이 일제히 붉게 끓어올랐다.' },
+    { who: 'voice', text: '신이시여, 우리의 피를 쓰소서.' },
+    { who: 'hero', face: 'pain', text: '…뜨거워. 이 피, 전부 나를 부르고 있어.' },
+    { who: 'boss', text: '야간 규정 전환. 핏자국 반응 감지. 우상의 출력 상승을 경계한다.' },
+  ],
+  half: [
+    { tint: 'cold' },
+    { who: 'boss', text: '외장 손상 50퍼센트 초과. 처분 우선순위 상향.' },
+    { who: 'hero', face: 'smug', text: '이제야 좀 진지해졌네?' },
+    { who: 'boss', text: '이단의 우상은 반드시 멈춘다. 그것이 인류의 시간이다.' },
+  ],
+  stun1: [
+    { tint: 'cold', fx: 'flash' },
+    { who: 'boss', text: '회로 과부하— 재부팅— 재, 재부팅—' },
+    { who: 'hero', face: 'aim', text: '지금이야. 저 녀석 톱니가 멈췄어.' },
+  ],
+  freeze1: [
+    { tint: 'blood', fx: 'red' },
+    { who: 'hero', face: 'overload', text: '으… 몸이… 안 움직여…!' },
+    { who: 'voice', text: '신이시여, 너무 서두르지 마소서. 톱니가 타 버립니다.' },
+    { who: 'boss', text: '이단 우상, 기능 정지 확인. 처분하라.' },
+  ],
+};
+const EPILOGUE_WIN = [
+  { tint: 'warm', place: '성당 앞 광장 · 교전 종료' },
+  { who: 'nar', text: '못박이의 감시 렌즈가 몇 번 깜빡이다가, 천천히 빛을 잃었다.' },
+  { who: 'boss', text: '처분… 실패… 기록을… 상부에… 송신……' },
+  { who: 'boss', text: '대상… 기계 신… 재가동 횟수… 열둘……' },
+  { who: 'hero', face: 'surprised', text: '…열둘? 무슨 소리야. 나는 방금 처음 깨어났는데.' },
+  { fx: 'shake' },
+  { who: 'nar', text: '대답은 없었다. 강철 몸체가 무너져 내리고, 광장에 정적이 내려앉았다.' },
+  { who: 'merchant', text: '……살아 있네. 흥, 외상값은 받을 수 있겠어.' },
+  { who: 'hero', face: 'smug', text: '이 녀석 부품, 제법 값 나가겠지?' },
+  { who: 'merchant', face: 'hmph', text: '…너, 신치고는 꽤 장사꾼 체질이다.' },
+  { who: 'voice', text: '신이시여… 다음 시간으로 나아가소서.' },
+  { fx: 'tick' },
+  { who: 'nar', text: '제단 위의 시계가 다시 째깍거린다. 시침은 이제 「I」을 가리키고 있었다.' },
+  { card: { num: 'II', title: '다음 이야기 — 준비 중' } },
+];
+const EPILOGUE_LOSE = [
+  { tint: 'blood', fx: 'red' },
+  { who: 'nar', text: '못이 몸을 꿰뚫고, 시야가 천천히 기울어진다.' },
+  { who: 'hero', face: 'wounded', text: '여기서… 끝이라고…?' },
+  { who: 'boss', text: '처분 완료. 기록을 삭제한다.' },
+  { who: 'voice', text: '아니요, 신이시여. 시간은 아직 당신의 것입니다.' },
+  { fx: 'tick' },
+  { who: 'nar', text: '째깍, 째깍. 시곗바늘이 거꾸로 돌기 시작했다.' },
+  { tint: 'warm', fx: 'flash', place: '무너진 성당 · 오전 11:48' },
+  { who: 'nar', text: '……눈을 뜨자 녹슨 제단 위였다. 열두 시를 몇 분 앞둔 시계가 다시 멈춰 있다.' },
+  { who: 'hero', face: 'pain', text: '…또, 여기야.' },
 ];
 // 전투 중 보스 말풍선
 const BARKS = {
@@ -1948,7 +2129,7 @@ const BARKS = {
   lose:   ['처분 완료. 기록을 삭제한다.'],
 };
 
-const SC = { queue: [], full: '', shown: 0, who: 'nar', face: 'idle', typing: false, choosing: null, carding: false, auto: false, log: [], onEnd: null, t: 0, autoT: 0, cardT: 0 };
+const SC = { queue: [], full: '', shown: 0, who: 'nar', face: 'idle', typing: false, choosing: null, carding: false, auto: false, log: [], onEnd: null, t: 0, autoT: 0, cardT: 0, placeT: 0 };
 
 function buildScene() {
   // 이미지가 없을 때의 초상화: 보드 SD 그림 확대 · 보스 그림의 감시 눈 확대
@@ -1963,8 +2144,12 @@ function buildScene() {
 
 function playScene(script, onEnd) {
   Object.assign(SC, { queue: script.slice(), log: [], onEnd, choosing: null, carding: false, typing: false });
-  setPortrait('idle');
-  for (const sel of ['#ptHero', '#ptBoss']) $(sel).classList.remove('in', 'on', 'off', 'swap');   // 그림 모드(img)는 유지
+  setPortrait('hero', 'idle');
+  setPortrait('merchant', 'idle');
+  for (const sel of Object.values(PORTRAITS)) $(sel).classList.remove('in', 'on', 'off', 'swap');   // 그림 모드(img)는 유지
+  $('#scene').dataset.tint = '';
+  $('#scene').classList.remove('duo');
+  $('#scPlace').hidden = true;
   $('#dname').hidden = true;
   $('#dtext').textContent = '';
   $('#dbox').className = 'dbox';
@@ -1978,41 +2163,77 @@ function playScene(script, onEnd) {
 
 function sceneNext() {
   clearTimeout(SC.autoT);
-  const step = SC.queue.shift();
-  if (!step) { endScene(); return; }
-  if (step.card) { showCard(step.card); return; }
-  if (step.choice) { showChoice(step.choice); return; }
-  showLine(step);
+  for (;;) {
+    const step = SC.queue.shift();
+    if (!step) { endScene(); return; }
+    // 연출 단계는 곧바로 적용하고 다음으로 (대사 · 선택지 · 챕터 카드에서 멈춘다)
+    if (step.tint !== undefined) $('#scene').dataset.tint = step.tint;
+    if (step.place) showPlace(step.place);
+    if (step.fx) sceneFx(step.fx);
+    if (step.exit) { $(PORTRAITS[step.exit]).classList.remove('in', 'on'); updateDuo(); }
+    if (step.card) { showCard(step.card); return; }
+    if (step.choice) { showChoice(step.choice); return; }
+    if (step.text) { showLine(step); return; }
+  }
+}
+
+function playSceneAsync(script) { return new Promise(res => playScene(script, res)); }
+
+function showPlace(text) {
+  const el = $('#scPlace');
+  el.textContent = text;
+  el.hidden = false;
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  clearTimeout(SC.placeT);
+  SC.placeT = setTimeout(() => { el.hidden = true; }, 3000);
+}
+function sceneFx(kind) {
+  if (kind === 'shake') { FX.flash($('#scene .sc-wrap'), 'sc-shake', 480); SFX.boom(); }
+  if (kind === 'flash') { FX.flash($('#scene'), 'sc-flash', 760); SFX.warn(); }
+  if (kind === 'red')   { FX.flash($('#scene'), 'sc-red', 820); SFX.hurt(); }
+  if (kind === 'tick')  SFX.arm();
+}
+function updateDuo() { $('#scene').classList.toggle('duo', $('#ptMerchant').classList.contains('in')); }
+
+// 전투 중 대사 장면: 조건이 맞으면 대기열에 넣고, 행동이 끝난 뒤 안전한 시점에 재생
+function queueInterlude(key) {
+  if (!CFG.interludes || !S.started || S.seen.has(key) || !INTERLUDES[key]) return;
+  S.seen.add(key);
+  S.pendingScenes.push(key);
+}
+async function flushInterludes() {
+  while (S.pendingScenes.length && !S.over) await playSceneAsync(INTERLUDES[S.pendingScenes.shift()]);
 }
 
 function showLine(step) {
   const who = SPEAKERS[step.who] ? step.who : 'nar';
   const name = SPEAKERS[who].name;
-  for (const [sel, key] of [['#ptHero', 'hero'], ['#ptBoss', 'boss']]) {
+  for (const [key, sel] of Object.entries(PORTRAITS)) {
     const el = $(sel);
     if (who === key) el.classList.add('in');                  // 처음 말할 때 등장
     el.classList.toggle('on', who === key);
     el.classList.toggle('off', who !== key);
   }
+  updateDuo();
   const nm = $('#dname');
   nm.textContent = name;
   nm.hidden = !name;
-  nm.className = 'dname' + (who === 'boss' ? ' boss' : '');
+  nm.className = 'dname' + (who === 'hero' || who === 'nar' ? '' : ' ' + who);
   $('#dtext').className = 'dtext' + (who === 'hero' ? '' : ' ' + who);
-  if (who === 'hero') setPortrait(step.face || 'idle');
+  if (who === 'hero' || who === 'merchant') setPortrait(who, step.face || 'idle');
   SC.log.push({ who, name, text: step.text });
   SC.who = who;
   typeText(step.text);
 }
 
-function setPortrait(face) {
-  SC.face = face;
-  const img = $('#ptHeroImg');
+function setPortrait(who, face) {
+  if (who === 'hero') SC.face = face;
+  const img = $(who === 'hero' ? '#ptHeroImg' : '#ptMerchantImg');
   if (!img) return;
-  const url = faceUrl(face);
+  const url = who === 'hero' ? faceUrl(face) : npcUrl(who, face);
   if (url && img.getAttribute('src') !== url) {
     img.setAttribute('src', url);
-    FX.flash($('#ptHero'), 'swap', 280);
+    FX.flash($(PORTRAITS[who]), 'swap', 280);
   }
 }
 
@@ -2088,7 +2309,7 @@ function toggleSceneLog(open) {
   if (open) {
     clearTimeout(SC.autoT);
     const list = $('#scLogList');
-    list.innerHTML = SC.log.map(l => `<div class="lg-item${l.who === 'nar' ? ' nar' : l.who === 'pick' ? ' pick' : ''}">${l.name ? `<b>${l.name}</b>` : ''}<p>${l.text}</p></div>`).join('') || '<p class="hint">아직 지나간 대사가 없어요.</p>';
+    list.innerHTML = SC.log.map(l => `<div class="lg-item${l.who === 'nar' ? ' nar' : l.who === 'pick' ? ' pick' : l.who === 'voice' ? ' voice' : ''}">${l.name ? `<b>${l.name}</b>` : ''}<p>${l.text}</p></div>`).join('') || '<p class="hint">아직 지나간 대사가 없어요.</p>';
     panel.hidden = false;
     list.scrollTop = list.scrollHeight;
     return;
@@ -2103,7 +2324,8 @@ function toggleAuto() {
   if (SC.auto && !SC.typing && !SC.choosing && !SC.carding && $('#scLogPanel').hidden) SC.autoT = setTimeout(sceneNext, 600);
 }
 function endScene() {
-  clearTimeout(SC.t); clearTimeout(SC.autoT); clearTimeout(SC.cardT);
+  clearTimeout(SC.t); clearTimeout(SC.autoT); clearTimeout(SC.cardT); clearTimeout(SC.placeT);
+  $('#scPlace').hidden = true;
   SC.choosing = null; SC.carding = false; SC.typing = false;
   $('#scene').hidden = true;
   const cb = SC.onEnd;
@@ -2238,6 +2460,7 @@ function bindInput() {
   $('#cfgBody').addEventListener('click', onCfgClick);
   $('#cfgBody').addEventListener('change', onCfgChange);
   $('#cfgActions').addEventListener('click', e => { const b = e.target.closest('button[data-a]'); if (b) testAction(b.dataset.a); });
+  $('#cfgScenes').addEventListener('click', e => { const b = e.target.closest('button[data-scene]'); if (b) previewScene(b.dataset.scene); });
   window.addEventListener('resize', fitHand);
 }
 
@@ -2331,22 +2554,33 @@ function helpHTML() {
   <section><h4>보스 턴 공격 패턴</h4>
     <div class="tbl-wrap"><table class="ctbl"><thead><tr><th>패턴</th><th>범위</th><th>효과</th></tr></thead><tbody>${patRows}</tbody></table></div>
   </section>
+  <section><h4>이야기</h4>
+    <p>시작하면 프롤로그(챕터 I — 감시탑 아래에서)가 흐르고 전투가 시작된다. 전투 중에는 첫 밤 · 보스 체력 절반 · 첫 과부하 때 짧은 장면이, 전투가 끝나면 승리 · 패배 엔딩이 나온다. 전부 테스트용 임시 문구이고, ⚙에서 끄거나 미리 볼 수 있다.</p>
+  </section>
   <section><h4>조작</h4>
     <p><b>이동</b> WASD·방향키, 또는 옆 칸 터치 · <b>카드</b> 1–6으로 선택 후 한 번 더(또는 Space), 마우스는 클릭 즉시 사용, 터치는 두 번 · <b>뽑기</b> Q · <b>취소</b> Esc · <b>소리</b> M</p>
   </section>
   <section><h4>이미지 슬롯</h4>
     <p><b>주인공 표정</b> (없는 표정은 비슷한 표정으로 대신)<br>${faces}</p>
-    <p>카드 배경 — ${slot(ASSET.cardBg, 'card-bg')}<br>보스(선택) — ${slot(ASSET.boss, 'boss')}</p>
+    <p>상점 주인 — ${slot(ASSET.npc.merchant.idle, 'shopkeeper')} (없으면 실루엣)<br>카드 배경 — ${slot(ASSET.cardBg, 'card-bg')}<br>보스(선택) — ${slot(ASSET.boss, 'boss')}</p>
     <p class="dim">webp · png · jpg를 인식한다. 배경은 투명해야 한다.</p>
   </section>`;
 }
 
 const TEST_ACTIONS = [
   ['flip', '낮밤 즉시 전환'], ['ol', '내 과부하 +50'], ['bol', '보스 과부하 +50'],
-  ['bhp', '보스 HP −50'], ['heal', 'HP 전부 회복'], ['story', '대사 장면 다시 보기'], ['restart', '전투 재시작'], ['reset', '설정 기본값', 'danger'],
+  ['bhp', '보스 HP −50'], ['heal', 'HP 전부 회복'], ['restart', '전투 재시작'], ['reset', '설정 기본값', 'danger'],
 ];
+const SCENE_PREVIEWS = [['prologue', '프롤로그'], ['night1', '첫 밤'], ['half', '보스 체력 절반'], ['stun1', '보스 첫 과부하'], ['freeze1', '내 첫 과부하'], ['win', '승리 엔딩'], ['lose', '패배 엔딩']];
+function sceneScript(key) { return key === 'prologue' ? PROLOGUE : key === 'win' ? EPILOGUE_WIN : key === 'lose' ? EPILOGUE_LOSE : INTERLUDES[key]; }
+function previewScene(key) {
+  if (S.busy) { toast('행동 처리 중이에요 — 잠시 뒤 다시'); return; }
+  closeSheets();
+  playScene(sceneScript(key), null);
+}
 function buildCfgSheet() {
   $('#cfgActions').innerHTML = TEST_ACTIONS.map(([a, l, c]) => `<button type="button" data-a="${a}" class="${c || ''}">${l}</button>`).join('');
+  $('#cfgScenes').innerHTML = SCENE_PREVIEWS.map(([k, l]) => `<button type="button" data-scene="${k}">${l}</button>`).join('');
   $('#cfgBody').innerHTML = CFG_UI.map(it => {
     if (it.group) return `<h4 class="cfg-g">${it.group}</h4>`;
     const id = 'cfg-' + it.k;
@@ -2385,7 +2619,6 @@ function testAction(a) {
   if (!S.started || S.over) { toast('전투 중에만 쓸 수 있어요'); return; }
   if (S.busy) { toast('행동 처리 중이에요 — 잠시 뒤 다시'); return; }
   if (a === 'flip') { closeSheets(); run(async () => { S.lastSwitch = S.total; await switchPhase(); }); return; }
-  if (a === 'story') { closeSheets(); playScene(PROLOGUE, null); return; }
   if (a === 'ol') addOverload(50, '테스트');
   if (a === 'bol') addBossOl(50);
   if (a === 'heal') S.hp = S.maxHp;
