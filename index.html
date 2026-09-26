@@ -174,6 +174,9 @@ svg{display:block}
 .boss-art{position:absolute;inset:0;transition:filter .3s}
 .boss-art svg,.boss-art img{width:100%;height:100%}
 .boss-art img{object-fit:contain;object-position:center bottom}
+/* 중간보스 그림: 감시 눈이 있는 윗부분을 가로 띠로 잘라 보스 줄을 채운다 */
+.boss-art img.strip{object-fit:cover;object-position:center 22%;border-radius:4px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6))}
+.boss-row.has-art .searchlight{left:39.7%;top:14%}
 .boss-svg .eye{fill:var(--eye);filter:drop-shadow(0 0 6px var(--eye));transition:fill .8s}
 .boss-svg .lamp{fill:#FFB84A;animation:blink 1.4s steps(2) infinite}
 .boss-svg .lamp:nth-child(2n){animation-delay:.7s}
@@ -501,6 +504,9 @@ svg{display:block}
 .foe-gal .fg-art .fg-sd{inset:auto 4px 4px auto;width:34%;height:auto;aspect-ratio:1;object-fit:contain;filter:drop-shadow(0 2px 3px #000)}
 .foe-gal figcaption{font-size:11.5px;line-height:1.4;color:var(--ash)}
 .foe-gal figcaption b{display:block;font:900 13px/1.3 var(--f-serif);color:var(--bone)}
+.boss-card{display:flex;gap:12px;align-items:center;margin:2px 0 8px}
+.boss-card img{flex:none;width:96px;max-width:30%;aspect-ratio:1097/1200;object-fit:contain;border-radius:5px;border:1px solid var(--line-2);background:radial-gradient(80% 60% at 50% 55%,rgba(255,184,74,.14),transparent 70%),#0E0C12}
+.boss-card p{margin:0}
 .res-kicker{margin:0;font:700 11px/1 var(--f-ui);letter-spacing:.2em;color:var(--mute)}
 .res-title{margin:0;font:900 44px/1.1 var(--f-serif);text-wrap:balance}
 .res-title.win{color:var(--brass-hi)} .res-title.lose{color:#FF6A5A}
@@ -584,8 +590,15 @@ svg{display:block}
 .pt-merchant.in,.pt-foe.in{transform:none}
 .pt-merchant.on,.pt-foe.on{transform:translateY(-6px) scale(1.02)}
 .pt-foe::before{content:"";position:absolute;left:4%;right:4%;top:18%;bottom:0;background:radial-gradient(ellipse at 50% 70%,rgba(255,92,138,.22),transparent 68%)}
+.pt-foe[data-who="black"]::before{background:radial-gradient(ellipse at 45% 62%,rgba(240,176,78,.22),transparent 66%)}
 .pt-foe .pt-art img{filter:drop-shadow(0 0 1.5px rgba(255,214,200,.6)) drop-shadow(0 10px 24px rgba(0,0,0,.6))}
 .pt-foe.on{z-index:2}
+/* 신도들의 속삭임: 말하는 동안만 가운데 뒤편에 흐릿하게 떠오른다 */
+.pt-voice{z-index:0;left:50%;top:6%;height:96%;aspect-ratio:2/3;translate:-50% 0;transform:translateY(14px) scale(.97);transition:opacity .8s ease,transform 1.2s ease}
+.pt-voice.in{opacity:.5;transform:none}
+.pt-voice .pt-art{animation:ghost 5s ease-in-out infinite}
+.pt-voice .pt-art img{filter:brightness(1.35) contrast(.9) drop-shadow(0 0 22px rgba(242,188,198,.35));-webkit-mask-image:linear-gradient(180deg,#000 55%,transparent 97%);mask-image:linear-gradient(180deg,#000 55%,transparent 97%)}
+@keyframes ghost{50%{translate:0 -10px;opacity:.82}}
 .pt-merchant .pt-art svg,.pt-merchant .pt-art img{object-position:center top}
 .pt-merchant .pt-art img{filter:drop-shadow(0 10px 24px rgba(0,0,0,.6))}
 .npc-svg .m-eye{filter:drop-shadow(0 0 3px #F0B44E)}
@@ -603,6 +616,7 @@ svg{display:block}
 .mon{padding:6px;border-radius:6px;background:linear-gradient(180deg,#2B313A,#171B21);border:1px solid #5E6A78;box-shadow:0 14px 30px rgba(0,0,0,.6);transition:border-color .3s,box-shadow .3s}
 .mon-screen{position:relative;aspect-ratio:16/10;border-radius:3px;overflow:hidden;background:#07090C}
 .mon-screen svg,.mon-screen img{width:100%;height:100%;object-fit:cover}
+.mon-screen img.full{object-position:50% 12%}
 .mon-screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(255,255,255,.06) 0 1px,transparent 1px 3px),radial-gradient(90% 80% at 50% 50%,transparent 55%,rgba(0,0,0,.55))}
 .mon-bar{display:flex;align-items:center;gap:6px;padding:6px 2px 0;font:700 10px/1 var(--f-ui);letter-spacing:.1em;color:#9AA6B4;white-space:nowrap;overflow:hidden}
 .mon-bar .rec{flex:none;width:7px;height:7px;border-radius:50%;background:#5A1F24}
@@ -624,12 +638,14 @@ svg{display:block}
 .dname.merchant{background:linear-gradient(180deg,#9A6A3E,#5E3D20);color:#FBE9D2}
 .dname.voice{background:linear-gradient(180deg,#9A1E34,#5A101D);color:#FFE3E8}
 .dname.foe{background:linear-gradient(180deg,#4E3A40,#2A1D22);color:#FFE3EC;box-shadow:0 4px 12px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,92,138,.5)}
+.dname.black{background:linear-gradient(180deg,#5E2A30,#2C1116);color:#F6DCC0;box-shadow:0 4px 12px rgba(0,0,0,.55),inset 0 0 0 1px rgba(240,176,78,.55)}
 .dtext{margin:0;min-height:3.6em;font:500 16px/1.8 var(--f-serif);color:var(--bone);white-space:pre-wrap}
 .dtext.nar{color:#C9C0D3}
 .dtext.boss{color:#DCE6F2;letter-spacing:.02em}
 .dtext.merchant{color:#F1E4D2}
 .dtext.voice{color:#F2BCC6;font-style:italic}
 .dtext.foe{color:#F4DDE3}
+.dtext.black{color:#F1DEC8}
 .sc-place{position:absolute;left:0;top:46px;z-index:6;padding:7px 14px 7px 10px;border-left:2px solid var(--brass);background:linear-gradient(90deg,rgba(12,10,16,.92),rgba(12,10,16,0));font:700 12px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--bone);pointer-events:none;animation:placeIn 3s ease forwards}
 @keyframes placeIn{0%{opacity:0;transform:translateX(-10px)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
 .scene[data-tint="warm"]{background:radial-gradient(120% 75% at 50% 30%,rgba(70,42,16,.5),rgba(10,6,4,.92) 72%),rgba(12,8,4,.38)}
@@ -681,8 +697,8 @@ svg{display:block}
       <div class="clock-meta"><b id="clockTime">오전 12:00</b><span id="clockNext">전환까지 30코</span></div>
     </div>
     <div class="boss-name">
-      <div class="bname" id="bossName">집행 병기 「못박이」</div>
-      <div class="bsub" id="bossSub">인류 정부군 · 테스트 보스</div>
+      <div class="bname" id="bossName">대형 감시기계</div>
+      <div class="bsub" id="bossSub">인류 정부군 · 중간 보스</div>
     </div>
     <div class="hud-btns">
       <button class="icon-btn" id="btnHelp" type="button" aria-label="규칙과 조작"><svg><use href="#i-help"/></svg></button>
@@ -806,7 +822,7 @@ svg{display:block}
       <p class="ctrl">WASD·방향키 또는 옆 칸을 눌러 이동 · 카드 1–6 · Q 뽑기</p>
       <div class="mode-btns">
         <button class="btn-mode" id="btnNormal" type="button"><kbd>1</kbd><b>일반 전투</b><span id="modeNormalSub">감시탑 순찰대</span></button>
-        <button class="btn-mode boss" id="btnBoss" type="button"><kbd>2</kbd><b>보스전</b><span id="modeBossSub">집행 병기 「못박이」</span></button>
+        <button class="btn-mode boss" id="btnBoss" type="button"><kbd>2</kbd><b>보스전</b><span id="modeBossSub">대형 감시기계</span></button>
       </div>
     </div>
   </div>
@@ -820,6 +836,7 @@ svg{display:block}
         <button type="button" id="scSkipBtn">건너뛰기 ▸▸</button>
       </div>
       <div class="sc-place" id="scPlace" hidden></div>
+      <div class="pt pt-voice" id="ptVoice"><div class="pt-art" id="ptVoiceArt"></div></div>
       <div class="pt pt-hero" id="ptHero"><div class="pt-art" id="ptHeroArt"></div></div>
       <div class="pt pt-merchant" id="ptMerchant"><div class="pt-art" id="ptMerchantArt">
         <svg class="npc-svg" viewBox="0 0 200 300" aria-hidden="true">
@@ -847,7 +864,7 @@ svg{display:block}
       </div></div>
       <div class="pt pt-foe" id="ptFoe"><div class="pt-art" id="ptFoeArt"></div></div>
       <div class="sc-stage">
-        <div class="pt pt-boss" id="ptBoss"><div class="mon"><div class="mon-screen" id="ptBossArt"></div><div class="mon-bar"><i class="rec"></i><span>감시망 방송 · 집행 병기</span></div></div></div>
+        <div class="pt pt-boss" id="ptBoss"><div class="mon"><div class="mon-screen" id="ptBossArt"></div><div class="mon-bar"><i class="rec"></i><span>감시망 방송 · 대형 감시기계</span></div></div></div>
         <div class="sc-choices" id="scChoices" hidden></div>
       </div>
       <div class="dbox" id="dbox">
@@ -1802,7 +1819,7 @@ async function victory() {
   S.over = true; S.won = true; S.sel = null; S.hover = null; S.inspect = null;
   SFX.win(); render(); bark('win');
   if (S.mode === 'boss') await FX.bossDown(); else await wait(500);
-  if (CFG.interludes) await playSceneAsync(S.mode === 'boss' ? EPILOGUE_WIN : PATROL_WIN);
+  if (CFG.interludes) await playSceneAsync(S.mode === 'boss' ? EPILOGUE_WIN : [...PATROL_WIN, ...BLACKMARKET]);
   showResult(true);
 }
 async function defeat() {
@@ -1833,8 +1850,10 @@ const NPC_FACES = { merchant: { idle: { file: 'shopkeeper', label: '기본' }, h
 // 격자 위 SD (발끝이 그림 아래에 닿게 자른 그림) · 적 스탠딩 일러스트(대사 초상화 · 도감)
 const SD_FILES = { hero: 'hero-sd', rifle: 'enemy-rifle-sd', shield: 'enemy-shield-sd', bomb: 'enemy-bomb-sd' };
 const FOE_ART_FILES = { rifle: 'enemy-rifle', shield: 'enemy-shield', bomb: 'enemy-bomb' };
-const ASSET_SLOTS = { cardBg: 'assets/card-bg', boss: 'assets/boss' };
-const ASSET = { face: {}, npc: { merchant: {} }, sd: {}, foeArt: {}, cardBg: null, boss: null };
+// boss = 보스 줄을 채우는 가로 띠 · bossFull = 전신(감시망 방송 화면 · 도감)
+// believer = 신도들의 속삭임 초상화(미지의 신도) · blackmarket = 암시장 상인
+const ASSET_SLOTS = { cardBg: 'assets/card-bg', boss: 'assets/boss', bossFull: 'assets/boss-full', believer: 'assets/believer', blackmarket: 'assets/blackmarket' };
+const ASSET = { face: {}, npc: { merchant: {} }, sd: {}, foeArt: {}, cardBg: null, boss: null, bossFull: null, believer: null, blackmarket: null };
 function npcUrl(who, face) { const set = ASSET.npc[who] || {}; return set[face] || set.idle || null; }
 function faceUrl(face) {
   for (const f of [face, ...(FACE_FALLBACK[face] || []), 'idle']) if (ASSET.face[f]) return ASSET.face[f];
@@ -1863,6 +1882,7 @@ async function loadAssets() {
   }
   for (const [k, file] of Object.entries(SD_FILES)) jobs.push(probe('assets/' + file).then(url => { if (url) ASSET.sd[k] = url; }));
   for (const [k, file] of Object.entries(FOE_ART_FILES)) jobs.push(probe('assets/' + file).then(url => { if (url) ASSET.foeArt[k] = url; }));
+  for (const k of ['bossFull', 'believer', 'blackmarket']) jobs.push(probe(ASSET_SLOTS[k]).then(url => { ASSET[k] = url; }));
   const [faceUrls, cardBg, boss] = await Promise.all([
     Promise.all(faceKeys.map(k => probe('assets/' + FACES[k].file))),
     probe(ASSET_SLOTS.cardBg), probe(ASSET_SLOTS.boss),
@@ -1890,7 +1910,12 @@ async function loadAssets() {
   refreshFoeArt();
   if (ASSET.npc.merchant.idle) { $('#ptMerchantArt').innerHTML = '<img id="ptMerchantImg" alt="" draggable="false">'; setPortrait('merchant', 'idle'); }
   if (cardBg) { document.documentElement.style.setProperty('--card-art', `url("${cardBg}")`); $('#app').classList.add('has-card-art'); }
-  if (boss) { $('#bossArt').innerHTML = img(boss); $('#ptBossArt').innerHTML = img(boss); }
+  if (boss) {
+    $('#bossArt').innerHTML = `<img class="strip" src="${boss}" alt="" draggable="false">`;
+    $('#bossRow').classList.add('has-art');
+  }
+  if (ASSET.bossFull || boss) $('#ptBossArt').innerHTML = `<img class="${ASSET.bossFull ? 'full' : ''}" src="${ASSET.bossFull || boss}" alt="" draggable="false">`;
+  if (ASSET.believer) $('#ptVoiceArt').innerHTML = img(ASSET.believer);
 }
 
 // 보드 위 주인공 표정: 승패 > 잠깐 바뀌는 표정(공격·피격) > 마비 > 기본
@@ -2016,8 +2041,8 @@ function renderHud() {
   const alive = liveFoes().length, total = S.foes.length;
   const ol = $('#bossOl');
   if (S.mode === 'boss') {
-    $('#bossName').textContent = '집행 병기 「못박이」';
-    $('#bossSub').textContent = total ? `인류 정부군 · 졸개 ${alive} / ${total}` : '인류 정부군 · 테스트 보스';
+    $('#bossName').textContent = '대형 감시기계';
+    $('#bossSub').textContent = total ? `중간 보스 · 졸개 ${alive} / ${total}` : '인류 정부군 · 중간 보스';
     setBar($('#bossHp'), S.boss.hp / S.boss.max, `<span>HP</span><span>${S.boss.hp} / ${S.boss.max}</span>`);
     ol.classList.remove('kills');
     setBar(ol, S.boss.ol / CFG.olMax, `<span>과부하</span><span>${S.boss.ol} / ${CFG.olMax}</span>`);
@@ -2755,14 +2780,16 @@ const SFX = (() => {
 const SPEAKERS = {
   nar:      { name: '', cls: 'nar' },
   hero:     { name: '기계 신', pt: 'hero' },
-  boss:     { name: '집행 병기 「못박이」', pt: 'boss', cls: 'boss' },
+  boss:     { name: '대형 감시기계', pt: 'boss', cls: 'boss' },
   merchant: { name: '상점 주인', pt: 'merchant', cls: 'merchant' },
-  voice:    { name: '신도들의 속삭임', cls: 'voice' },
+  voice:    { name: '신도들의 속삭임', pt: 'voice', cls: 'voice' },
   rifle:    { name: FOES.rifle.name, pt: 'foe', cls: 'foe' },
   shield:   { name: FOES.shield.name, pt: 'foe', cls: 'foe' },
   bomb:     { name: FOES.bomb.name, pt: 'foe', cls: 'foe' },
+  black:    { name: '암시장 상인', pt: 'foe', cls: 'black' },
 };
-const PORTRAITS = { hero: '#ptHero', merchant: '#ptMerchant', boss: '#ptBoss', foe: '#ptFoe' };
+// 초상화 칸 — foe 칸은 적 · 암시장 상인이 번갈아 쓰는 오른쪽 손님 칸, voice 칸은 말하는 동안만 떠오른다
+const PORTRAITS = { hero: '#ptHero', merchant: '#ptMerchant', boss: '#ptBoss', foe: '#ptFoe', voice: '#ptVoice' };
 // 대사 = { who, face?, text } · 선택지 = { choice: [{ label, then: [...] }] } · 챕터 카드 = { card: { num, title } }
 // 연출(한 단계에 함께 써도 됨) = { tint: 'warm' | 'cold' | 'blood' | '' } · { place: '장소 자막' } · { fx: 'shake' | 'flash' | 'red' | 'tick' } · { exit: 'merchant' | 'foe' }
 // 조건 = { when: () => 참일 때만 } · who: 적 대사는 rifle · shield · bomb (스탠딩 일러스트가 오른쪽에)
@@ -2817,7 +2844,7 @@ const PROLOGUE = [
   { tint: 'cold', place: '성당 앞 광장 · 오전 11:59', fx: 'flash' },
   { who: 'nar', text: '새하얀 빛이 성당 안을 가로질렀다. 감시탑의 탐조등이다.' },
   { who: 'boss', text: '감시망에 미등록 개체 포착. 분류 — 이단의 우상.' },
-  { who: 'merchant', text: '……귀찮게 됐네. 저건 「못박이」. 정부군 집행 병기야.' },
+  { who: 'merchant', text: '……귀찮게 됐네. 저건 대형 감시기계. 정부군이 이 도시를 내려다보는 눈이야.' },
   { who: 'merchant', text: '오전엔 저 녀석 감시망이 판 끝까지 닿아. 빨간 줄이 보이면 두 번째 행동을 마치기 전에 빠져.' },
   { who: 'merchant', text: '주황색은 턴 공격이야. 코스트를 다 쓸 때 날아오니까, 마지막 행동은 주황 밖에서 끝내.' },
   { who: 'merchant', face: 'hmph', text: '난 빠질게. 장사꾼은 싸움에 안 끼거든.' },
@@ -2872,6 +2899,18 @@ const PATROL_WIN = [
   { who: 'merchant', face: 'hmph', text: '궁금한 건 나중에. 순찰대가 안 돌아온 걸 탑이 눈치채기 전에 움직이자.' },
   { who: 'hero', face: 'smug', text: '이 녀석들 장비, 팔면 값 좀 나가?' },
   { who: 'merchant', face: 'hmph', text: '……외상값부터 갚고 말해.' },
+];
+// 일반 전투 승리 뒤 — 암시장 상인이 말을 건다 (테스트용 임시 문구)
+const BLACKMARKET = [
+  { tint: 'blood', place: '골목 끝 · 찢어진 천막 아래' },
+  { who: 'nar', text: '아까는 없던 천막 하나가 골목 끝에서 펄럭인다. 동전 튕기는 소리가 났다.' },
+  { who: 'black', text: '쉿, 쉿. 방금 솜씨 잘 봤어. 순찰대 셋을 혼자서라니.' },
+  { who: 'hero', face: 'surprised', text: '…누구야? 방금까지 여기 아무것도 없었는데.' },
+  { who: 'black', text: '나? 장사꾼이지. 저기 모자 쓴 친구보다 물건이 조금… 덜 깨끗할 뿐.' },
+  { who: 'merchant', face: 'hmph', text: '……흥. 암시장 녀석이 왜 여기 있어.' },
+  { who: 'black', text: '정부군 도장이 안 찍힌 물건이 필요하면 불러. 값은 동전일 수도, 네 시간일 수도 있고.' },
+  { who: 'nar', text: '동전이 허공에서 한 바퀴 돌았다. 떨어지는 소리가 나기 전에, 천막은 통째로 사라져 있었다.' },
+  { who: 'merchant', face: 'hmph', text: '…저 녀석이랑은 거래하지 마. 외상 같은 건 절대 안 해 주니까.' },
 ];
 const PATROL_LOSE = [
   { tint: 'blood', fx: 'red' },
@@ -2933,7 +2972,7 @@ const INTERLUDES = {
 };
 const EPILOGUE_WIN = [
   { tint: 'warm', place: '성당 앞 광장 · 교전 종료' },
-  { who: 'nar', text: '못박이의 감시 렌즈가 몇 번 깜빡이다가, 천천히 빛을 잃었다.' },
+  { who: 'nar', text: '새장 속 감시 눈이 몇 번 깜빡이다가, 천천히 빛을 잃었다.' },
   { who: 'boss', text: '처분… 실패… 기록을… 상부에… 송신……' },
   { who: 'boss', text: '대상… 기계 신… 재가동 횟수… 열둘……' },
   { who: 'hero', face: 'surprised', text: '…열둘? 무슨 소리야. 나는 방금 처음 깨어났는데.' },
@@ -3061,12 +3100,13 @@ async function flushInterludes() {
 function showLine(step) {
   const who = SPEAKERS[step.who] ? step.who : 'nar';
   const sp = SPEAKERS[who], name = sp.name, pt = sp.pt || null;
-  // 오른쪽 칸은 한 명만 — 상점 주인이 말하면 적이 빠지고, 적이 말하면 상점 주인이 빠진다
+  // 오른쪽 칸은 한 명만 — 상점 주인이 말하면 손님(적 · 암시장 상인)이 빠지고, 손님이 말하면 상점 주인이 빠진다
   if (pt === 'merchant') $('#ptFoe').classList.remove('in');
-  if (pt === 'foe') { $('#ptMerchant').classList.remove('in'); setFoePortrait(who); }
+  if (pt === 'foe') { $('#ptMerchant').classList.remove('in'); setGuestPortrait(who); }
   for (const [key, sel] of Object.entries(PORTRAITS)) {
     const el = $(sel);
-    if (pt === key) el.classList.add('in');                   // 처음 말할 때 등장
+    if (key === 'voice') el.classList.toggle('in', pt === key);   // 속삭임은 말하는 동안만
+    else if (pt === key) el.classList.add('in');              // 처음 말할 때 등장
     el.classList.toggle('on', pt === key);
     el.classList.toggle('off', pt !== key);
   }
@@ -3082,13 +3122,14 @@ function showLine(step) {
   typeText(step.text);
 }
 
-// 적 초상화: 스탠딩 일러스트 (없으면 SD)
-function setFoePortrait(type) {
-  const url = ASSET.foeArt[type] || ASSET.sd[type];
+// 오른쪽 손님 칸 초상화: 적은 스탠딩 일러스트(없으면 SD), 암시장 상인은 전신 그림
+function setGuestPortrait(who) {
+  const url = who === 'black' ? ASSET.blackmarket : ASSET.foeArt[who] || ASSET.sd[who];
   const box = $('#ptFoeArt');
-  if (box.dataset.type === type) return;
-  box.dataset.type = type;
-  box.innerHTML = url ? `<img src="${url}" alt="" draggable="false">` : FOE_SVG[type];
+  $('#ptFoe').dataset.who = who;
+  if (box.dataset.type === who) return;
+  box.dataset.type = who;
+  box.innerHTML = url ? `<img src="${url}" alt="" draggable="false">` : FOE_SVG[who] || '';
   FX.flash($('#ptFoe'), 'swap', 280);
 }
 
@@ -3414,7 +3455,7 @@ function renderIntro() {
   $('#introRules').innerHTML = rulesHTML();
   const n = CFG.foeCount, a = CFG.bossAdds;
   $('#modeNormalSub').innerHTML = `감시탑 순찰대<br>적 ${n}명${CFG.normalAmbush ? ' · 기습 있음' : ''}`;
-  $('#modeBossSub').innerHTML = `집행 병기 「못박이」<br>${a ? `졸개 ${a}명 · ` : ''}턴 공격`;
+  $('#modeBossSub').innerHTML = `대형 감시기계<br>중간 보스${a ? ` · 졸개 ${a}명` : ''}`;
 }
 
 const modeName = m => m === 'boss' ? '보스전' : '일반 전투';
@@ -3434,7 +3475,7 @@ function startBattle() {
   SFX.init();
   $('#intro').hidden = true;
   S.started = true;
-  log(S.mode === 'boss' ? '인류 정부군 집행 병기 「못박이」 — 교전 개시' : `감시탑 순찰대 ${S.foes.length}명 — 교전 개시`, 'dim');
+  log(S.mode === 'boss' ? '중간 보스 대형 감시기계 — 교전 개시' : `감시탑 순찰대 ${S.foes.length}명 — 교전 개시`, 'dim');
   run(() => startLoop());
 }
 
@@ -3454,7 +3495,7 @@ function showResult(win) {
   const t = $('#resTitle');
   t.textContent = win ? '승리' : '패배';
   t.className = 'res-title ' + (win ? 'win' : 'lose');
-  $('#resSub').textContent = win ? (boss ? '집행 병기 「못박이」의 회로가 멈췄다.' : '감시탑 순찰대를 모두 쓰러뜨렸다.') : '기계 신의 몸이 버티지 못했다.';
+  $('#resSub').textContent = win ? (boss ? '대형 감시기계의 감시 눈이 꺼졌다.' : '감시탑 순찰대를 모두 쓰러뜨렸다.') : '기계 신의 몸이 버티지 못했다.';
   const rows = [
     ['버틴 루프', S.loop], ['누적 코스트', `${S.total} (나 ${S.totalP} · ${boss ? '보스·적' : '적'} ${S.totalB})`],
     ['준 피해', st.dealt], ['받은 피해', st.taken],
@@ -3512,11 +3553,12 @@ function helpHTML() {
     보스전 칸 왼쪽 위 숫자가 보스와의 거리.</p>
     <div class="tbl-wrap"><table class="ctbl"><thead><tr><th>이름</th><th>종류</th><th>사거리</th><th>효과</th></tr></thead><tbody>${cardRows}</tbody></table></div>
   </section>
-  <section><h4>보스 턴 공격 패턴</h4>
+  <section><h4>중간 보스 — 대형 감시기계</h4>
+    <div class="boss-card">${ASSET.bossFull ? `<img src="${ASSET.bossFull}" alt="대형 감시기계">` : ''}<p>인류 정부군이 도시를 내려다보는 눈. HP ${CFG.bossHp}. 맨 윗줄 5칸을 통째로 차지하고, 2번째 행동 뒤 기습 폭격 · 마지막 행동 뒤 턴 공격을 한다. 턴 공격 패턴은 루프 시작 때 예고된다.</p></div>
     <div class="tbl-wrap"><table class="ctbl"><thead><tr><th>패턴</th><th>범위</th><th>효과</th></tr></thead><tbody>${patRows}</tbody></table></div>
   </section>
   <section><h4>이야기</h4>
-    <p><b>일반 전투</b>는 순찰대 등장 장면(적 설명 겸)으로, <b>보스전</b>은 프롤로그(챕터 I — 감시탑 아래에서)로 시작한다. 전투 중에는 첫 밤 · 보스 체력 절반 · 첫 과부하 · 첫 자폭 때 짧은 장면이, 전투가 끝나면 승리 · 패배 엔딩이 나온다. 전부 테스트용 임시 문구이고, ⚙에서 끄거나 미리 볼 수 있다.</p>
+    <p><b>일반 전투</b>는 순찰대 등장 장면(적 설명 겸)으로, <b>보스전</b>은 프롤로그(챕터 I — 감시탑 아래에서)로 시작한다. 전투 중에는 첫 밤 · 보스 체력 절반 · 첫 과부하 · 첫 자폭 때 짧은 장면이, 전투가 끝나면 승리 · 패배 엔딩이 나온다. 일반 전투에서 이기면 암시장 상인이 잠깐 말을 건다. 전부 테스트용 임시 문구이고, ⚙에서 끄거나 미리 볼 수 있다.</p>
   </section>
   <section><h4>조작</h4>
     <p><b>이동</b> WASD·방향키, 또는 옆 칸 터치 · <b>카드</b> 1–6으로 선택 후 한 번 더(또는 Space), 마우스는 클릭 즉시 사용(적이 여러 방향이면 선택 → 칸 클릭), 터치는 두 번 · <b>조준</b> 카드 선택 중 WASD 또는 점선 칸 · <b>뽑기</b> Q · <b>취소</b> Esc · <b>소리</b> M</p>
@@ -3525,7 +3567,8 @@ function helpHTML() {
     <p><b>주인공 SD</b>(격자) — ${slot(ASSET.sd.hero, 'hero-sd')}</p>
     <p><b>주인공 표정</b> (대사 초상화 · 없는 표정은 비슷한 표정으로 대신)<br>${faces}</p>
     <p><b>일반 적</b> — ${FOE_TYPES.map(k => `${FOES[k].name}: SD ${ASSET.sd[k] ? '<b class="ok">✓</b>' : '<span class="dim">없음</span>'} · 스탠딩 ${ASSET.foeArt[k] ? '<b class="ok">✓</b>' : '<span class="dim">없음</span>'} <code>${FOE_ART_FILES[k]}(-sd)</code>`).join('<br>')}</p>
-    <p>상점 주인 — ${slot(ASSET.npc.merchant.idle, 'shopkeeper')} (없으면 실루엣)<br>카드 배경 — ${slot(ASSET.cardBg, 'card-bg')}<br>보스(선택) — ${slot(ASSET.boss, 'boss')}</p>
+    <p>상점 주인 — ${slot(ASSET.npc.merchant.idle, 'shopkeeper')} (없으면 실루엣)<br>암시장 상인 — ${slot(ASSET.blackmarket, 'blackmarket')}<br>신도들의 속삭임(미지의 신도) — ${slot(ASSET.believer, 'believer')}</p>
+    <p>중간 보스 · 보스 줄 가로 띠 — ${slot(ASSET.boss, 'boss')}<br>중간 보스 · 전신(방송 화면 · 도감) — ${slot(ASSET.bossFull, 'boss-full')}<br>카드 배경 — ${slot(ASSET.cardBg, 'card-bg')}</p>
     <p class="dim">webp · png · jpg를 인식한다. 배경은 투명해야 한다.</p>
   </section>`;
 }
@@ -3537,12 +3580,12 @@ const TEST_ACTIONS = [
   ['reset', '설정 기본값', 'danger'],
 ];
 const SCENE_PREVIEWS = [
-  ['patrol', '일반 전투 시작'], ['patrolWin', '일반 전투 승리'], ['patrolLose', '일반 전투 패배'], ['blast1', '첫 자폭'],
+  ['patrol', '일반 전투 시작'], ['patrolWin', '일반 전투 승리'], ['blackmarket', '암시장 상인'], ['patrolLose', '일반 전투 패배'], ['blast1', '첫 자폭'],
   ['prologue', '프롤로그(보스전)'], ['night1', '첫 밤'], ['half', '보스 체력 절반'], ['stun1', '보스 첫 과부하'], ['freeze1', '내 첫 과부하'],
   ['win', '보스전 승리'], ['lose', '보스전 패배'],
 ];
 function sceneScript(key) {
-  return { prologue: PROLOGUE, win: EPILOGUE_WIN, lose: EPILOGUE_LOSE, patrol: PATROL_INTRO, patrolWin: PATROL_WIN, patrolLose: PATROL_LOSE }[key] || INTERLUDES[key];
+  return { prologue: PROLOGUE, win: EPILOGUE_WIN, lose: EPILOGUE_LOSE, patrol: PATROL_INTRO, patrolWin: [...PATROL_WIN, ...BLACKMARKET], blackmarket: BLACKMARKET, patrolLose: PATROL_LOSE }[key] || INTERLUDES[key];
 }
 function previewScene(key) {
   if (S.busy) { toast('행동 처리 중이에요 — 잠시 뒤 다시'); return; }
