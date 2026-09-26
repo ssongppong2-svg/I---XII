@@ -550,6 +550,7 @@ svg{display:block}
 .cfg-actions button{padding:8px 6px;border-radius:4px;border:1px solid var(--line-2);background:var(--panel-2);font:700 12px/1.2 var(--f-ui);color:var(--bone);cursor:pointer}
 .cfg-actions button:hover{border-color:var(--brass)}
 .cfg-actions .danger{color:#FF9C8E}
+.cfg-actions .wide{grid-column:1/-1;border-color:var(--brass);border-style:dashed}
 .cfg-note{margin:0 0 4px!important;font-size:11.5px!important;color:var(--mute)!important}
 .cfg-g{margin:14px 0 4px!important}
 .cfg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--bone);cursor:default}
@@ -1840,11 +1841,12 @@ const FACES = {
   overload:  { file: 'hero-overload',  label: '과부하' },
   smug:      { file: 'hero-smug',      label: '씩 웃음' },
   surprised: { file: 'hero-surprised', label: '놀람' },
+  puzzled:   { file: 'hero-puzzled',   label: '의문' },
   wounded:   { file: 'hero-wounded',   label: '부상' },
   pain:      { file: 'hero-pain',      label: '괴로움' },
   angry:     { file: 'hero-angry',     label: '분노' },
 };
-const FACE_FALLBACK = { wounded: ['pain', 'overload'], pain: ['overload'] };
+const FACE_FALLBACK = { puzzled: ['surprised'], wounded: ['pain', 'overload'], pain: ['overload'] };
 // 조연 초상화 (세로 2:3, 배경 투명). 없으면 실루엣
 const NPC_FACES = { merchant: { idle: { file: 'shopkeeper', label: '기본' }, hmph: { file: 'shopkeeper-hmph', label: '흥' } } };
 // 격자 위 SD (발끝이 그림 아래에 닿게 자른 그림) · 적 스탠딩 일러스트(대사 초상화 · 도감)
@@ -2793,7 +2795,7 @@ const PORTRAITS = { hero: '#ptHero', merchant: '#ptMerchant', boss: '#ptBoss', f
 // 대사 = { who, face?, text } · 선택지 = { choice: [{ label, then: [...] }] } · 챕터 카드 = { card: { num, title } }
 // 연출(한 단계에 함께 써도 됨) = { tint: 'warm' | 'cold' | 'blood' | '' } · { place: '장소 자막' } · { fx: 'shake' | 'flash' | 'red' | 'tick' } · { exit: 'merchant' | 'foe' }
 // 조건 = { when: () => 참일 때만 } · who: 적 대사는 rifle · shield · bomb (스탠딩 일러스트가 오른쪽에)
-// face: 주인공 idle · aim · overload · smug · surprised · wounded · pain · angry (FACES) / 상점 주인 idle · hmph (NPC_FACES)
+// face: 주인공 idle · aim · overload · smug · surprised · puzzled · wounded · pain · angry (FACES) / 상점 주인 idle · hmph (NPC_FACES)
 const PROLOGUE = [
   { card: { num: 'I', title: '감시탑 아래에서' } },
   // ── 깨어남
@@ -2805,9 +2807,9 @@ const PROLOGUE = [
   { fx: 'tick' },
   { who: 'nar', text: '째깍. 멈춰 있던 초침이 한 칸 움직였다.' },
   { who: 'hero', face: 'surprised', text: '……!' },
-  { who: 'hero', text: '여기가… 어디지. 방금 누가 날 불렀는데.' },
+  { who: 'hero', face: 'puzzled', text: '여기가… 어디지. 방금 누가 날 불렀는데.' },
   { who: 'nar', text: '주위를 둘러봐도, 바닥에 쓰러진 것은 오래전에 식어 버린 사람들뿐이다.' },
-  { who: 'hero', face: 'pain', text: '이 사람들… 다 같은 옷을 입고 있어. 가슴마다 톱니 문양이….' },
+  { who: 'hero', face: 'puzzled', text: '이 사람들… 다 같은 옷을 입고 있어. 가슴마다 톱니 문양이….' },
   { who: 'voice', text: '신이시여, 우리를 잊지 마소서.' },
   { fx: 'shake' },
   { who: 'hero', face: 'overload', text: '윽…! 머릿속에서 기도 소리가 한꺼번에 울려…!' },
@@ -2817,7 +2819,7 @@ const PROLOGUE = [
   { who: 'hero', face: 'angry', text: '누구야, 넌.' },
   { who: 'merchant', face: 'hmph', text: '흥. 보면 몰라? 장사꾼이지. 폐허에서 쓸 만한 걸 줍는.' },
   { who: 'merchant', text: '그 옷에 그 톱니… 너, 설마 이 교단이 떠받들던 그거야? 기계 신?' },
-  { who: 'hero', text: '기계… 신? 나는 아무것도 기억이 안 나.' },
+  { who: 'hero', face: 'puzzled', text: '기계… 신? 나는 아무것도 기억이 안 나.' },
   { who: 'merchant', text: '그래? 잘됐네. 기억해 봤자 기분만 나빠질 테니까.' },
   { who: 'nar', text: '늑대 수인은 귀찮다는 듯 모자를 눌러쓰면서도, 쓰러진 신도들의 눈을 하나씩 감겨 주었다.' },
   { who: 'merchant', text: '어제 오전에 인류 정부군이 왔어. 감시탑이 이 성당을 이단 거점으로 찍었거든.' },
@@ -2827,7 +2829,7 @@ const PROLOGUE = [
     { label: '밤이 되면 어떻게 되는데?', then: [
       { who: 'merchant', text: '핏자국 위에서 싸우면 네 힘이 세 배로 불어나. 대신 네 몸도 그만큼 달아오르고.' },
       { who: 'merchant', text: '과부하가 끝까지 차면 한동안 꼼짝도 못 해. 그때 얻어맞으면… 뭐, 알아서 해.' },
-      { who: 'hero', face: 'pain', text: '친절한 건지 겁주는 건지 모르겠네.' },
+      { who: 'hero', face: 'puzzled', text: '친절한 건지 겁주는 건지 모르겠네.' },
       { who: 'merchant', face: 'hmph', text: '흥. 둘 다.' },
     ] },
     { label: '넌 왜 도망 안 쳤어?', then: [
@@ -2895,7 +2897,7 @@ const PATROL_INTRO = [
 const PATROL_WIN = [
   { tint: 'warm', place: '성당 뒤 골목 · 교전 종료' },
   { who: 'nar', text: '마지막 순찰병이 쓰러지자, 골목에 다시 먼지만 내려앉았다.' },
-  { who: 'hero', face: 'surprised', text: '저 가면의 톱니… 성당에 쓰러져 있던 사람들 가슴의 문양이랑 똑같아.' },
+  { who: 'hero', face: 'puzzled', text: '저 가면의 톱니… 성당에 쓰러져 있던 사람들 가슴의 문양이랑 똑같아.' },
   { who: 'merchant', face: 'hmph', text: '궁금한 건 나중에. 순찰대가 안 돌아온 걸 탑이 눈치채기 전에 움직이자.' },
   { who: 'hero', face: 'smug', text: '이 녀석들 장비, 팔면 값 좀 나가?' },
   { who: 'merchant', face: 'hmph', text: '……외상값부터 갚고 말해.' },
@@ -2905,7 +2907,7 @@ const BLACKMARKET = [
   { tint: 'blood', place: '골목 끝 · 찢어진 천막 아래' },
   { who: 'nar', text: '아까는 없던 천막 하나가 골목 끝에서 펄럭인다. 동전 튕기는 소리가 났다.' },
   { who: 'black', text: '쉿, 쉿. 방금 솜씨 잘 봤어. 순찰대 셋을 혼자서라니.' },
-  { who: 'hero', face: 'surprised', text: '…누구야? 방금까지 여기 아무것도 없었는데.' },
+  { who: 'hero', face: 'puzzled', text: '…누구야? 방금까지 여기 아무것도 없었는데.' },
   { who: 'black', text: '나? 장사꾼이지. 저기 모자 쓴 친구보다 물건이 조금… 덜 깨끗할 뿐.' },
   { who: 'merchant', face: 'hmph', text: '……흥. 암시장 녀석이 왜 여기 있어.' },
   { who: 'black', text: '정부군 도장이 안 찍힌 물건이 필요하면 불러. 값은 동전일 수도, 네 시간일 수도 있고.' },
@@ -2975,7 +2977,7 @@ const EPILOGUE_WIN = [
   { who: 'nar', text: '새장 속 감시 눈이 몇 번 깜빡이다가, 천천히 빛을 잃었다.' },
   { who: 'boss', text: '처분… 실패… 기록을… 상부에… 송신……' },
   { who: 'boss', text: '대상… 기계 신… 재가동 횟수… 열둘……' },
-  { who: 'hero', face: 'surprised', text: '…열둘? 무슨 소리야. 나는 방금 처음 깨어났는데.' },
+  { who: 'hero', face: 'puzzled', text: '…열둘? 무슨 소리야. 나는 방금 처음 깨어났는데.' },
   { fx: 'shake' },
   { who: 'nar', text: '대답은 없었다. 강철 몸체가 무너져 내리고, 광장에 정적이 내려앉았다.' },
   { who: 'merchant', text: '……살아 있네. 흥, 외상값은 받을 수 있겠어.' },
@@ -3582,9 +3584,22 @@ const TEST_ACTIONS = [
 const SCENE_PREVIEWS = [
   ['patrol', '일반 전투 시작'], ['patrolWin', '일반 전투 승리'], ['blackmarket', '암시장 상인'], ['patrolLose', '일반 전투 패배'], ['blast1', '첫 자폭'],
   ['prologue', '프롤로그(보스전)'], ['night1', '첫 밤'], ['half', '보스 체력 절반'], ['stun1', '보스 첫 과부하'], ['freeze1', '내 첫 과부하'],
-  ['win', '보스전 승리'], ['lose', '보스전 패배'],
+  ['win', '보스전 승리'], ['lose', '보스전 패배'], ['faces', `주인공 표정 모음 · ${Object.keys(FACES).length}종`, 'wide'],
 ];
+// 주인공 표정을 차례로 넘겨 보는 확인용 장면 (파일이 없으면 무엇으로 대신하는지도 알려 준다)
+function faceTour() {
+  return [
+    { tint: '', place: '주인공 표정 모음' },
+    ...Object.entries(FACES).map(([k, f]) => {
+      const url = ASSET.face[k];
+      const alt = [...(FACE_FALLBACK[k] || []), 'idle'].find(x => ASSET.face[x]);
+      const note = url ? url.split('/').pop() : `파일 없음 → ${alt ? FACES[alt].label + ' 표정으로 대신' : '실루엣'}`;
+      return { who: 'hero', face: k, text: `${f.label} — ${note}` };
+    }),
+  ];
+}
 function sceneScript(key) {
+  if (key === 'faces') return faceTour();
   return { prologue: PROLOGUE, win: EPILOGUE_WIN, lose: EPILOGUE_LOSE, patrol: PATROL_INTRO, patrolWin: [...PATROL_WIN, ...BLACKMARKET], blackmarket: BLACKMARKET, patrolLose: PATROL_LOSE }[key] || INTERLUDES[key];
 }
 function previewScene(key) {
@@ -3594,7 +3609,7 @@ function previewScene(key) {
 }
 function buildCfgSheet() {
   $('#cfgActions').innerHTML = TEST_ACTIONS.map(([a, l, c]) => `<button type="button" data-a="${a}" class="${c || ''}">${l}</button>`).join('');
-  $('#cfgScenes').innerHTML = SCENE_PREVIEWS.map(([k, l]) => `<button type="button" data-scene="${k}">${l}</button>`).join('');
+  $('#cfgScenes').innerHTML = SCENE_PREVIEWS.map(([k, l, c]) => `<button type="button" data-scene="${k}" class="${c || ''}">${l}</button>`).join('');
   $('#cfgBody').innerHTML = CFG_UI.map(it => {
     if (it.group) return `<h4 class="cfg-g">${it.group}</h4>`;
     const id = 'cfg-' + it.k;
@@ -3671,7 +3686,7 @@ buildBoard();
 buildClock();
 bindInput();
 newBattle('normal');
-if (location.hash === '#debug') window.I12 = { S, CFG, CARDS, FOES, render, act, restart, startStory, planFoe, liveFoes, validDirs, aimFor };   // 개발용: 상태 확인·조작
+if (location.hash === '#debug') window.I12 = { S, CFG, CARDS, FOES, ASSET, render, act, restart, startStory, planFoe, liveFoes, validDirs, aimFor, faceUrl };   // 개발용: 상태 확인·조작
 renderIntro();
 buildScene();
 render();
