@@ -6,7 +6,7 @@
 <title>I–XII 전투 테스트</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@500;700;900&display=swap">
 <style>
 /* ═══════════════════════════════════════════════════════════
    I–XII · 전투 테스트판
@@ -157,7 +157,7 @@ svg{display:block}
 @keyframes bossHit{0%{filter:brightness(2.6) saturate(0)}40%{transform:translateY(-3px)}100%{filter:none;transform:none}}
 .boss-row.stunned .boss-art{filter:grayscale(.85) brightness(.72);animation:flick 1.3s steps(3) infinite}
 @keyframes flick{40%{filter:grayscale(.9) brightness(.45)}}
-.stun-tag{position:absolute;left:50%;top:50%;translate:-50% -50%;padding:3px 8px;border-radius:2px;background:rgba(20,12,34,.88);border:1px solid var(--volt);color:var(--volt);font:700 11px/1.2 var(--f-ui);letter-spacing:.04em;white-space:nowrap;z-index:3;pointer-events:none}
+.stun-tag{position:absolute;left:24%;top:50%;translate:-50% -50%;padding:3px 8px;border-radius:2px;background:rgba(20,12,34,.88);border:1px solid var(--volt);color:var(--volt);font:700 11px/1.2 var(--f-ui);letter-spacing:.04em;white-space:nowrap;z-index:3;pointer-events:none}
 .bcells{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap);pointer-events:none;z-index:2}
 .bcell{position:relative;border-radius:4px;transition:box-shadow .12s}
 .bcell.rng{box-shadow:inset 0 0 0 2px var(--aether),0 0 18px -3px var(--aether)}
@@ -186,6 +186,9 @@ svg{display:block}
 .hero-art svg,.hero-art img{width:100%;height:100%}
 .hero-art img{object-fit:contain;object-position:center bottom;filter:drop-shadow(0 4px 4px rgba(0,0,0,.55))}
 .unit.face-l .hero-art{transform:scaleX(-1)}
+.hero-art.img{left:-16%;right:-16%;bottom:3%;height:165%}
+.hero-art.img img{filter:drop-shadow(0 0 1px rgba(255,236,200,.95)) drop-shadow(0 3px 3px rgba(0,0,0,.7))}
+.unit.frozen .hero-art.img{filter:drop-shadow(0 0 6px var(--volt))}
 @keyframes bob{50%{translate:0 -3%}}
 .hero-svg .halo{transform-box:fill-box;transform-origin:center;animation:spin 14s linear infinite}
 @keyframes spin{to{rotate:360deg}}
@@ -274,8 +277,20 @@ svg{display:block}
   background:linear-gradient(165deg,#251F2D 0%,#16121C 58%,#100D14 100%);box-shadow:0 8px 16px -8px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.07);text-align:left;cursor:pointer;touch-action:manipulation;transition:transform .14s ease,box-shadow .14s ease,filter .14s}
 .card:first-child{margin-left:0}
 .card::before{content:"";position:absolute;inset:2px;border:1px solid rgba(214,174,98,.16);border-radius:4px;pointer-events:none}
-.has-card-art .card{background:var(--card-art) center/cover no-repeat,#16121C}
-.has-card-art .card .c-name,.has-card-art .card .c-mid,.has-card-art .card .c-top{background:rgba(12,10,16,.72);border-radius:3px}
+.has-card-art .card{background:var(--card-art) center/cover no-repeat,#C9B38A;border-color:#4A3218;color:#2A1A0C;box-shadow:0 8px 16px -8px rgba(0,0,0,.85),inset 0 0 16px rgba(70,40,12,.35)}
+.has-card-art .card::before{border-color:rgba(90,60,30,.3)}
+.has-card-art .card .c-name{color:#1E1208}
+.has-card-art .card .c-stat b{color:#1E1208}
+.has-card-art .card .c-stat small{color:#5B4430}
+.has-card-art .card .c-key{color:#5B4430;border-color:rgba(90,60,30,.45)}
+.has-card-art .card .c-mini i{background:rgba(60,35,15,.16)}
+.has-card-art .card .c-mini i.me{background:#8A5A12}
+.has-card-art .card .c-tags em{background:rgba(60,35,15,.12);color:#5B4430}
+.has-card-art .card.k-melee{--k:#9C4A10} .has-card-art .card.k-shot{--k:#0E6F66} .has-card-art .card.k-far{--k:#2C5C9E} .has-card-art .card.k-jam{--k:#6B3DB0}
+.has-card-art .card.k-guard{--k:#3A5670} .has-card-art .card.k-cool{--k:#2A7A4B} .has-card-art .card.k-move{--k:#6A5530}
+.has-card-art .card .t-ol{color:#6B3DB0!important} .has-card-art .card .t-bol{color:#2A7A4B!important} .has-card-art .card .t-rap{color:#A0381C!important} .has-card-art .card .t-per{color:#8A5A12!important}
+.has-card-art .card.bld .c-stat b{color:#A3122D}
+.has-card-art .card.off{filter:grayscale(.85) brightness(.66)}
 .k-melee{--k:var(--k-melee)} .k-shot{--k:var(--k-shot)} .k-far{--k:var(--k-far)} .k-jam{--k:var(--k-jam)} .k-guard{--k:var(--k-guard)} .k-cool{--k:var(--k-cool)} .k-move{--k:var(--k-move)}
 .c-top{display:flex;align-items:center;gap:3px;height:15px}
 .c-cost{flex:none;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;font:800 9.5px/1 var(--f-num);color:#1A140A;background:radial-gradient(circle at 35% 30%,#FFE7AE,#C99A45 60%,#7C6234)}
@@ -419,6 +434,81 @@ svg{display:block}
 .sw-row input:checked+.sw::after{transform:translateX(18px);background:var(--brass-hi)}
 .sw-row input:focus-visible+.sw{outline:2px solid var(--brass-hi);outline-offset:2px}
 
+/* ── 대사 장면 ── */
+.scene{position:fixed;inset:0;z-index:42;display:flex;justify-content:center;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));
+  background:radial-gradient(120% 75% at 50% 32%,rgba(9,8,13,.45),rgba(5,4,8,.9) 72%),rgba(5,4,8,.3);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);cursor:pointer;animation:scIn .45s ease-out}
+@keyframes scIn{from{opacity:0}}
+.sc-wrap{position:relative;width:min(620px,100%);height:100%;display:flex;flex-direction:column}
+.sc-tools{position:relative;z-index:6;display:flex;justify-content:flex-end;gap:6px}
+.sc-tools button{padding:7px 11px;border-radius:4px;border:1px solid var(--line-2);background:rgba(21,19,27,.9);font:700 11.5px/1 var(--f-ui);color:var(--ash);cursor:pointer;touch-action:manipulation}
+.sc-tools button:hover{color:var(--bone);border-color:var(--brass-lo)}
+.sc-tools button.on{color:var(--brass-hi);border-color:var(--brass);background:rgba(58,46,22,.9)}
+.sc-stage{position:relative;z-index:2;flex:1;min-height:0}
+.pt{position:absolute;opacity:0;transition:opacity .45s ease,transform .45s cubic-bezier(.2,.8,.3,1),filter .3s ease;pointer-events:none}
+.pt.in{opacity:1}
+.pt.off{filter:brightness(.42) saturate(.55)}
+.pt-hero{z-index:1;left:-3%;bottom:150px;height:min(42vh,420px);max-width:70%;aspect-ratio:100/130;transform:translateX(-40px)}
+.pt-hero.img{left:38%;top:20%;bottom:auto;height:100%;max-width:none;aspect-ratio:2/3;translate:-50% 0}
+.pt-hero.img::before{display:none}
+.pt-hero.img .pt-art img{object-position:center top;filter:drop-shadow(0 10px 24px rgba(0,0,0,.6))}
+.pt-hero.swap .pt-art{animation:faceSwap .28s ease-out}
+@keyframes faceSwap{from{opacity:.6;transform:translateY(5px)}}
+.pt-hero.in{transform:none}
+.pt-hero.on{transform:translateY(-6px) scale(1.02)}
+.pt-hero::before{content:"";position:absolute;left:5%;right:5%;bottom:0;height:45%;background:radial-gradient(ellipse at 50% 100%,rgba(214,174,98,.3),transparent 70%)}
+.pt-art{position:relative;width:100%;height:100%}
+.pt-art svg,.pt-art img{width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.pt-boss{right:0;top:7%;width:min(58%,300px);transform:translateX(40px)}
+.pt-boss.in{transform:none}
+.pt-boss.on{transform:translateY(-3px)}
+.mon{padding:6px;border-radius:6px;background:linear-gradient(180deg,#2B313A,#171B21);border:1px solid #5E6A78;box-shadow:0 14px 30px rgba(0,0,0,.6);transition:border-color .3s,box-shadow .3s}
+.mon-screen{position:relative;aspect-ratio:16/10;border-radius:3px;overflow:hidden;background:#07090C}
+.mon-screen svg,.mon-screen img{width:100%;height:100%;object-fit:cover}
+.mon-screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(255,255,255,.06) 0 1px,transparent 1px 3px),radial-gradient(90% 80% at 50% 50%,transparent 55%,rgba(0,0,0,.55))}
+.mon-bar{display:flex;align-items:center;gap:6px;padding:6px 2px 0;font:700 10px/1 var(--f-ui);letter-spacing:.1em;color:#9AA6B4;white-space:nowrap;overflow:hidden}
+.mon-bar .rec{flex:none;width:7px;height:7px;border-radius:50%;background:#5A1F24}
+.pt-boss.on .mon{border-color:#FF5A6E;box-shadow:0 0 24px rgba(255,59,78,.35),0 14px 30px rgba(0,0,0,.6)}
+.pt-boss.on .rec{background:#FF3B4E;animation:blink .8s steps(2) infinite}
+.sc-choices{position:absolute;left:50%;bottom:16px;translate:-50% 0;z-index:5;width:min(340px,92%);display:flex;flex-direction:column;gap:8px}
+.sc-choices button{padding:13px 18px;border-radius:4px;border:1px solid var(--brass);background:linear-gradient(180deg,rgba(64,51,26,.97),rgba(36,28,14,.97));color:var(--brass-hi);font:700 15px/1.3 var(--f-serif);text-align:left;cursor:pointer;box-shadow:0 10px 24px rgba(0,0,0,.55);animation:choiceIn .35s ease-out both;touch-action:manipulation}
+.sc-choices button:nth-child(2){animation-delay:.08s}
+.sc-choices button:hover{background:linear-gradient(180deg,rgba(86,68,34,.97),rgba(46,36,18,.97))}
+.sc-choices button kbd{display:inline-block;min-width:18px;margin-right:8px;padding:1px 4px;border-radius:3px;border:1px solid var(--brass-lo);font:700 11px/1.2 var(--f-ui);text-align:center;color:var(--brass)}
+@keyframes choiceIn{from{opacity:0;transform:translateY(8px)}}
+.dbox{position:relative;z-index:4;margin-top:12px;min-height:150px;padding:24px 20px 22px;border-radius:6px;border:1px solid #6A5733;
+  background:linear-gradient(180deg,rgba(27,23,34,.97),rgba(14,12,18,.98));box-shadow:0 20px 44px rgba(0,0,0,.65),inset 0 0 0 3px rgba(12,10,16,.9),inset 0 0 0 4px rgba(214,174,98,.2)}
+.dbox::before,.dbox::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--brass);opacity:.65;pointer-events:none}
+.dbox::before{left:7px;bottom:7px;border-right:0;border-top:0}
+.dbox::after{right:7px;top:7px;border-left:0;border-bottom:0}
+.dname{position:absolute;left:16px;top:-16px;padding:6px 16px;border-radius:3px;background:linear-gradient(180deg,#EDC983,#B88D42);color:#1B150B;font:900 14px/1.2 var(--f-serif);letter-spacing:.05em;box-shadow:0 4px 12px rgba(0,0,0,.55)}
+.dname.boss{background:linear-gradient(180deg,#6A7582,#39414C);color:#EAF4FF}
+.dtext{margin:0;min-height:3.6em;font:500 16px/1.8 var(--f-serif);color:var(--bone);white-space:pre-wrap}
+.dtext.nar{color:#C9C0D3}
+.dtext.boss{color:#DCE6F2;letter-spacing:.02em}
+.dnext{position:absolute;right:18px;bottom:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--brass-hi);opacity:0;animation:nextBob .9s ease-in-out infinite}
+.dbox.done .dnext{opacity:1}
+.dbox.choosing .dnext{opacity:0}
+@keyframes nextBob{50%{transform:translateY(4px)}}
+.sc-card{position:absolute;inset:0;z-index:7;display:grid;place-items:center;background:radial-gradient(70% 50% at 50% 45%,rgba(20,16,26,.96),rgba(5,4,8,.98));text-align:center;animation:cardIn 2.1s ease forwards}
+.sc-card b{display:block;font:800 88px/1 var(--f-num);color:var(--brass);text-shadow:0 0 36px rgba(214,174,98,.35)}
+.sc-card span{display:block;margin-top:14px;font:900 19px/1.4 var(--f-serif);letter-spacing:.24em;color:var(--bone)}
+.sc-card i{display:block;width:44px;height:1px;margin:14px auto 0;background:var(--brass-lo)}
+@keyframes cardIn{0%{opacity:0}18%{opacity:1}82%{opacity:1}100%{opacity:0}}
+.sc-logp{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:8px;background:rgba(12,11,16,.98);cursor:default;user-select:text;-webkit-user-select:text}
+.sc-logp .sheet-head{position:static;margin:0;border-radius:8px 8px 0 0}
+.lg-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:14px 16px 18px}
+.lg-item b{display:block;font:700 11.5px/1.3 var(--f-ui);letter-spacing:.04em;color:var(--brass)}
+.lg-item p{margin:3px 0 0;font:500 14.5px/1.65 var(--f-serif);color:var(--bone)}
+.lg-item.nar p{color:#C9C0D3}
+.lg-item.pick b{color:var(--aether)}
+.lg-item.pick p{color:var(--aether)}
+/* 전투 중 보스 말풍선 */
+.bark{position:absolute;left:57%;top:50%;translate:0 -50%;z-index:9;max-width:41%;padding:6px 10px;border-radius:4px;background:rgba(12,14,18,.96);border:1px solid #7C8896;color:#E8F2FF;font:600 12px/1.35 var(--f-ui);pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.5);animation:barkIn 2.3s ease forwards}
+.bark::before{content:"";position:absolute;left:-7px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:0;border-right-color:#7C8896}
+#app[data-phase="night"] .bark{border-color:#A33347}
+#app[data-phase="night"] .bark::before{border-right-color:#A33347}
+@keyframes barkIn{0%{opacity:0;transform:translateX(-6px)}10%{opacity:1;transform:none}86%{opacity:1}100%{opacity:0}}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
@@ -490,6 +580,7 @@ svg{display:block}
       </div>
       <div class="bcells" id="bcells"></div>
       <div class="stun-tag" id="stunTag" hidden></div>
+      <div class="bark" id="bark" hidden></div>
     </div>
     <!-- 4×5 플레이어 칸은 스크립트가 생성 -->
     <div class="beams" id="beams"></div>
@@ -554,7 +645,33 @@ svg{display:block}
       <p class="logo-sub">전투 테스트판 · 5×5 보스전</p>
       <ul class="rules" id="introRules"></ul>
       <p class="ctrl">WASD·방향키 또는 옆 칸을 눌러 이동 · 카드 1–6 · Q 뽑기</p>
-      <button class="btn-main" id="btnStart" type="button">전투 개시</button>
+      <button class="btn-main" id="btnStart" type="button">시작하기</button>
+    </div>
+  </div>
+
+  <!-- ═════ 대사 장면 ═════ -->
+  <div class="scene" id="scene" hidden>
+    <div class="sc-wrap">
+      <div class="sc-tools">
+        <button type="button" id="scLogBtn">로그</button>
+        <button type="button" id="scAutoBtn">자동</button>
+        <button type="button" id="scSkipBtn">건너뛰기 ▸▸</button>
+      </div>
+      <div class="pt pt-hero" id="ptHero"><div class="pt-art" id="ptHeroArt"></div></div>
+      <div class="sc-stage">
+        <div class="pt pt-boss" id="ptBoss"><div class="mon"><div class="mon-screen" id="ptBossArt"></div><div class="mon-bar"><i class="rec"></i><span>감시망 방송 · 집행 병기</span></div></div></div>
+        <div class="sc-choices" id="scChoices" hidden></div>
+      </div>
+      <div class="dbox" id="dbox">
+        <div class="dname" id="dname" hidden></div>
+        <p class="dtext" id="dtext"></p>
+        <span class="dnext" aria-hidden="true"></span>
+      </div>
+      <div class="sc-card" id="scCard" hidden></div>
+      <div class="sc-logp" id="scLogPanel" hidden>
+        <div class="sheet-head"><h3>대사 기록</h3><button class="icon-btn x" type="button" id="scLogClose" aria-label="닫기">×</button></div>
+        <div class="lg-list" id="scLogList"></div>
+      </div>
     </div>
   </div>
 
@@ -642,7 +759,7 @@ const DEFAULTS = {
   ambushNight: 7,       // 오후(밤) 기습 칸 수
   ambushDmg: 1,
   nailOl: 30,           // 장력 가속 못총 피격 시 과부하
-  atkTiming: 'pay',     // 'pay' 마지막 코스트 지불 순간 / 'after' 마지막 행동 처리 뒤
+  atkTiming: 'after',   // 'after' 마지막 행동이 끝난 뒤 / 'pay' 마지막 코스트 지불 순간(행동 전)
   olMax: 100, olReset: 50,
   freezeCost: 4,        // 내 과부하 100 → 4코스트 마비
   bossStunCost: 4,      // 보스 과부하 100 → 4코스트 공격 정지
@@ -658,7 +775,7 @@ const LIMITS = {
   freezeCost: [1, 8], bossStunCost: [1, 8], bloodTiles: [0, 10], bloodMult: [1, 5], bloodOl: [0, 100],
   handRefill: [1, 6], handMax: [3, 8], playerHp: [1, 9], bossHp: [20, 990],
 };
-const CFG_KEY = 'i12.battle-test.cfg.v1';
+const CFG_KEY = 'i12.battle-test.cfg.v2';
 const SND_KEY = 'i12.battle-test.sound.v1';
 const CFG = sanitizeCfg(Object.assign({}, DEFAULTS, readJSON(CFG_KEY)));
 function sanitizeCfg(c) {
@@ -684,7 +801,7 @@ const CFG_UI = [
   { k: 'ambushNight', label: '기습 칸 수 · 오후(밤)', unit: '칸' },
   { k: 'ambushDmg', label: '기습 피해', unit: '' },
   { k: 'nailOl', label: '못총 피격 시 과부하', unit: '', step: 5 },
-  { k: 'atkTiming', label: '턴 공격 판정 시점', type: 'seg', opts: [['pay', '지불 순간'], ['after', '행동 뒤']] },
+  { k: 'atkTiming', label: '턴 공격 판정 시점', type: 'seg', opts: [['after', '행동 뒤'], ['pay', '지불 순간']] },
   { group: '시계 · 낮밤' },
   { k: 'phaseCost', label: '낮밤 전환 누적 코스트', unit: '코', step: 5 },
   { k: 'bossAmbushCost', label: '보스 기습 1회 = 코스트', unit: '코' },
@@ -706,7 +823,7 @@ const CFG_UI = [
    2. 보드 좌표 — 0행은 보스, 1~4행이 플레이어 구역
    ═════════════════════════════════════════════ */
 const COLS = 5;
-const AMBUSH_AT = 2;                                   // 루프의 2번째 코스트를 지불하는 순간 기습 폭발
+const AMBUSH_AT = 2;                                   // 루프의 2번째 행동이 끝나는 순간 기습 폭발
 const K = (r, c) => r * COLS + c;
 const RC = k => [Math.floor(k / COLS), k % COLS];
 const inCol = c => c >= 0 && c < COLS;
@@ -851,7 +968,7 @@ function newBattle() {
     amb: null, ambFired: false, prevAmbKey: '',
     intent: null, atk: null, prevPat: '',
     blood: new Set(),
-    lastAct: '', chain: 0,
+    lastAct: '', chain: 0, lowBarked: false, won: false,
     sel: null, hover: null,
     busy: false, over: false, started: false,
     stats: { dealt: 0, taken: 0, bloodHits: 0, freezes: 0, stuns: 0, dodged: 0, cards: 0 },
@@ -862,6 +979,8 @@ function newBattle() {
   if (S.phase === 'night') rollBlood();
   $('#banner').hidden = true;
   $('#result').hidden = true;
+  $('#bark').hidden = true;
+  poseTemp = null;
 }
 
 /* ═════════════════════════════════════════════
@@ -950,27 +1069,29 @@ function act(a) {
 }
 
 async function doAct(a) {
-  const frozen = S.freeze > 0;          // 이번 지불이 마비 구간인가
-  const bossDown = S.boss.stun > 0;     // 이번 지불이 보스 정지 구간인가
+  const frozen = S.freeze > 0;          // 이번 행동이 마비 구간인가
+  const downAtPay = S.boss.stun > 0;    // 지불 시점에 보스가 정지 중인가
   S.sel = null; S.hover = null;
   // ① 코스트 지불
   S.costLeft--; S.spent++;
   if (frozen) S.freeze--;
-  if (bossDown) S.boss.stun--;
+  if (downAtPay) S.boss.stun--;
   addCost('p', 1);
   const last = S.costLeft <= 0;
   render();
-  // ② 지불 순간 발동 — 2번째 코스트: 기습 폭발 → 턴 공격 범위 공개
+  // (설정) 턴 공격을 '지불 순간'에 판정하는 모드
+  if (last && CFG.atkTiming === 'pay') { await fireAttack(downAtPay); if (S.over) return; }
+  // ② 행동 처리 (마비 중이면 코스트만 날아간다)
+  if (frozen) await fizzle(a); else await resolve(a);
+  if (S.over) return;
+  // ③ 행동이 끝난 뒤 발동 — 2번째 행동 뒤 기습(→ 턴 공격 범위 공개), 마지막 행동 뒤 턴 공격
+  const bossDown = downAtPay || S.boss.stun > 0;   // 방금 행동으로 과부하시켰다면 곧바로 멈춘다
   if (S.spent === AMBUSH_AT && !S.ambFired) {
     await fireAmbush(bossDown);
     if (S.over) return;
     revealAttack();
     await wait(160);
   }
-  if (last && CFG.atkTiming === 'pay') { await fireAttack(bossDown); if (S.over) return; }
-  // ③ 행동 처리 (마비 중이면 코스트만 날아간다)
-  if (frozen) await fizzle(a); else await resolve(a);
-  if (S.over) return;
   if (last && CFG.atkTiming === 'after') { await fireAttack(bossDown); if (S.over) return; }
   // ④ 낮밤 전환 → ⑤ 루프 종료
   await checkPhase();
@@ -1011,6 +1132,7 @@ async function fireAttack(bossDown) {
     return;
   }
   addCost('b', CFG.bossAttackCost);
+  if (Math.random() < 0.35) bark('attack');
   const cells = S.atk;
   const hit = cells.has(K(S.p.r, S.p.c));
   await FX.attackBlast(cells, pat);
@@ -1030,6 +1152,7 @@ async function damagePlayer(dmg, o) {
   S.hp = Math.max(0, S.hp - real);
   S.stats.taken += dmg;
   log(CFG.god ? `${o.src} 명중 (무적 모드)` : `${o.src} 명중 — HP −${dmg}`, 'bad');
+  flashPose('wounded', 900);
   render(); await FX.playerHit(real);
   if (S.hp <= 0) { await defeat(); return; }
   if (o.nail) addOverload(CFG.nailOl, '장력 가속 못총');
@@ -1046,7 +1169,7 @@ function addOverload(n, src) {
     S.stats.freezes++;
     S.lastAct = ''; S.chain = 0;
     log(`과부하 ${CFG.olMax}! 시스템 정지 — ${CFG.freezeCost}코스트 동안 마비`, 'volt');
-    FX.freeze();
+    FX.freeze(); bark('freeze');
   }
 }
 function addBossOl(n) {
@@ -1057,7 +1180,7 @@ function addBossOl(n) {
     S.boss.stun = Math.max(S.boss.stun, CFG.bossStunCost);
     S.stats.stuns++;
     log(`보스 과부하! ${CFG.bossStunCost}코스트 동안 기습·턴 공격 정지`, 'ok');
-    FX.stun();
+    FX.stun(); bark('stun');
   }
 }
 
@@ -1108,6 +1231,7 @@ async function playCard(a) {
     const mult = onBlood ? CFG.bloodMult : 1;
     const dmg = def.dmg * mult;
     const cols = hitColumns(def.shape, S.p);
+    flashPose('aim', 750);
     await FX.cardStrike(def, onBlood);
     S.boss.hp = Math.max(0, S.boss.hp - dmg);
     S.stats.dealt += dmg;
@@ -1116,6 +1240,7 @@ async function playCard(a) {
     log(onBlood ? `${def.name} — 핏빛 ×${mult}! 보스에 ${dmg} 피해` : `${def.name} — 보스에 ${dmg} 피해`, onBlood ? 'blood' : '');
     render();
     if (S.boss.hp <= 0) { await victory(); return; }
+    if (!S.lowBarked && S.boss.hp <= S.boss.max * 0.3) { S.lowBarked = true; bark('low'); }
     if (def.bossOl) addBossOl(def.bossOl);
     const ol = (def.ol || 0) + (def.rapid ? def.rapid * chain : 0) + (onBlood ? CFG.bloodOl : 0);
     if (ol) addOverload(ol, onBlood ? '핏빛 타일 반동' : def.rapid && chain ? `${def.name} ${chain + 1}연사` : def.name);
@@ -1146,21 +1271,21 @@ async function switchPhase() {
   S.phaseIdx++;
   if (S.phase === 'night') rollBlood(); else S.blood = new Set();
   log(S.phase === 'night' ? '오후 12:00 — 광신의 시간. 핏빛 타일이 깔렸다' : '오전 12:00 — 감시망 가동. 기습이 판 끝까지 뻗는다', S.phase === 'night' ? 'blood' : 'day');
-  SFX.chime(); render();
+  SFX.chime(); render(); bark(S.phase);
   await FX.phaseBanner(S.phase);
 }
 
 async function endLoop() { S.amb = null; S.atk = null; render(); await wait(200); }
 
 async function victory() {
-  S.over = true; S.sel = null; S.hover = null;
-  SFX.win(); render();
+  S.over = true; S.won = true; S.sel = null; S.hover = null;
+  SFX.win(); render(); bark('win');
   await FX.bossDown();
   showResult(true);
 }
 async function defeat() {
   S.over = true; S.sel = null; S.hover = null;
-  SFX.lose(); render();
+  SFX.lose(); render(); bark('lose');
   await FX.playerDown();
   showResult(false);
 }
@@ -1168,10 +1293,26 @@ async function defeat() {
 /* ═════════════════════════════════════════════
    7. 이미지 슬롯 — assets/ 폴더에 넣으면 자동 교체
    ═════════════════════════════════════════════ */
-const ASSET_SLOTS = { hero: 'assets/hero', cardBg: 'assets/card-bg', boss: 'assets/boss' };
-const ASSET = { hero: null, cardBg: null, boss: null };
+// 주인공 표정 — 파일이 없으면 FACE_FALLBACK 순서대로, 그래도 없으면 기본 표정을 쓴다
+const FACES = {
+  idle:      { file: 'hero',           label: '기본' },
+  aim:       { file: 'hero-aim',       label: '조준' },
+  overload:  { file: 'hero-overload',  label: '과부하' },
+  smug:      { file: 'hero-smug',      label: '씩 웃음' },
+  surprised: { file: 'hero-surprised', label: '놀람' },
+  wounded:   { file: 'hero-wounded',   label: '부상' },
+  pain:      { file: 'hero-pain',      label: '괴로움' },
+  angry:     { file: 'hero-angry',     label: '분노' },
+};
+const FACE_FALLBACK = { wounded: ['pain', 'overload'], pain: ['overload'] };
+const ASSET_SLOTS = { cardBg: 'assets/card-bg', boss: 'assets/boss' };
+const ASSET = { face: {}, cardBg: null, boss: null };
+function faceUrl(face) {
+  for (const f of [face, ...(FACE_FALLBACK[face] || []), 'idle']) if (ASSET.face[f]) return ASSET.face[f];
+  return null;
+}
 function probe(base) {
-  const exts = ['png', 'webp', 'jpg', 'jpeg', 'gif'];
+  const exts = ['webp', 'png', 'jpg'];
   return new Promise(res => {
     let i = 0;
     const next = () => {
@@ -1186,11 +1327,46 @@ function probe(base) {
   });
 }
 async function loadAssets() {
-  const [hero, cardBg, boss] = await Promise.all([probe(ASSET_SLOTS.hero), probe(ASSET_SLOTS.cardBg), probe(ASSET_SLOTS.boss)]);
-  Object.assign(ASSET, { hero, cardBg, boss });
-  if (hero) $('#heroArt').innerHTML = `<img src="${hero}" alt="" draggable="false">`;
+  const faceKeys = Object.keys(FACES);
+  const [faceUrls, cardBg, boss] = await Promise.all([
+    Promise.all(faceKeys.map(k => probe('assets/' + FACES[k].file))),
+    probe(ASSET_SLOTS.cardBg), probe(ASSET_SLOTS.boss),
+  ]);
+  faceKeys.forEach((k, i) => { if (faceUrls[i]) ASSET.face[k] = faceUrls[i]; });
+  ASSET.cardBg = cardBg; ASSET.boss = boss;
+  const img = url => `<img src="${url}" alt="" draggable="false">`;
+  if (ASSET.face.idle) {
+    // 보드 캐릭터 · 대사 초상화를 그림으로 교체 (표정은 renderPose / setPortrait가 고른다)
+    $('#heroArt').innerHTML = '<img id="heroImg" alt="" draggable="false">';
+    $('#heroArt').classList.add('img');
+    $('#ptHeroArt').innerHTML = '<img id="ptHeroImg" alt="" draggable="false">';
+    $('#ptHero').classList.add('img');
+    renderPose();
+    setPortrait(SC.face);
+  }
   if (cardBg) { document.documentElement.style.setProperty('--card-art', `url("${cardBg}")`); $('#app').classList.add('has-card-art'); }
-  if (boss) $('#bossArt').innerHTML = `<img src="${boss}" alt="" draggable="false">`;
+  if (boss) { $('#bossArt').innerHTML = img(boss); $('#ptBossArt').innerHTML = img(boss); }
+}
+
+// 보드 위 주인공 표정: 승패 > 잠깐 바뀌는 표정(공격·피격) > 마비 > 기본
+let poseTemp = null, poseTimer = 0;
+function flashPose(face, ms) {
+  poseTemp = face;
+  clearTimeout(poseTimer);
+  poseTimer = setTimeout(() => { poseTemp = null; renderPose(); }, ms);
+  renderPose();
+}
+function currentPose() {
+  if (S.over) return S.won ? 'smug' : 'wounded';
+  if (poseTemp) return poseTemp;
+  if (S.freeze > 0) return 'overload';
+  return 'idle';
+}
+function renderPose() {
+  const img = $('#heroImg');
+  if (!img) return;
+  const url = faceUrl(currentPose());
+  if (url && img.getAttribute('src') !== url) img.setAttribute('src', url);
 }
 
 /* ═════════════════════════════════════════════
@@ -1337,6 +1513,7 @@ function renderBoard() {
   pl.classList.toggle('warded', S.shield > 0);
   $('#frzBadge').textContent = S.freeze > 0 ? S.freeze : '';
   pl.classList.toggle('on-blood', S.started && S.blood.has(K(S.p.r, S.p.c)));
+  renderPose();
   $('#bldBadge').textContent = `×${CFG.bloodMult}`;
   $('#bossRow').classList.toggle('stunned', S.boss.stun > 0);
 }
@@ -1351,8 +1528,8 @@ function renderBeams() {
 }
 
 function pipTitle(j, n) {
-  if (j === AMBUSH_AT) return `${j}번째 코스트: 지불하는 순간 기습 폭발`;
-  if (j === n) return `${j}번째 코스트: 턴 공격`;
+  if (j === AMBUSH_AT) return `${j}번째 행동이 끝나면 기습 폭발`;
+  if (j === n) return CFG.atkTiming === 'pay' ? `${j}번째 코스트를 지불하는 순간 턴 공격` : `${j}번째 행동이 끝나면 턴 공격`;
   return `${j}번째 코스트`;
 }
 function renderStatus() {
@@ -1398,16 +1575,16 @@ function coach() {
     const inRed = S.amb.cells.has(me);
     if (next === AMBUSH_AT) {
       if (ambCancelled()) return { t: '기습 차례 — 보스 정지로 무력화', tone: 'ok' };
-      return inRed ? { t: '다음 행동 순간 기습 폭발 — 빨간 줄 위!', tone: 'danger' } : { t: '다음 행동 순간 기습 폭발 — 여기는 안전', tone: 'ok' };
+      return inRed ? { t: '다음 행동 뒤 기습 폭발 — 빨간 줄 밖에서 끝내기', tone: 'danger' } : { t: '다음 행동 뒤 기습 폭발 — 여기서 끝내면 안전', tone: 'ok' };
     }
-    return inRed ? { t: '빨간 줄 위 — 첫 행동으로 대피하세요', tone: 'danger' } : { t: '안전 지대 — 기습은 2번째 코스트에 폭발', tone: 'ok' };
+    return inRed ? { t: '빨간 줄 위 — 2번째 행동까지 대피하세요', tone: 'danger' } : { t: '안전 지대 — 기습은 2번째 행동 뒤에 폭발', tone: 'ok' };
   }
   if (S.atk) {
     const inAtk = S.atk.has(me);
     if (S.costLeft === 1) {
       if (atkCancelled()) return { t: '턴 공격 차례 — 보스 정지로 무력화', tone: 'ok' };
       if (CFG.atkTiming === 'pay') return inAtk ? { t: '다음 행동 순간 턴 공격 — 주황 범위 안!', tone: 'warn' } : { t: '다음 행동 순간 턴 공격 — 여기는 안전', tone: 'ok' };
-      return { t: '마지막 행동 뒤 턴 공격 — 주황 밖에서 끝내기', tone: inAtk ? 'warn' : 'ok' };
+      return inAtk ? { t: '마지막 행동 뒤 턴 공격 — 주황 밖에서 끝내기', tone: 'warn' } : { t: '마지막 행동 뒤 턴 공격 — 여기서 끝내면 안전', tone: 'ok' };
     }
     return inAtk ? { t: '주황 범위 안 — 턴 공격 전에 벗어나세요', tone: 'warn' } : { t: '주황 범위 밖 — 공격할 타이밍', tone: 'ok' };
   }
@@ -1715,6 +1892,8 @@ const SFX = (() => {
     stun()   { tone(600, 0.6, { type: 'sawtooth', v: 0.06, f2: 60 }); },
     fizzle() { tone(160, 0.12, { type: 'sawtooth', v: 0.05, f2: 120 }); hiss(0.08, { v: 0.05, f: 3000, type: 'highpass' }); },
     deny()   { tone(180, 0.08, { type: 'square', v: 0.045 }); tone(140, 0.1, { type: 'square', v: 0.045, at: 0.08 }); },
+    blip(who) { if (who === 'boss') tone(180, 0.04, { type: 'square', v: 0.016 }); else if (who === 'hero') tone(720 + Math.random() * 90, 0.035, { type: 'triangle', v: 0.02 }); },
+    page()   { hiss(0.12, { v: 0.035, f: 2600, type: 'bandpass', q: 0.7 }); },
     chime()  { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.9, { v: 0.07, at: i * 0.12 })); },
     hurt()   { tone(220, 0.25, { type: 'square', v: 0.09, f2: 90 }); },
     win()    { [392, 523, 659, 784].forEach((f, i) => tone(f, 0.5, { type: 'triangle', v: 0.09, at: i * 0.13 })); },
@@ -1722,8 +1901,230 @@ const SFX = (() => {
   };
 })();
 
+
 /* ═════════════════════════════════════════════
-   11. 입력 — 키보드 · 마우스 · 터치
+   11. 대사 장면 — 전투 전 이야기 · 전투 중 보스 대사
+   ═════════════════════════════════════════════ */
+// 화자 이름표. 이름과 대사는 전부 테스트용 임시 문구
+const SPEAKERS = {
+  nar:  { name: '' },
+  hero: { name: '기계 신' },
+  boss: { name: '집행 병기 「못박이」' },
+};
+// 대사 = { who, face?, text } · 선택지 = { choice: [{ label, then: [...] }] } · 챕터 카드 = { card: { num, title } }
+// face: idle · aim · overload · smug · surprised · wounded · pain · angry (FACES 참고)
+const PROLOGUE = [
+  { card: { num: 'I', title: '감시탑 아래에서' } },
+  { who: 'nar',  text: '오전 12시 정각. 감시탑의 탐조등이 무너진 성당을 천천히 훑는다.' },
+  { who: 'nar',  text: '핏자국이 말라붙은 제단 아래, 멈춰 있던 톱니 하나가 다시 돌기 시작했다.' },
+  { who: 'hero', face: 'surprised', text: '……여기가 어디지. 기도 소리가 하나도 들리지 않아.' },
+  { who: 'boss', text: '감시망에 미등록 개체 포착. 분류 — 이단의 우상.' },
+  { who: 'hero', face: 'overload', text: '윽… 머릿속에서 톱니가 비명을 질러. 저 목소리, 뭐야…!' },
+  { who: 'boss', text: '장력 가속 못총, 장전 완료. 오전 규정에 따라 즉시 처분한다.' },
+  { who: 'hero', face: 'angry', text: '처분? 방금 깨어난 신한테 하는 인사치고는 꽤 무례하네.' },
+  { who: 'nar',  text: '바닥의 핏자국이 희미하게 맥동한다. 밤이 오면, 이 피는 다시 끓어오를 것이다.' },
+  { choice: [
+    { label: '총을 겨눈다', then: [
+      { who: 'hero', face: 'aim', text: '좋아. 너희가 부순 것들, 하나씩 돌려받을게.' },
+    ] },
+    { label: '흥정을 걸어 본다', then: [
+      { who: 'hero', face: 'smug', text: '잠깐. 날 살려 두면 꽤 쓸모 있을 텐데? 값은 후하게 쳐 주지.' },
+      { who: 'boss', text: '거래 프로토콜 없음. 처분을 개시한다.' },
+      { who: 'hero', face: 'aim', text: '……그럼 할 수 없지. 대가는 네 부품으로 받아 갈게.' },
+    ] },
+  ] },
+  { who: 'boss', text: '교전 개시. 기습 좌표, 송신.' },
+];
+// 전투 중 보스 말풍선
+const BARKS = {
+  start:  ['좌표 고정. 처분을 시작한다.'],
+  attack: ['장전 완료. 발사.', '처분 집행.', '못, 가속.', '회피 예측 수정.'],
+  stun:   ['회로 과부하— 재부팅 중…', '경고. 출력 저하… 출력 저하…'],
+  freeze: ['이단 우상, 기능 정지 확인.', '움직임 없음. 지금이다.'],
+  night:  ['야간 규정 전환. 핏자국 반응 감지.'],
+  day:    ['오전 규정. 감시망 재가동.'],
+  low:    ['외장 손상 치명적… 교전 계속.'],
+  win:    ['시스템… 종…료…'],
+  lose:   ['처분 완료. 기록을 삭제한다.'],
+};
+
+const SC = { queue: [], full: '', shown: 0, who: 'nar', face: 'idle', typing: false, choosing: null, carding: false, auto: false, log: [], onEnd: null, t: 0, autoT: 0, cardT: 0 };
+
+function buildScene() {
+  // 이미지가 없을 때의 초상화: 보드 SD 그림 확대 · 보스 그림의 감시 눈 확대
+  $('#ptHeroArt').innerHTML = $('#heroArt').innerHTML;
+  const eye = $('#bossArt svg').cloneNode(true);
+  const defs = eye.querySelector('defs');
+  if (defs) defs.remove();                                   // 그라데이션은 원본 정의를 그대로 참조
+  eye.setAttribute('viewBox', '196 0 128 80');
+  eye.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  $('#ptBossArt').replaceChildren(eye);
+}
+
+function playScene(script, onEnd) {
+  Object.assign(SC, { queue: script.slice(), log: [], onEnd, choosing: null, carding: false, typing: false });
+  setPortrait('idle');
+  for (const sel of ['#ptHero', '#ptBoss']) $(sel).classList.remove('in', 'on', 'off', 'swap');   // 그림 모드(img)는 유지
+  $('#dname').hidden = true;
+  $('#dtext').textContent = '';
+  $('#dbox').className = 'dbox';
+  $('#scChoices').hidden = true;
+  $('#scLogPanel').hidden = true;
+  $('#scCard').hidden = true;
+  $('#scAutoBtn').classList.toggle('on', SC.auto);
+  $('#scene').hidden = false;
+  sceneNext();
+}
+
+function sceneNext() {
+  clearTimeout(SC.autoT);
+  const step = SC.queue.shift();
+  if (!step) { endScene(); return; }
+  if (step.card) { showCard(step.card); return; }
+  if (step.choice) { showChoice(step.choice); return; }
+  showLine(step);
+}
+
+function showLine(step) {
+  const who = SPEAKERS[step.who] ? step.who : 'nar';
+  const name = SPEAKERS[who].name;
+  for (const [sel, key] of [['#ptHero', 'hero'], ['#ptBoss', 'boss']]) {
+    const el = $(sel);
+    if (who === key) el.classList.add('in');                  // 처음 말할 때 등장
+    el.classList.toggle('on', who === key);
+    el.classList.toggle('off', who !== key);
+  }
+  const nm = $('#dname');
+  nm.textContent = name;
+  nm.hidden = !name;
+  nm.className = 'dname' + (who === 'boss' ? ' boss' : '');
+  $('#dtext').className = 'dtext' + (who === 'hero' ? '' : ' ' + who);
+  if (who === 'hero') setPortrait(step.face || 'idle');
+  SC.log.push({ who, name, text: step.text });
+  SC.who = who;
+  typeText(step.text);
+}
+
+function setPortrait(face) {
+  SC.face = face;
+  const img = $('#ptHeroImg');
+  if (!img) return;
+  const url = faceUrl(face);
+  if (url && img.getAttribute('src') !== url) {
+    img.setAttribute('src', url);
+    FX.flash($('#ptHero'), 'swap', 280);
+  }
+}
+
+function typeText(text) {
+  clearTimeout(SC.t);
+  SC.full = text; SC.shown = 0; SC.typing = true;
+  $('#dbox').classList.remove('done');
+  const el = $('#dtext');
+  const tick = () => {
+    SC.shown++;
+    el.textContent = SC.full.slice(0, SC.shown);
+    const ch = SC.full[SC.shown - 1];
+    if (SC.shown % 2 && /\S/.test(ch)) SFX.blip(SC.who);
+    if (SC.shown >= SC.full.length) { finishType(); return; }
+    SC.t = setTimeout(tick, RM.matches ? 6 : /[.,!?…—]/.test(ch) ? 150 : 30);
+  };
+  tick();
+}
+
+function finishType() {
+  clearTimeout(SC.t);
+  SC.typing = false;
+  SC.shown = SC.full.length;
+  $('#dtext').textContent = SC.full;
+  $('#dbox').classList.add('done');
+  if (SC.auto) SC.autoT = setTimeout(sceneNext, 1000 + SC.full.length * 35);
+}
+
+// 탭·클릭·Space: 글자가 나오는 중이면 한 번에 다 보여주고, 다 나왔으면 다음 줄
+function sceneAdvance() {
+  if (!$('#scLogPanel').hidden || SC.choosing) return;
+  if (SC.carding) { hideCard(); return; }
+  if (SC.typing) finishType();
+  else { SFX.page(); sceneNext(); }
+}
+
+function showCard(c) {
+  SC.carding = true;
+  const el = $('#scCard');
+  el.innerHTML = `<div><b>${c.num}</b><i></i><span>${c.title}</span></div>`;
+  el.hidden = false;
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  SC.cardT = setTimeout(hideCard, 2000);
+}
+function hideCard() {
+  clearTimeout(SC.cardT);
+  SC.carding = false;
+  $('#scCard').hidden = true;
+  sceneNext();
+}
+
+function showChoice(opts) {
+  SC.choosing = opts;
+  $('#dbox').classList.add('choosing');
+  const box = $('#scChoices');
+  box.innerHTML = opts.map((o, i) => `<button type="button" data-i="${i}"><kbd>${i + 1}</kbd>${o.label}</button>`).join('');
+  box.hidden = false;
+}
+function chooseOption(i) {
+  const opts = SC.choosing;
+  if (!opts || !opts[i]) return;
+  SC.choosing = null;
+  $('#scChoices').hidden = true;
+  $('#dbox').classList.remove('choosing');
+  SC.log.push({ who: 'pick', name: '선택', text: opts[i].label });
+  SC.queue.unshift(...opts[i].then);
+  SFX.card();
+  sceneNext();
+}
+
+function toggleSceneLog(open) {
+  const panel = $('#scLogPanel');
+  if (open) {
+    clearTimeout(SC.autoT);
+    const list = $('#scLogList');
+    list.innerHTML = SC.log.map(l => `<div class="lg-item${l.who === 'nar' ? ' nar' : l.who === 'pick' ? ' pick' : ''}">${l.name ? `<b>${l.name}</b>` : ''}<p>${l.text}</p></div>`).join('') || '<p class="hint">아직 지나간 대사가 없어요.</p>';
+    panel.hidden = false;
+    list.scrollTop = list.scrollHeight;
+    return;
+  }
+  panel.hidden = true;
+  if (SC.auto && !SC.typing && !SC.choosing && !SC.carding) SC.autoT = setTimeout(sceneNext, 800);
+}
+function toggleAuto() {
+  SC.auto = !SC.auto;
+  $('#scAutoBtn').classList.toggle('on', SC.auto);
+  clearTimeout(SC.autoT);
+  if (SC.auto && !SC.typing && !SC.choosing && !SC.carding && $('#scLogPanel').hidden) SC.autoT = setTimeout(sceneNext, 600);
+}
+function endScene() {
+  clearTimeout(SC.t); clearTimeout(SC.autoT); clearTimeout(SC.cardT);
+  SC.choosing = null; SC.carding = false; SC.typing = false;
+  $('#scene').hidden = true;
+  const cb = SC.onEnd;
+  SC.onEnd = null;
+  if (cb) cb();
+}
+
+let barkTimer = 0;
+function bark(kind) {
+  const lines = BARKS[kind];
+  if (!lines) return;
+  const el = $('#bark');
+  el.textContent = pick(lines);
+  el.hidden = false;
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+  clearTimeout(barkTimer);
+  barkTimer = setTimeout(() => { el.hidden = true; }, 2300);
+}
+
+/* ═════════════════════════════════════════════
+   12. 입력 — 키보드 · 마우스 · 터치
    ═════════════════════════════════════════════ */
 let lastPointer = window.matchMedia && window.matchMedia('(hover: hover)').matches ? 'mouse' : 'touch';
 document.addEventListener('pointerdown', e => { lastPointer = e.pointerType || 'mouse'; }, true);
@@ -1764,11 +2165,19 @@ function onCardClick(i) {
 const CODE_DIR = { KeyW: 'up', KeyA: 'left', KeyS: 'down', KeyD: 'right', ArrowUp: 'up', ArrowLeft: 'left', ArrowDown: 'down', ArrowRight: 'right' };
 document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (!$('#scene').hidden) {
+    if (!$('#scLogPanel').hidden) { if (e.key === 'Escape' || e.code === 'KeyL') { e.preventDefault(); toggleSceneLog(false); } return; }
+    const pickKey = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+    if (SC.choosing) { if (pickKey) chooseOption(+pickKey[1] - 1); return; }
+    if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); sceneAdvance(); return; }
+    if (e.code === 'KeyL') toggleSceneLog(true);
+    return;
+  }
   if (document.querySelector('.sheet:not([hidden])')) { if (e.key === 'Escape') closeSheets(); return; }
   const ae = document.activeElement;
   const onControl = ae && ae !== document.body && /^(BUTTON|INPUT|SELECT|TEXTAREA)$/.test(ae.tagName);
   if (!$('#result').hidden) { if (e.key === 'Enter' && !onControl) { e.preventDefault(); restart(); } return; }
-  if (!S.started) { if ((e.key === 'Enter' || e.code === 'Space') && !onControl) { e.preventDefault(); startBattle(); } return; }
+  if (!S.started) { if ((e.key === 'Enter' || e.code === 'Space') && !onControl) { e.preventDefault(); startStory(); } return; }
   // 한글 자판 상태에서도 되도록 물리 키(e.code)로 판정
   const dir = CODE_DIR[e.code];
   if (dir) {
@@ -1806,7 +2215,18 @@ function bindInput() {
   db.addEventListener('mousedown', e => e.preventDefault());
   db.addEventListener('click', () => act({ type: 'draw' }));
   $('#detail').addEventListener('click', e => { if (e.target.closest('#btnUse')) useSelected(); });
-  $('#btnStart').addEventListener('click', startBattle);
+  $('#btnStart').addEventListener('click', startStory);
+  $('#scene').addEventListener('click', e => {
+    if (e.target.closest('.sc-tools, .sc-logp')) return;
+    const choice = e.target.closest('.sc-choices button');
+    if (choice) { chooseOption(+choice.dataset.i); return; }
+    if (e.target.closest('.sc-choices')) return;
+    sceneAdvance();
+  });
+  $('#scLogBtn').addEventListener('click', e => { e.currentTarget.blur(); toggleSceneLog(true); });
+  $('#scLogClose').addEventListener('click', () => toggleSceneLog(false));
+  $('#scAutoBtn').addEventListener('click', e => { e.currentTarget.blur(); toggleAuto(); });
+  $('#scSkipBtn').addEventListener('click', e => { e.currentTarget.blur(); endScene(); });
   $('#btnAgain').addEventListener('click', restart);
   $('#btnResCfg').addEventListener('click', () => openSheet('cfg'));
   $('#btnHelp').addEventListener('click', () => openSheet('help'));
@@ -1824,15 +2244,22 @@ function bindInput() {
 function toggleSound() { SFX.init(); const m = SFX.toggle(); renderHud(); toast(m ? '소리 끔' : '소리 켬', 'ok'); }
 
 /* ═════════════════════════════════════════════
-   12. 화면 — 시작 · 결과 · 규칙 · 테스트 설정
+   13. 화면 — 시작 · 결과 · 규칙 · 테스트 설정
    ═════════════════════════════════════════════ */
 function rulesHTML() {
   return `
     <li><svg><use href="#i-deck"/></svg><div><b>모든 행동은 1코스트</b>이동·카드·추가 뽑기. 한 루프에 ${CFG.costPerLoop}코스트, 턴 종료 버튼은 없다.</div></li>
-    <li class="r-amb"><svg><use href="#i-cross"/></svg><div><b>2번째 코스트 = 기습 폭격</b>빨간 줄은 2번째 코스트를 쓰는 순간 터진다. 첫 행동으로 대피.</div></li>
-    <li class="r-atk"><svg><use href="#i-hazard"/></svg><div><b>코스트 소진 = 턴 공격</b>기습이 터지면 주황 범위가 드러난다. 마지막 코스트 전에 벗어나기.</div></li>
+    <li class="r-amb"><svg><use href="#i-cross"/></svg><div><b>2번째 행동 뒤 = 기습 폭격</b>2번째 행동을 마쳤을 때 빨간 줄 위에 있으면 맞는다.</div></li>
+    <li class="r-atk"><svg><use href="#i-hazard"/></svg><div><b>코스트 소진 = 턴 공격</b>기습이 터지면 주황 범위가 드러난다. 마지막 행동을 주황 밖에서 끝내기.</div></li>
     <li class="r-volt"><svg><use href="#i-bolt"/></svg><div><b>과부하 ${CFG.olMax} = ${CFG.freezeCost}코스트 마비</b>게이지는 ${CFG.olReset}으로. 보스를 과부하시키면 ${CFG.bossStunCost}코스트 동안 공격이 멈춘다.</div></li>
     <li class="r-blood"><svg><use href="#i-moon"/></svg><div><b>누적 ${CFG.phaseCost}코스트마다 낮밤 전환</b>오전 기습 ${CFG.ambushDay}칸 · 오후 기습 ${CFG.ambushNight}칸 + 핏빛 타일(피해 ×${CFG.bloodMult}, 과부하 +${CFG.bloodOl}).</div></li>`;
+}
+
+function startStory() {
+  if (S.started || !$('#scene').hidden) return;
+  SFX.init();
+  $('#intro').hidden = true;
+  playScene(PROLOGUE, () => { startBattle(); bark('start'); });
 }
 
 function startBattle() {
@@ -1871,7 +2298,8 @@ function showResult(win) {
 }
 
 function helpHTML() {
-  const slot = (url, name) => url ? `<b class="ok">적용됨</b> <code>${url}</code>` : `<span class="dim">기본 그림 사용 중 — <code>assets/${name}.png</code>를 넣으면 교체</span>`;
+  const slot = (url, name) => url ? `<b class="ok">적용됨</b> <code>${url}</code>` : `<span class="dim">기본 그림 사용 중 — <code>assets/${name}.webp</code>(또는 png)를 넣으면 교체</span>`;
+  const faces = Object.entries(FACES).map(([k, f]) => `${f.label} <code>${f.file}</code> ${ASSET.face[k] ? '<b class="ok">✓</b>' : '<span class="dim">없음</span>'}`).join('<br>');
   const cardRows = Object.values(CARDS).map(d => {
     const range = d.shape ? `${SHAPES[d.shape].label}<br><span class="dim">${reachText(d.shape)}</span>` : d.leap ? `최대 ${d.leap}칸` : '자신';
     const eff = [d.dmg ? `피해 ${d.dmg}` : '', d.shield ? `실드 +${d.shield}` : '', d.cool ? `과부하 −${d.cool}` : '', d.ol ? `내 과부하 +${d.ol}` : '', d.bossOl ? `보스 과부하 +${d.bossOl}` : '', d.rapid ? `연사 시 +${d.rapid}씩 가중` : '', d.persist ? '상주' : ''].filter(Boolean).join(' · ');
@@ -1882,10 +2310,10 @@ function helpHTML() {
   <section><h4>한 루프의 흐름</h4>
     <ol>
       <li>루프 시작 — 코스트 ${CFG.costPerLoop} 충전, 손패 ${CFG.handRefill}장까지 보충, <b>빨간 기습 줄</b>과 턴 공격 패턴 예고</li>
-      <li>첫 행동 — 빨간 줄 밖으로 대피</li>
-      <li><b>2번째 코스트를 지불하는 순간</b> 기습 폭발 (그 행동은 폭발 뒤에 처리) → <b>주황 턴 공격 범위</b> 공개</li>
+      <li>1~2번째 행동 — 빨간 줄 밖으로 대피</li>
+      <li><b>2번째 행동이 끝나는 순간</b> 기습 폭발 → <b>주황 턴 공격 범위</b> 공개</li>
       <li>남은 행동 — 주황 범위 밖으로 자리 잡기</li>
-      <li>${CFG.atkTiming === 'pay' ? '<b>마지막 코스트를 지불하는 순간</b>' : '<b>마지막 행동이 끝난 뒤</b>'} 턴 공격 → 다음 루프</li>
+      <li>${CFG.atkTiming === 'pay' ? '<b>마지막 코스트를 지불하는 순간</b>(그 행동 전)' : '<b>마지막 행동이 끝나는 순간</b>'} 턴 공격 → 다음 루프</li>
     </ol>
   </section>
   <section><h4>과부하</h4>
@@ -1907,14 +2335,15 @@ function helpHTML() {
     <p><b>이동</b> WASD·방향키, 또는 옆 칸 터치 · <b>카드</b> 1–6으로 선택 후 한 번 더(또는 Space), 마우스는 클릭 즉시 사용, 터치는 두 번 · <b>뽑기</b> Q · <b>취소</b> Esc · <b>소리</b> M</p>
   </section>
   <section><h4>이미지 슬롯</h4>
-    <p>주인공 SD — ${slot(ASSET.hero, 'hero')}<br>카드 배경 — ${slot(ASSET.cardBg, 'card-bg')}<br>보스(선택) — ${slot(ASSET.boss, 'boss')}</p>
-    <p class="dim">png · webp · jpg 모두 인식한다.</p>
+    <p><b>주인공 표정</b> (없는 표정은 비슷한 표정으로 대신)<br>${faces}</p>
+    <p>카드 배경 — ${slot(ASSET.cardBg, 'card-bg')}<br>보스(선택) — ${slot(ASSET.boss, 'boss')}</p>
+    <p class="dim">webp · png · jpg를 인식한다. 배경은 투명해야 한다.</p>
   </section>`;
 }
 
 const TEST_ACTIONS = [
   ['flip', '낮밤 즉시 전환'], ['ol', '내 과부하 +50'], ['bol', '보스 과부하 +50'],
-  ['bhp', '보스 HP −50'], ['heal', 'HP 전부 회복'], ['restart', '전투 재시작'], ['reset', '설정 기본값', 'danger'],
+  ['bhp', '보스 HP −50'], ['heal', 'HP 전부 회복'], ['story', '대사 장면 다시 보기'], ['restart', '전투 재시작'], ['reset', '설정 기본값', 'danger'],
 ];
 function buildCfgSheet() {
   $('#cfgActions').innerHTML = TEST_ACTIONS.map(([a, l, c]) => `<button type="button" data-a="${a}" class="${c || ''}">${l}</button>`).join('');
@@ -1956,6 +2385,7 @@ function testAction(a) {
   if (!S.started || S.over) { toast('전투 중에만 쓸 수 있어요'); return; }
   if (S.busy) { toast('행동 처리 중이에요 — 잠시 뒤 다시'); return; }
   if (a === 'flip') { closeSheets(); run(async () => { S.lastSwitch = S.total; await switchPhase(); }); return; }
+  if (a === 'story') { closeSheets(); playScene(PROLOGUE, null); return; }
   if (a === 'ol') addOverload(50, '테스트');
   if (a === 'bol') addBossOl(50);
   if (a === 'heal') S.hp = S.maxHp;
@@ -1978,7 +2408,7 @@ function closeSheets() {
 }
 
 /* ═════════════════════════════════════════════
-   13. 시작
+   14. 시작
    ═════════════════════════════════════════════ */
 buildBoard();
 buildClock();
@@ -1986,6 +2416,7 @@ bindInput();
 newBattle();
 if (location.hash === '#debug') window.I12 = { S, CFG, CARDS, render, act, restart };   // 개발용: 상태 확인·조작
 $('#introRules').innerHTML = rulesHTML();
+buildScene();
 render();
 loadAssets();
 })();
