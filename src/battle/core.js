@@ -59,6 +59,7 @@ export const dueIn = f => (B.totalP + 1) % 2 === f.ph ? 1 : 2;
 
 /* ═════════════ 전투 준비 ═════════════ */
 // enc: { kind:'normal'|'boss', foes:[type], boss, hpMul, hpMulOf:{ 종류: 배율 }, ambush(칸 수), ambushed, narrow, trial, tut, story, elite, signal }
+//      start: { r, c } 시작 칸(없으면 맨 아랫줄 가운데) · sig: 감시 시계 송신까지 행동 수 · foeCols: 적이 먼저 서는 세로줄 (09 — 경로마다 배치)
 // ctx: { hp, maxHp, deck:[inst], mods, diff, seed, name, items: { potion }, seen: [이미 본 전투 중 이야기] } — 회복약은 전투 중 1코스트, 이기면 남은 수를 돌려준다
 export function setupBattle(enc, ctx) {
   B.tok++;
@@ -97,6 +98,8 @@ export function setupBattle(enc, ctx) {
   });
   B.area = [];
   for (let r = B.top; r < B.rows; r++) for (let c = 0; c < COLS; c++) if (inArea(r, c)) B.area.push(K(r, c));
+  // 시작 칸 — 대본이 정한 자리(경로마다 다른 배치)가 판 안이면 거기서
+  if (enc.start && B.area.includes(K(enc.start.r, enc.start.c))) { B.p = { r: enc.start.r, c: enc.start.c }; B.loopStartP = { r: enc.start.r, c: enc.start.c }; }
   // 덱 — 인스턴스를 섞어서
   B.deck = R.shuffle(ctx.deck.map(inst => ({ uid: inst.uid, id: inst.id, up: inst.up })));
   // 보스
@@ -116,11 +119,13 @@ function spawnFoes(types, enc) {
   const near = (r, c) => taken.some(t => Math.abs(t.r - r) + Math.abs(t.c - c) <= 1);
   // 처음부터 불공평하지 않게: 사격형은 나와 줄이 어긋나게, 폭탄형은 던지는 거리(2~3) 밖에서
   const fair = (ai, r, c) => ai === 'line' || ai === 'charge' ? r !== me.r && c !== me.c : ai === 'bomber' || ai === 'chaser' ? manh({ r, c }, me) >= 4 : ai === 'mortar' ? manh({ r, c }, me) >= 3 : true;
+  const side = c => !enc.foeCols || enc.foeCols.includes(c);   // 경로마다 적이 먼저 서는 쪽
   types.forEach((type, i) => {
     const D = FOES[type];
     if (!D) return;
     const free = B.area.map(RC).filter(([r, c]) => !(r === me.r && c === me.c) && !taken.some(t => t.r === r && t.c === c));
     const tiers = [
+      free.filter(([r, c]) => rows.includes(r) && side(c) && !near(r, c) && fair(D.ai, r, c)),
       free.filter(([r, c]) => rows.includes(r) && !near(r, c) && fair(D.ai, r, c)),
       free.filter(([r, c]) => rows.includes(r) && fair(D.ai, r, c)),
       free.filter(([r]) => rows.includes(r)),
@@ -132,7 +137,7 @@ function spawnFoes(types, enc) {
     taken.push({ r, c });
     const hp = Math.max(1, Math.round(D.hp * (B.diff.foeHp || 1) * (enc.hpMul || 1) * ((enc.hpMulOf || {})[type] || 1)));
     const f = { uid: ++B.foeUid, type, r, c, hp, max: hp, ph: (i + 1) % 2, face: 'down', flip: false, intent: null, skip: false, traits: [], volley: 0 };
-    if (B.signal && type === 'watcher') f.sig = SIGNAL_TURNS;   // 송신까지 남은 행동 수
+    if (B.signal && type === 'watcher') f.sig = enc.sig || SIGNAL_TURNS;   // 송신까지 남은 행동 수 (가림길이면 한 박자 늦다)
     // 정예 특성 (난이도 IV부터)
     if (D.elite && B.diff.eliteTrait) f.traits.push(R.pick(Object.keys(ELITE_TRAITS)));
     B.foes.push(f);

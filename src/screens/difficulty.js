@@ -1,11 +1,13 @@
-// 난이도 — 시계 바늘로 I~XII 중 하나를 고른다 → 긴 프롤로그(이름 입력) → 1장
+// 난이도 — 시계 바늘로 I~XII 중 하나를 고른다 → 프롤로그(01 회상 · 02 각성) → 1장 지도 (이름은 04에서)
 import { register, go } from '../ui/router.js';
 import { DIFFS, diffMods } from '../data/difficulty.js';
 import { roman } from '../core/util.js';
 import { SFX } from '../ui/sfx.js';
 import { newRun, RUN, BASE_HP } from '../game/run.js';
 import { playScene } from '../scenes/scene.js';
-import { PROLOGUE } from '../data/story/prologue.js';
+import { PROLOGUE, PROLOGUE_CAST } from '../data/story/prologue.js';
+import { CH1_CAST } from '../data/story/ch1.js';
+import { storyArtKeys } from '../ui/foeart.js';
 import { startChapter } from '../game/flow.js';
 import { resetClock } from '../game/save.js';
 import { loadAll } from '../ui/assets.js';
@@ -78,14 +80,15 @@ function onKey(e) {
 
 register('difficulty', { mount, onKey });
 
-// 프롤로그 — 검은 화면 위에 대사 장면 → 1장 시작
+// 프롤로그 — 01 작업실의 마지막 손님(회상) → 02 숨을 쉬는 순서(각성) → 1장 지도
+// 이름은 아직 정하지 않는다 — 04에서 마르트가 접힌 그림을 꺼낼 때 (그 전까지 이름 칸은 ???)
 register('prologue', {
   async mount(holder) {
-    holder.style.background = 'radial-gradient(70% 60% at 50% 45%,#120E16,#050407)';
+    holder.style.background = '#000';
     await new Promise(r => setTimeout(r, 300));
-    await loadAll(['story-nailgun', 'bg-battle']);
-    await playScene(PROLOGUE, { onName: n => { RUN.name = n; } });
-    if (!RUN.name) RUN.name = '크로노스';   // 대본의 표기
+    const cast = Object.assign({}, CH1_CAST, PROLOGUE_CAST);
+    await loadAll(storyArtKeys(PROLOGUE, cast));
+    await playScene(PROLOGUE, { cast, onName: n => { RUN.name = n; } });
     startChapter(1);
   },
 });

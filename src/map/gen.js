@@ -2,11 +2,12 @@
 // 1) 층마다 톱니 수 → 2) 교차 없는 연결(놋쇠 축) → 3) 칸 종류 → 4) 위치 · 크기 · 도는 방향
 import { makeRng, hashSeed } from '../core/rng.js';
 import { NODE_TYPES } from '../data/nodes.js';
-import { EVENT_POOL } from '../data/events.js';
+import { EVENT_POOL, EVENTS } from '../data/events.js';
 
-export const MAP_BOX = { x0: 100, x1: 1760, y0: 250, y1: 860, cy: 555 };
+// 지도 칸 — 한 줄이면 가운데(cy), 두 줄이면 rows[0] · rows[1] (위 줄은 왼쪽 → 오른쪽, 아래 줄은 오른쪽 → 왼쪽)
+export const MAP_BOX = { x0: 118, x1: 1762, y0: 250, y1: 860, cy: 555, rows: [370, 712] };
 // 사이 층(톱니 2개)은 가운데 줄을 비우고 위아래로 — 가운데 줄은 이야기 칸과 그 이름표 자리
-const SPLIT = 135;
+const SPLIT = 135, SPLIT2 = 70;   // 한 줄 지도 · 두 줄 지도
 
 // 두 층 사이의 교차 없는 연결: 계단처럼 한쪽씩 전진하며 모든 칸을 잇고, 몇 개를 덧붙인다
 function linkLayers(m, n, R) {
@@ -75,11 +76,11 @@ export function genMap(ch, seed, opt = {}) {
       if (n.layer >= 3 && n.layer < L - 2 && !['boss', 'elite', 'midboss', 'story'].includes(n.type) && R.chance(ch.watched)) n.watched = true;
     }
   }
-  // 칸마다 내용 씨앗 · 전투 구성 · 사건
+  // 칸마다 내용 씨앗 · 전투 구성 · 사건 (사건은 그 층의 때에 맞는 것만 — 오르가 함께인지, 잃은 뒤인지)
   const events = eventBag(makeRng(hashSeed(seed, 'events', ch.num)), EVENT_POOL[ch.num] || EVENT_POOL[1], opt.seenEvents || {});
-  for (const id of Object.keys(nodes)) fillContent(ch, nodes[id], R, seed, events);
+  for (const i of layers.keys()) for (const id of layers[i]) fillContent(ch, nodes[id], R, seed, events);
   // 4) 위치 · 크기 · 도는 방향
-  layout(nodes, layers, L, R);
+  layout(nodes, layers, L, R, ch);
   return { chapter: ch.num, nodes, layers, edges, arc: 0, start: layers[0][0] };
 }
 
@@ -93,8 +94,14 @@ function assignTypes(ch, nodes, layers, R) {
   });
   const free = [];
   for (let i = 0; i < L; i++) if (!ch.fixed[i]) free.push(...layers[i]);
+  const moodOf = n => { const ph = (ch.phases || {})[n.layer]; return ph && ch.moods && ch.moods[ph] || null; };
   const okAt = (t, n) => {
+    const mood = moodOf(n);
+    if (mood && !mood[t]) return false;   // 그때에 맞지 않는 칸 (오르를 잃은 뒤의 상점 · 심연 등)
     if (ch.from[t] && n.layer < ch.from[t]) return false;
+    // 이야기 칸과 같은 일을 바로 옆에 두지 않는다
+    const near = (ch.avoidNear || {})[t];
+    if (near && [...n.prev, ...n.next].some(x => near.includes(nodes[x].story))) return false;
     if (ch.noRepeat.includes(t)) {
       const nb = [...n.prev, ...n.next].map(x => nodes[x].type);
       if (nb.includes(t)) return false;
@@ -114,23 +121,27 @@ function assignTypes(ch, nodes, layers, R) {
       n.type = t; placed++;
     }
   }
-  // 나머지는 비율대로
+  // 나머지는 비율대로 (그때의 비율이 따로 있으면 그것으로)
   for (const id of free) {
     const n = nodes[id];
     if (n.type) continue;
-    const cands = Object.entries(ch.weights).filter(([t]) => okAt(t, n));
+    const cands = Object.entries(moodOf(n) || ch.weights).filter(([t]) => okAt(t, n));
     n.type = cands.length ? R.weighted(cands) : 'battle';
   }
 }
 
-// 사건 주머니 — 한 지도에 같은 사건이 두 번 나오지 않게 하나씩 꺼낸다. 안 본 것(섞어서) → 덜 본 것 순, 다 꺼내면 새로 섞는다
+// 사건 주머니 — 한 지도에 같은 사건이 두 번 나오지 않게 하나씩 꺼낸다. 안 본 것(섞어서) → 덜 본 것 순
+// phase = 그 층의 때(a · b · c) — 사건의 phase 목록에 있는 것만 (없으면 아무 때나). 맞는 게 다 떨어지면 이미 쓴 것 중에서
 function eventBag(r, pool, seen) {
   const fresh = r.shuffle(pool.filter(id => !seen[id]));
   const old = r.shuffle(pool.filter(id => seen[id])).sort((a, b) => seen[a] - seen[b]);
-  let list = [...fresh, ...old], i = 0;
-  return () => {
-    if (i >= list.length) { list = r.shuffle(pool.slice()); i = 0; }
-    return list[i++];
+  const list = [...fresh, ...old], used = new Set();
+  const fits = (id, ph) => !ph || !EVENTS[id] || !EVENTS[id].phase || EVENTS[id].phase.includes(ph);
+  return ph => {
+    let id = list.find(x => !used.has(x) && fits(x, ph));
+    if (!id) id = r.pick(list.filter(x => fits(x, ph)).length ? list.filter(x => fits(x, ph)) : list);
+    used.add(id);
+    return id;
   };
 }
 
@@ -145,49 +156,71 @@ function fillContent(ch, n, R, seed, events) {
   else if (n.type === 'elite') n.enc = null;       // 지도 전체를 본 뒤 번갈아 정한다(아래 layout 전에 처리)
   else if (n.type === 'story') n.enc = null;       // 이야기 칸 — 대사 · 전투는 대본(data/story)이 정한다
   else if (n.type === 'boss') n.enc = Object.assign({ kind: 'boss' }, E.boss);
-  else if (n.type === 'event') n.event = events();
+  else if (n.type === 'event') n.event = events((ch.phases || {})[n.layer]);
   else if (n.type === 'alley') n.alley = r.pick(['hide', 'narrow', 'deal', 'shortcut']);
   if (n.type === 'trial') n.trial = r.pick(['untouched', 'swift', 'frugal']);
   if (n.type === 'elite') n.eliteIdx = null;
 }
 
-function layout(nodes, layers, L, R) {
+function layout(nodes, layers, L, R, ch = {}) {
   const B = MAP_BOX;
   // 정예는 층 순서대로 번갈아 (수문장 · 우두머리)
   let e = 0;
   for (let i = 0; i < L; i++) for (const id of layers[i]) if (nodes[id].type === 'elite') nodes[id].eliteIdx = e++;
-  // 층 사이 간격 — 톱니 하나짜리 층끼리(이어지는 이야기 칸)는 조금 붙이고, 보스 앞은 넓게
   const single = i => layers[i].length === 1;
-  const gaps = [];
-  for (let i = 0; i < L - 1; i++) gaps.push(i === L - 2 ? 1.4 : single(i) && single(i + 1) ? 0.92 : !single(i) && !single(i + 1) ? 1.08 : 1);
-  const unit = (B.x1 - B.x0) / gaps.reduce((a, b) => a + b, 0);
-  let x = B.x0;
-  for (let i = 0; i < L; i++) {
-    const ids = layers[i], w = ids.length;
-    const span = w === 2 ? SPLIT * 2 : Math.min(B.y1 - B.y0, (w - 1) * 190);
-    ids.forEach((id, k) => {
-      const n = nodes[id];
-      const t = NODE_TYPES[n.type] || NODE_TYPES.battle;
-      n.r = t.r;
-      n.x = Math.round(x + (w === 1 ? 0 : R.int(-10, 10)));
-      n.y = Math.round(w === 1 ? B.cy : B.cy - span / 2 + (span / (w - 1)) * k + R.int(-8, 8));
-      n.spin = i % 2 === 0 ? 1 : -1;               // 층마다 번갈아 도는 방향
-      n.phase = R.float(0, 360);
-      // 이름표 자리 — 사이 층은 바깥쪽(위 톱니는 위, 아래 톱니는 아래)
-      if (w === 2) n.tag = k === 0 ? 'up' : 'down';
-    });
-    if (i < L - 1) x += gaps[i] * unit;
-  }
+  // 줄 나누기 — turn이 있으면 두 줄 (위 줄 왼→오, 아래 줄 오→왼 · 끝에 보스). 없으면 한 줄
+  const turn = ch.turn && ch.turn > 1 && ch.turn < L ? ch.turn : L;
+  const rows = turn < L ? [[0, turn - 1], [turn, L - 1]] : [[0, L - 1]];
+  const two = rows.length === 2;
+  const split = two ? SPLIT2 : SPLIT;
+  rows.forEach(([a, b], ri) => {
+    const cy = two ? B.rows[ri] : B.cy;
+    // 층 사이 간격 — 톱니 하나짜리 층끼리(이어지는 이야기 칸)는 조금 붙이고, 보스 앞은 넓게
+    const gaps = [];
+    for (let i = a; i < b; i++) gaps.push(i === L - 2 ? 1.4 : single(i) && single(i + 1) ? 0.92 : !single(i) && !single(i + 1) ? 1.08 : 1);
+    const unit = (B.x1 - B.x0) / Math.max(1, gaps.reduce((s, g) => s + g, 0));
+    const dir = ri === 0 ? 1 : -1;
+    let x = ri === 0 ? B.x0 : B.x1;
+    for (let i = a; i <= b; i++) {
+      const ids = layers[i], w = ids.length;
+      const span = w === 2 ? split * 2 : Math.min(two ? 260 : B.y1 - B.y0, (w - 1) * (two ? 130 : 190));
+      ids.forEach((id, k) => {
+        const n = nodes[id];
+        const t = NODE_TYPES[n.type] || NODE_TYPES.battle;
+        n.r = t.r;
+        n.row = ri;
+        n.x = Math.round(x + (w === 1 ? 0 : R.int(-10, 10)));
+        n.y = Math.round(w === 1 ? cy : cy - span / 2 + (span / (w - 1)) * k + R.int(-6, 6));
+        n.spin = i % 2 === 0 ? 1 : -1;               // 층마다 번갈아 도는 방향
+        n.phase = R.float(0, 360);
+        // 이름표 자리 — 사이 층은 바깥쪽(위 톱니는 위, 아래 톱니는 아래)
+        if (w === 2) n.tag = k === 0 ? 'up' : 'down';
+      });
+      if (i < b) x += dir * gaps[i - a] * unit;
+    }
+  });
   // 이어지는 톱니 하나짜리 층(이야기 칸 · 시작 · 보스)은 이름표를 위아래로 번갈아 — 옆 이름표와 겹치지 않게. 보스는 늘 아래
-  let run = [];
-  const flush = () => {
-    if (!run.length) return;
+  // 두 줄이면 줄을 넘어가는 축(세로)을 이름표가 가리지 않게: 위 줄 끝 칸은 위, 아래 줄 첫 칸은 아래
+  const tagRun = (run, lastUp) => {
     const endsBoss = nodes[run[run.length - 1]].type === 'boss';
-    run.forEach((id, k) => { nodes[id].tag = (endsBoss ? (run.length - 1 - k) % 2 : k % 2) ? 'up' : 'down'; });
-    run = [];
+    run.forEach((id, k) => {
+      let up = endsBoss ? (run.length - 1 - k) % 2 === 1 : k % 2 === 1;
+      if (lastUp) up = (run.length - 1 - k) % 2 === 0;   // 끝에서부터 위 · 아래 · 위 …
+      nodes[id].tag = up ? 'up' : 'down';
+    });
   };
-  for (let i = 0; i < L; i++) { if (single(i)) run.push(layers[i][0]); else flush(); }
-  flush();
+  rows.forEach(([a, b], ri) => {
+    let run = [];
+    const flush = (atEnd = false) => { if (run.length) tagRun(run, two && ri === 0 && atEnd); run = []; };
+    for (let i = a; i <= b; i++) {
+      if (single(i)) run.push(layers[i][0]); else flush();
+    }
+    flush(true);
+    if (two && ri === 1 && single(a)) {   // 아래 줄 첫 칸 — 세로 축을 피해 아래로 (다음 칸부터 번갈아)
+      let up = false;
+      for (let i = a; i <= b && single(i); i++) { if (nodes[layers[i][0]].type === 'boss') break; nodes[layers[i][0]].tag = up ? 'up' : 'down'; up = !up; }
+    }
+  });
   // 나란한 사이 층의 이름표가 겹치면(긴 이름 — 「기계 이식소」 등) 뒤쪽 이름표를 바깥으로 한 칸 비켜 둔다
   const tagBox = n => {
     const w = textW((NODE_TYPES[n.type] || NODE_TYPES.battle).label) + 40, dy = n.tag === 'up' ? -(n.r + 24 + (n.tagDy || 0)) : n.r + 24 + (n.tagDy || 0);

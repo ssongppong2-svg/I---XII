@@ -213,7 +213,7 @@ const HANDLERS = {
     const d = storyDef(node);
     if (!d || !STORY[d.kind]) { finishNode(); return; }
     const here = node, S = storyOf(RUN.chapter);
-    await loadAll([bgKeyOf(node), `bg-st-${node.story}`, 'blackmarket', 'believer', ...storyArtKeys([...(d.pre || []), ...(d.scene || []), ...(d.quiet || []), ...(d.ambush || []), ...(d.leave || []), ...(d.close || []), ...(d.ask || []).flatMap(a => a.scene)], S.cast || {})]);
+    await loadAll([bgKeyOf(node), `bg-st-${node.story}`, 'blackmarket', 'believer', d.art || '', ...storyArtKeys([...(d.pre || []), ...(d.scene || []), ...(d.quiet || []), ...(d.ambush || []), ...(d.win || []), ...(d.leave || []), ...(d.close || []), ...(d.ask || []).flatMap(a => a.scene)], S.cast || {})].filter(Boolean));
     if (!alive || node !== here) return;
     STORY[d.kind](d, S, params);
   },
@@ -318,7 +318,7 @@ const HANDLERS = {
     const seen = (RUN.flags.lore[ch.num] || 0);
     if (node.loreIdx === undefined) { node.loreIdx = seen % Math.max(1, list.length); RUN.flags.lore[ch.num] = seen + 1; }
     const line = list[node.loreIdx] || '';
-    frame({ title: '신도들의 천막', say: `“${fmt(line)}”`, text: `천막 안의 신도들이 목소리를 낮춘다. "${esc(RUN.name)} 님, 필요한 것을 말씀해 주십시오."`, artHTML: charArt('believer', 'tent') });
+    frame({ title: '신도들의 천막', say: `“${fmt(line)}”`, text: `천막 안의 신도들이 목소리를 낮춘다. "${esc(RUN.name || '당신')}${RUN.name ? ' 님' : ''}, 필요한 게 있으면 말해요."`, artHTML: charArt('believer', 'tent') });
     const next = nextEliteBoss();
     opts([
       { label: '치료 — HP +2', desc: `지금 ${RUN.hp} / ${maxHp()}`, on: () => { const n = heal(2); SFX.heal(); hud(); autosave(); body(`<p class="nd-result">${icon('chalice')} 신도들이 숨겨 둔 약으로 상처를 감쌌다. HP +${n}.</p>`); } },
@@ -374,9 +374,11 @@ function shopStock() {
 // 대본 장면 — 사건과 같은 도우미(G)로 선택지 효과를 처리한다. 저장은 장면이 끝난 뒤
 async function storyScene(script, G = eventCtx()) {
   const S = storyOf(RUN.chapter);
-  await playScene(script, Object.assign(sceneOpts(), { ctx: G, cast: S.cast || {}, bg: bgKeyOf(node) }));
+  await playScene(script, Object.assign(sceneOpts(), { ctx: G, cast: S.cast || {}, bg: bgKeyOf(node), onName: n => { RUN.name = n; } }));
   return G;
 }
+// 이야기 칸의 사람 그림 — 전용 그림(art)이 있으면 그것, 없으면 대신 쓰는 그림(altArt)
+const storyArt = (d, fallback, glyphName) => charArt(d.art && art(d.art) ? d.art : d.altArt || fallback, glyphName);
 // 장면을 보는 동안 칸 화면은 제목만 (장면이 끝나야 떠날 수 있다)
 function storyCover(d, artHTML = '') {
   frame({ title: esc(d.title), artHTML: artHTML || glyph(d.icon) });
@@ -403,6 +405,7 @@ const STORY = {
     storyCover(d);
     const G = await storyScene(d.scene);
     if (!alive || node !== here) return;
+    if (node.healed && node.healed.got && !G.res.some(r => r.i === 'heart')) G.res.unshift({ t: `HP +${node.healed.got}`, k: 'good', i: 'heart' });   // 장면을 보다 끄고 다시 봐도 회복한 것은 남긴다
     node.ev = { done: true, after: G.afterText || '', res: G.res, pending: G.pending };
     RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [`st:${node.story}`]: true });
     autosave();
@@ -412,7 +415,7 @@ const STORY = {
   async shop(d) {
     const here = node;
     if (!node.preDone) {
-      storyCover(d, charArt('blackmarket', 'mask'));
+      storyCover(d, storyArt(d, 'blackmarket', 'mask'));
       await storyScene(d.pre);
       if (!alive || node !== here) return;
       node.preDone = true;
@@ -420,7 +423,7 @@ const STORY = {
     }
     shopStock();
     node.asked = node.asked || {};
-    frame({ title: esc(d.title), say: d.say || '', artHTML: charArt('blackmarket', 'mask'), narrow: false, onLeave: () => storyShopLeave(d) });
+    frame({ title: esc(d.title), say: d.say || '', artHTML: storyArt(d, 'blackmarket', 'mask'), narrow: false, onLeave: () => storyShopLeave(d) });
     renderShop();
     storyShopLeaveLabel(d);
   },
@@ -428,7 +431,7 @@ const STORY = {
   async rest(d) {
     const here = node;
     if (!node.preDone) {
-      storyCover(d, charArt('believer', 'flame'));
+      storyCover(d, glyph('flame'));
       await storyScene(d.pre);
       if (!alive || node !== here) return;
       node.preDone = true;
@@ -449,9 +452,9 @@ function storyAskHTML(d) {
   return `<div class="st-ask"><b>${icon('help')}상인에게 묻는다 <small>값은 받지 않는다 · 둘 다 들어야 나갈 수 있다</small></b>
     <div class="st-ask-row">${d.ask.map(a => `<button class="nd-opt${asked[a.id] ? ' done' : ''}" type="button" data-ask="${a.id}"><b>${esc(a.label)}</b><small>${asked[a.id] ? '들었다 — 다시 들을 수 있다' : esc(a.short || '')}</small></button>`).join('')}</div></div>`;
 }
-function storyAsked(d) { return d.ask.every(a => (node.asked || {})[a.id]); }
+function storyAsked(d) { return (d.ask || []).every(a => (node.asked || {})[a.id]); }
 function storyShopLeaveLabel(d) {
-  const n = d.ask.filter(a => (node.asked || {})[a.id]).length;
+  const n = (d.ask || []).filter(a => (node.asked || {})[a.id]).length;
   leaveLabel(storyAsked(d) ? '천막을 나선다' : `먼저 물어본다 (${n}/${d.ask.length})`);
   const b = q('#ndLeave');
   if (b) b.classList.toggle('wait', !storyAsked(d));
@@ -470,19 +473,19 @@ async function storyAsk(d, id) {
 async function storyShopLeave(d) {
   if (!storyAsked(d)) { SFX.deny(); toast('상인에게 두 가지를 먼저 물어보세요 — 값은 받지 않아요'); return; }
   const here = node;
-  if (d.close) await storyScene(d.close);
-  if (!alive || node !== here) return;
+  // 나가는 대화(07 — 외투의 빚)는 한 번만. 보다가 끄면 다시 들어왔을 때 처음부터
+  if (d.close && !node.closed) { await storyScene(d.close); if (!alive || node !== here) return; node.closed = true; }
   leave();
 }
 
 // 꺼지지 않는 화로 — 휴식할지, 정비만 하고 떠날지
 function storyRestChoose(d) {
   const h = restHeal(), p = restAmbushChance();
-  frame({ title: esc(d.title), artHTML: charArt('believer', 'flame'),
-    text: `화로 옆에서 잠시 쉴 수 있다. <b>HP +${h}</b> (지금 ${RUN.hp} / ${maxHp()}).<br><span class="dim">경계 ${alertStage()}단계 — 쉬는 사이 습격받을 확률 ${Math.round(p * 100)}% (회복한 뒤 판정 · 이 칸에서 한 번만).</span>` });
+  frame({ title: esc(d.title), artHTML: glyph('flame'),
+    text: `작은 화로 옆에서 잠시 쉴 수 있다. <b>HP +${h}</b> (지금 ${RUN.hp} / ${maxHp()}).<br><span class="dim">경계 ${alertStage()}단계 — 쉬는 사이 습격받을 확률 <b>${Math.round(p * 100)}%</b> (0 · 1 · 2단계 = 15 · 25 · 35%, 회복한 뒤 한 번만 판정).</span>` });
   q('#ndLeave').hidden = true;
   opts([
-    { label: `휴식한다 — HP +${h}`, desc: `습격 확률 ${Math.round(p * 100)}%${RUN.hp >= maxHp() ? ' · 이미 HP가 가득 차 있다' : ''}`, on: async () => {
+    { label: `${d.restLabel || '휴식한다'} — HP +${h}`, desc: `습격 확률 ${Math.round(p * 100)}%${RUN.hp >= maxHp() ? ' · 이미 HP가 가득 차 있다' : ''}`, on: async () => {
       const got = heal(h);
       node.rested = { mode: 'rest', got, ambushed: R.chance(p) };
       SFX.heal(); hud(); autosave();
@@ -493,7 +496,7 @@ function storyRestChoose(d) {
       node.quiet = true; autosave();
       storyRestDone(d);
     } },
-    { label: '정비만 하고 출발한다', desc: '회복도 습격 판정도 없다 — 덱 · 가방을 살핀 뒤 떠난다', on: () => {
+    { label: d.fixLabel || '정비만 하고 출발한다', desc: d.fixDesc || '회복도 습격 판정도 없다 — 덱 · 가방을 살핀 뒤 떠난다', on: () => {
       node.rested = { mode: 'fix' };
       SFX.click(); autosave();
       storyRestDone(d);
@@ -505,7 +508,7 @@ async function storyRestAmbush(d) {
   const here = node;
   if (!node.ambushPre) {
     SFX.alarm();
-    storyCover(d, charArt('believer', 'flame'));
+    storyCover(d, glyph('flame'));
     await storyScene(d.ambush);
     if (!alive || node !== here) return;
     node.ambushPre = true;
@@ -516,23 +519,16 @@ async function storyRestAmbush(d) {
 // 결과 — 무엇을 했는지 · (조용한 휴식을 못 들었으면) 신도와 이야기 · 떠나기
 function storyRestDone(d) {
   const r = node.rested;
-  const line = r.mode === 'fix' ? `${icon('wrench')} 쉬지 않고 정비만 했다. 덱과 가방을 살핀 뒤 떠날 수 있다.`
-    : `${icon('flame')} 화로 옆에서 잠시 눈을 붙였다. ${r.got ? `HP +${r.got}.` : '몸은 이미 멀쩡했다.'}${r.ambushed ? ' 쉬던 자리를 뒤지던 감시 시계를 물리쳤다.' : ''}`;
-  frame({ title: esc(d.title), artHTML: charArt('believer', 'flame'), leave: '신호교로 떠난다', onLeave: async () => {
+  const line = r.mode === 'fix' ? `${icon('wrench')} 쉬지 않고 물품만 정리했다. 덱과 가방을 살핀 뒤 떠날 수 있다.`
+    : `${icon('flame')} 작은 화로 옆에서 잠시 쉬었다. ${r.got ? `HP +${r.got}.` : '몸은 이미 멀쩡했다.'}${r.ambushed ? ' 쉬던 자리를 뒤지던 기계들을 물리쳤다.' : ''}`;
+  frame({ title: esc(d.title), artHTML: glyph('flame'), leave: d.leaveLabel || '떠난다', onLeave: async () => {
     const here = node;
-    if (r.mode === 'fix' && d.leave && !node.closed) { await storyScene(d.leave); if (!alive || node !== here) return; node.closed = true; autosave(); }
+    if (r.mode === 'fix' && d.leave && !node.closed) { await storyScene(d.leave); if (!alive || node !== here) return; node.closed = true; }
+    if (d.goalAfter) RUN.goal = d.goalAfter;
+    autosave();
     leave();
   } });
-  const b = body(`<p class="nd-result">${line}</p>${node.quiet ? '' : `<div class="nd-opts"><button class="nd-opt" type="button" id="ndQuiet"><b>화로 옆 꾸러미를 살핀다</b><small>신도와 나누는 짧은 이야기 (쉬지 않고도 들을 수 있다)</small></button></div>`}`);
-  const qb = b.querySelector('#ndQuiet');
-  if (qb) qb.addEventListener('click', async () => {
-    SFX.click();
-    const here = node;
-    await storyScene(d.quiet);
-    if (!alive || node !== here) return;
-    node.quiet = true; autosave();
-    storyRestDone(d);
-  });
+  body(`<p class="nd-result">${line}</p>`);
 }
 
 // 휴식 결과 — 회복은 이미 들어갔고, 습격이면 싸우고 떠난다 (다시 들어와도 같은 결과)
@@ -588,6 +584,8 @@ function eventCtx() {
     item(id, n = 1) { addItem(id, n); note(`${ITEMS[id].name} ${sgn(n)}`, n > 0 ? 'good' : 'bad', ITEMS[id].icon); n > 0 ? SFX.gain() : SFX.click(); },
     alertUp() { if (alertStageUp()) { note(`경계 +1단계 — 지금 ${alertStage()}단계`, 'bad', 'eye'); SFX.warn(); } },   // 대본의 '경계도 +1'
     goal(t) { RUN.goal = t; note(`목표 — ${t}`, '', 'compass'); SFX.page(); },
+    // 안전한 휴식(04 · 08) — 이 칸에서 한 번만 회복한다. 습격은 없다
+    safeRest() { if (node.healed) return; const b = RUN.hp; heal(restHeal()); node.healed = { got: RUN.hp - b }; if (node.healed.got) { note(`HP +${node.healed.got} — 숨은 곳에서 쉬었다`, 'good', 'heart'); SFX.heal(); } },
     // 장면이 끝난 뒤 이 화면에서 이어지는 일 (하나만)
     cardPick(tier = 'normal') { G.pending = { t: 'cards', ids: cardChoices(R, tier, 3) }; },
     removePick() { G.pending = { t: 'remove' }; },
@@ -610,31 +608,19 @@ function eventCtx() {
   };
   return G;
 }
-// 재귀 기시감 — 되감기 전에 본 사건을 다시 만나면
-const DEJA = [
-  '…이 장면. 본 적이 있다.',
-  '째깍. 같은 장면이 한 번 더 겹친다.',
-  '또 여기군. 되감기기 전에도 여기 섰었다.',
-];
-function dejaLines(E, before) {
-  const lines = E.deja ? E.deja.slice() : [{ who: 'hero', face: 'puzzled', text: DEJA[hashSeed(RUN.seed, node.id, RUN.recur) % DEJA.length] }];
-  if (typeof before === 'string') lines.push({ who: 'nar', text: `재귀하기 전의 기억이 겹친다. 그때 고른 것은 — 「${before}」.` });
-  return [{ fx: 'tick' }, ...lines];
-}
 async function playEvent(id, E) {
   const here = node;
-  await loadAll(storyArtKeys(E.scene, E.cast || {}));   // 말하는 인물 · 적(돌진 기계 등) 그림
+  await loadAll(storyArtKeys(E.scene, Object.assign({}, storyOf(RUN.chapter).cast || {}, E.cast || {})));   // 말하는 인물 · 적(돌진 기계 등) 그림
   if (!alive || node !== here) return;
   const G = eventCtx();
   const key = 'ev:' + id;
-  const before = RUN.flags.seen[key];
+  // 대본: 되돌린 뒤 같은 사건을 다시 만나도 주인공은 기억하지 않는다(쓰러짐 · 재도전은 정사가 아니다) — 기시감 대사는 없다
   const script = [
-    { tint: E.tint || '', place: E.place || chapterDef().place },
-    ...(before ? dejaLines(E, before) : []),
+    { tint: E.tint || '', place: E.place || chapterDef().place, amb: E.amb || null },
     ...E.scene,
   ];
   let picked = '';
-  await playScene(script, { ctx: G, cast: E.cast, bg: bgKeyOf(node), onChoice: l => { if (!picked) picked = l; } });
+  await playScene(script, { ctx: G, cast: Object.assign({}, storyOf(RUN.chapter).cast || {}, E.cast || {}), bg: bgKeyOf(node), onChoice: l => { if (!picked) picked = l; } });
   if (!alive || node !== here) return;
   node.ev = { done: true, after: G.afterText || '', res: G.res, pending: G.pending };
   RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [key]: picked || true });
@@ -652,7 +638,7 @@ function eventResult(E) {
   // 얻고 잃은 것 — 아무것도 없고 이어지는 일(카드 고르기 등)도 없을 때만 「없다」고 적는다
   const list = ev.res.length
     ? `<ul class="ev-res">${ev.res.map(r => `<li class="${r.k || ''}">${icon(r.i)}<span>${esc(r.t)}</span></li>`).join('')}</ul>`
-    : p ? '' : '<p class="ev-none">얻은 것도, 잃은 것도 없다.</p>';
+    : p || E.noLoot ? '' : '<p class="ev-none">얻은 것도, 잃은 것도 없다.</p>';
   const settle = () => { ev.pending = null; hud(); autosave(); };
   if (!p) { body(list); return; }
   if (p.t === 'cards') { cardPick(p.ids, { skip: '떠난다', lead: list, onPick: settle }); return; }
@@ -692,8 +678,8 @@ function nextEliteBoss({ plain = false } = {}) {
   const elites = ch.encounters.elite.length ? [...reach].map(id => map.nodes[id]).filter(n => n.type === 'elite') : [];
   const lines = [];
   const TIPS = {
-    gatekeeper: '수문장은 정면의 방패판이 단단합니다. 옆이나 뒤로 도세요. 앞 두 줄을 한꺼번에 내려찍으니 거리를 두시고요.',
-    alpha: '사냥개 우두머리는 두 칸씩 달려옵니다. 바로 옆에 서면 물립니다 — 대각선도요. 무리를 먼저 흩으소서.',
+    gatekeeper: '수문장은 정면의 방패판이 단단해요. 옆이나 뒤로 도세요. 앞 두 줄을 한꺼번에 내려찍으니 거리를 두시고요.',
+    alpha: '사냥개 우두머리는 두 칸씩 달려와요. 바로 옆에 서면 물려요 — 대각선도요. 무리를 먼저 흩으세요.',
   };
   const seen = new Set();
   for (const n of elites) {
@@ -703,7 +689,7 @@ function nextEliteBoss({ plain = false } = {}) {
     lines.push([`정예 · ${FOES[e.foes[0]].name}`, TIPS[e.id] || FOES[e.foes[0]].desc]);
   }
   const bd = BOSSES[ch.encounters.boss.boss];
-  lines.push([`출입문 · ${bd.name}`, '루프마다 공격 하나를 예고하고, 마지막 행동 뒤에 쏩니다. 체력이 3분의 2 · 3분의 1 아래로 내려가면 절차가 바뀝니다. 마지막 「전 구역 폐쇄」 때는 옆 두 세로줄만 안전합니다. 덧붙인 명령판을 과부하시키면 4코스트 동안 멈춥니다.']);
+  lines.push([`외곽문 · ${bd.name}`, '루프마다 공격 하나를 예고하고, 마지막 행동 뒤에 쏴요. 체력이 3분의 2 · 3분의 1 아래로 내려가면 절차가 바뀌어요. 마지막 「전 구역 폐쇄」 때는 옆 두 세로줄만 안전해요. 덧붙인 명령판을 과부하시키면 4코스트 동안 멈춰요.']);
   if (plain) return lines.map(([h, t]) => `「${h}」 — ${t}`).join(' ');
   return lines.map(([h, t]) => `<p><b>${h}</b> — ${t}</p>`).join('');
 }

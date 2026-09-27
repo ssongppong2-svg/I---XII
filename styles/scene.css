@@ -224,3 +224,70 @@
 .sc-card .nm-card small{margin:0 0 18px;color:#FF8A96;letter-spacing:.5em}
 .sc-card .nm-card b{font:900 76px/1.15 var(--f-serif);letter-spacing:.08em;color:var(--bone);text-shadow:0 0 40px rgba(255,59,78,.35)}
 .sc-card .nm-card span{margin-top:18px;font:700 24px/1.3 var(--f-ui);letter-spacing:.2em;color:#E8B8B0}
+
+/* ═════════════ 1장 전면 개작 — 여러 사람의 대화 · 인물 색 · 권한 패널 · 상태 한 줄 ═════════════ */
+/* 둘째 손님 칸 — 셋이 이야기할 때 가운데 (조금 작게, 뒤에) */
+.pt-g2{left:52%;height:94%;z-index:0}
+.pt-g2.on{z-index:2}
+.scene.trio .pt-hero{left:19%}
+.scene.trio .pt-guest:not(.pt-g2){left:82%}
+.scene.trio .pt-g2{left:50%}
+.scene.solo-b .pt-g2{left:76%;height:100%}
+/* 인물 색조 — 전용 그림이 오기 전: 신도 그림을 사람마다 다르게 (오르 = 주황빛 · 좌우 뒤집기, 에다 = 푸른빛 · 조금 작게) */
+.pt[data-tone="or"] .pt-art img{transform:scaleX(-1) scale(1.05);transform-origin:50% 100%;filter:sepia(.85) saturate(2.4) hue-rotate(-12deg) brightness(1.55) contrast(.95) drop-shadow(0 0 2px rgba(255,190,120,.8)) drop-shadow(0 0 18px rgba(240,150,70,.35))}
+.pt[data-tone="eda"] .pt-art img{transform:scale(.93);transform-origin:50% 100%;filter:sepia(.6) saturate(2) hue-rotate(155deg) brightness(1.6) contrast(.92) drop-shadow(0 0 2px rgba(170,230,240,.8)) drop-shadow(0 0 18px rgba(90,190,220,.3))}
+.pt-guest[data-who="marte"]::before{background:radial-gradient(ellipse at 50% 62%,rgba(242,188,198,.24),transparent 66%)}
+.pt-guest[data-who="or"]::before{background:radial-gradient(ellipse at 50% 62%,rgba(240,160,80,.24),transparent 66%)}
+.pt-guest[data-who="eda"]::before{background:radial-gradient(ellipse at 50% 62%,rgba(110,200,225,.22),transparent 66%)}
+/* 이름표 · 글 색 — 사람마다 */
+.dname.marte{color:#FFD3DC}
+.dname.or{color:#FFCF96}
+.dname.eda{color:#C4ECF4}
+.dname.barnett{color:#F6D7B0}
+.dtext.marte{color:#F6E6E4}
+.dtext.or{color:#F4E4CE}
+.dtext.eda{color:#E2F0F0}
+.dtext.barnett{color:#F1DEC8}
+.lg-item.c-marte b{color:#FFB6C4}
+.lg-item.c-or b{color:#FFBE78}
+.lg-item.c-eda b{color:#9ED8E6}
+.lg-item.c-barnett b,.lg-item.c-black b{color:#E8B878}
+.lg-item.c-broadcast b,.lg-item.c-foe b,.lg-item.c-boss b{color:#9FB6CC}
+.lg-item.paper b{color:#C9A46A}
+/* 주인공 자세 — 스탠딩을 조금 낮춘다(숨이 찰 때) */
+.pt-hero .pt-art{transition:transform .8s cubic-bezier(.2,.8,.3,1)}
+.pt-hero.low .pt-art{transform:translateY(64px) rotate(-1.2deg)}
+/* 권한 패널 — 기계의 화면 (종이 기록 대신) */
+.sc-paper.panel{width:820px;padding:30px 44px 36px;border-radius:4px;background:linear-gradient(180deg,rgba(10,18,22,.97),rgba(4,9,12,.98));border:1px solid rgba(120,200,220,.45);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 40px rgba(80,180,210,.18),0 30px 70px rgba(0,0,0,.7);color:#BFE6EE;text-align:left}
+.sc-paper.panel::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:4px;background:repeating-linear-gradient(180deg,rgba(160,230,245,.05) 0 1px,transparent 1px 3px)}
+.sc-paper.panel>b{color:#7FD2E4;letter-spacing:.24em;font-size:14px}
+.sc-paper.panel>b::before{content:"▣";margin:0 12px 0 0;opacity:.8}
+.sc-paper.panel>b::after{content:none}
+.sc-paper.panel p{font:600 25px/1.7 var(--f-ui);color:#D8F2F6;letter-spacing:.02em}
+.sc-paper.panel.deny{border-color:rgba(255,110,110,.6);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 0 44px rgba(255,70,70,.22),0 30px 70px rgba(0,0,0,.7);background:linear-gradient(180deg,rgba(26,8,10,.97),rgba(12,3,5,.98))}
+.sc-paper.panel.deny>b{color:#FF8C8C}
+.sc-paper.panel.deny p{color:#FFD4D4;font-size:32px;letter-spacing:.14em;text-align:center}
+.sc-paper.panel.deny.in{animation:paperIn .45s ease-out,denyBlink .9s steps(2) 2}
+@keyframes denyBlink{50%{border-color:rgba(255,110,110,.2)}}
+/* 상태 한 줄 — 위쪽 가운데에 잠깐 */
+.sc-sys{position:absolute;left:50%;top:92px;translate:-50% 0;z-index:6;padding:10px 26px;border:1px solid rgba(120,200,220,.5);border-radius:3px;background:rgba(6,14,18,.92);font:700 17px/1.3 var(--f-ui);letter-spacing:.14em;color:#BFE6EE;white-space:nowrap;pointer-events:none;animation:sysIn 4.2s ease forwards}
+@keyframes sysIn{0%{opacity:0;transform:translateY(-8px)}8%{opacity:1;transform:none}86%{opacity:1}100%{opacity:0}}
+/* 흔들리는 문자판 (불안정하게 점등) */
+.sc-dial.flicker .dn.on{animation:dialFlicker 1.1s steps(1) infinite}
+@keyframes dialFlicker{0%,100%{opacity:1}12%{opacity:.35}20%{opacity:1}57%{opacity:.5}63%{opacity:1}}
+/* 작은 한 장 그림 (접힌 그림 등) */
+.sc-cg.small{width:520px;top:90px}
+/* 경고등 — 붉은빛이 느리게 맥박친다 */
+.scene[data-tint="alarm"]{background:radial-gradient(90% 75% at 50% 40%,rgba(120,12,20,.55),rgba(14,2,4,.95) 72%),rgba(20,2,6,.5)}
+.scene[data-tint="alarm"]::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:radial-gradient(80% 70% at 50% 30%,rgba(255,40,50,.22),transparent 70%);animation:alarmPulse 1.2s ease-in-out infinite}
+@keyframes alarmPulse{50%{opacity:.15}}
+.scene.has-bg[data-tint="alarm"] .sc-bg::after{background:radial-gradient(90% 75% at 50% 40%,rgba(140,10,20,.45),rgba(14,2,4,.9) 76%)}
+/* 불이 꺼졌다 돌아온다 */
+.scene.sc-flicker::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;background:#000;animation:scFlicker .8s steps(1) forwards}
+@keyframes scFlicker{0%{opacity:1}30%{opacity:0}45%{opacity:.9}60%{opacity:0}100%{opacity:0}}
+.sc-wrap.sc-shake-l{animation:shL .46s 2}
+/* 보스 화면 손상 — 단계가 넘어갈수록 어둡고 흔들린다 */
+.pt-boss[data-dmg="1"] .mon-screen img{filter:brightness(.72) saturate(.8) contrast(1.1)}
+.pt-boss[data-dmg="2"] .mon-screen img{filter:brightness(.5) saturate(.6) contrast(1.25);animation:monGlitch 2.4s steps(1) infinite}
+@keyframes monGlitch{0%,100%{transform:none}31%{transform:translateX(-4px)}33%{transform:none}72%{transform:translateX(3px) skewX(-2deg)}74%{transform:none}}
+@media (prefers-reduced-motion:reduce){ .scene[data-tint="alarm"]::before,.sc-dial.flicker .dn.on,.pt-boss[data-dmg="2"] .mon-screen img{animation:none!important} .sc-sys{animation:none!important} }

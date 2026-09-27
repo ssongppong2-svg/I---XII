@@ -168,3 +168,17 @@
 .st-chip{display:inline-flex;align-items:baseline;gap:8px;padding:6px 12px;border:1px solid var(--line-2);border-radius:20px;background:rgba(40,32,20,.8);font:600 14px/1.2 var(--f-ui);color:var(--bone);cursor:pointer}
 .st-chip small{font-size:11.5px;color:var(--mute)}
 .st-chip:hover{border-color:var(--brass);color:var(--brass-hi)}
+/* 재귀 — 대사 없이 바늘만 거꾸로 (전투 패배는 체크포인트 재시도) */
+.rewind-bg{cursor:pointer;background:radial-gradient(60% 60% at 50% 50%,rgba(40,30,18,.35),#050407 72%)}
+.rewind-bg .rw-hands{animation:rwIn .6s ease-out}
+@keyframes rwIn{from{opacity:0;transform:scale(1.06)}}
+.rw-note{position:absolute;left:50%;top:50%;translate:-50% -50%;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;pointer-events:none}
+.rw-note b{font:800 64px/1 var(--f-num);letter-spacing:.3em;color:var(--brass-hi);text-shadow:0 0 30px rgba(214,174,98,.35);animation:fadeIn .5s ease-out .15s both}
+.rw-note span{font:700 20px/1.4 var(--f-ui);letter-spacing:.12em;color:var(--bone);animation:fadeIn .5s ease-out .35s both}
+.rw-note small{font:600 13px/1 var(--f-ui);color:var(--mute);animation:fadeIn .5s ease-out .9s both}
+/* 장 끝 — 조용한 끝(밝은 음악 대신 먼 열차 소리). I만 점등된 문자판, II는 다음 목적지로만 */
+.ce-dial{width:230px;animation:fadeIn 1.4s ease-out}
+.ce-dial svg{display:block;width:100%;height:auto}
+.ce.quiet .ce-title{animation:fadeIn 1.6s ease-out .4s both}
+.ce.quiet .ce-sub{animation:fadeIn 1.6s ease-out .9s both}
+.ce-left{margin:-4px 0 6px;max-width:760px;font:500 17px/1.8 var(--f-serif);color:var(--ash);animation:fadeIn 1.6s ease-out 1.2s both}

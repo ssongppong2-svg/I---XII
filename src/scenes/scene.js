@@ -9,8 +9,13 @@
 // 한 장 그림 = { cg: '그림 이름' | null } · 권능 문자판 = { dial: 'I' | null, pulse: 'II' }
 // 멈춤 = { wait: ms } (누르면 바로 넘어간다) · 대사창 비우기 = { blank: true }
 // 종이 기록 = { paper: '제목', text, emblem?: 'I' } — 낡은 종이 패널 위에 글 (대사창 대신)
+// 권한 패널 = { panel: '제목', text, tone?: 'deny' } — 기계의 화면(설비 조작 · 철회된 권한). 종이 기록처럼 누르면 넘어간다
+// 상태 한 줄 = { sys: '글' } — 위쪽에 잠깐 떴다 사라진다(멈추지 않는다) · 배경 소리 = { amb: 'work' | 'fire' | 'wind' | 'hum' | 'street' | 'drip' | null }
+// 주인공 자세 = { hero: 'low' | '' } (스탠딩을 조금 낮춘다) · 물러나기 = { exit: 'hero' | 'guest'(손님 모두) | 'boss' | 인물 이름 }
+// 문자판 흔들림 = { dial: 'I', flicker: true } · 작은 그림 = { cg: '그림', small: true } · 보스 화면 손상 = { bossDmg: 1 | 2 | 0 }
+// 손님 칸은 둘 — 세 사람이 이야기할 때 둘째 손님은 가운데에. 새로 말하는 사람은 빈 칸, 없으면 가장 오래 말 안 한 사람 자리에 선다
 // ctx = playScene(…, { ctx })로 넘긴 도우미 (사건이면 부품 · 경계도 · 깃발 등 — screens/node.js)
-import { $, el, esc, iga, eulreul, eunneun, irago, ah, iyeo, isiyeo, iya, RM } from '../core/util.js';
+import { $, el, esc, iga, eulreul, eunneun, irago, ah, iyeo, isiyeo, iya, gwawa, euro, RM } from '../core/util.js';
 import { SET, AUTO_SPEED } from '../core/settings.js';
 import { typeInto } from '../ui/typewriter.js';
 import { SFX } from '../ui/sfx.js';
@@ -21,7 +26,7 @@ import { FOES } from '../data/foes.js';
 import { RUN } from '../game/run.js';
 
 // 조사: {name|이라고} 처럼 받침이 있을 때의 꼴을 적으면 받침에 맞춰 바꾼다
-const PARTICLE = { '이라고': irago, '은': eunneun, '이': iga, '을': eulreul, '아': ah, '이여': iyeo, '이시여': isiyeo, '이야': iya };
+const PARTICLE = { '이라고': irago, '은': eunneun, '이': iga, '을': eulreul, '아': ah, '이여': iyeo, '이시여': isiyeo, '이야': iya, '과': gwawa, '으로': euro };
 export function fmt(text, name) {
   const nm = name || (RUN && RUN.name) || '???';
   return esc(text)
@@ -38,10 +43,11 @@ const SPEAKERS = {
   merchant: { name: '상점 주인', pt: 'guest', cls: 'merchant', art: 'shopkeeper' },
   black: { name: '암시장 상인', pt: 'guest', cls: 'black', art: 'blackmarket' },
   // 모습 없이 목소리만 (이름은 { name } 으로 바꿀 수 있다)
-  blackv: { name: '암시장 상인의 목소리', cls: 'black' },
-  human: { name: '인간의 목소리', cls: 'human' },
-  broadcast: { name: '녹음 방송', cls: 'broadcast' },
-  unknown: { name: '알 수 없는 목소리', cls: 'unknown' },
+  blackv: { name: '암시장 상인의 목소리', cls: 'black', voice: 'barnett' },
+  human: { name: '인간의 목소리', cls: 'human', voice: 'human' },
+  broadcast: { name: '녹음 방송', cls: 'broadcast', voice: 'machine' },
+  announce: { name: '자동 안내', cls: 'broadcast', voice: 'machine' },
+  unknown: { name: '알 수 없는 목소리', cls: 'unknown', voice: 'unknown' },
 };
 // 권능 문자판 — 열두 시 가운데 lit만 켜지고, pulse는 테두리만 잠깐 반응
 const RN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -53,11 +59,19 @@ export function dialSVG(lit = 'I', pulse = '') {
 }
 const NAME_SUGGEST = ['크로노스', '아르케', '엘리오스', '호라', '제로', '시계공', '카이로스', '루멘', '에온', '헤임'];
 
-const SC = { queue: [], full: '', plain: '', tw: null, who: 'nar', typing: false, choosing: null, inputting: false, carding: false, waiting: false, auto: false, log: [], onEnd: null, autoT: 0, cardT: 0, placeT: 0, waitT: 0, bossName: '대형 감시기계', onName: null, ctx: null, cast: {}, onChoice: null };
+const SC = { queue: [], full: '', plain: '', tw: null, who: 'nar', typing: false, choosing: null, inputting: false, carding: false, waiting: false, auto: false, log: [], onEnd: null, autoT: 0, cardT: 0, placeT: 0, waitT: 0, sysT: 0, bossName: '대형 감시기계', onName: null, ctx: null, cast: {}, onChoice: null,
+  slot: { a: null, b: null }, slotT: { a: 0, b: 0 }, clock: 0 };
+// 손님 칸 — a: 오른쪽(첫 손님) · b: 가운데(셋이 이야기할 때)
+const SLOT_EL = { a: 'ptGuest', b: 'ptGuest2' };
 let dom = null;
 const q = s => dom.querySelector(s);
 // ctx를 따로 넘기지 않은 장면(정예 · 보스 이야기)도 사건에서 세운 깃발은 볼 수 있다 — { when: G => G.has('pup') }
-const BASE_CTX = { has: k => !!(RUN && RUN.flags && (RUN.flags.ev || {})[k]) };
+// 이야기 전투의 승리 대사처럼 사건 도우미가 없는 장면에서도 깃발 · 목표는 쓸 수 있다
+const BASE_CTX = {
+  has: k => !!(RUN && RUN.flags && (RUN.flags.ev || {})[k]),
+  flag(k, v = true) { if (RUN) RUN.flags.ev = Object.assign({}, RUN.flags.ev, { [k]: v }); },
+  goal(t) { if (RUN) RUN.goal = t; },
+};
 const ctxOf = () => SC.ctx || BASE_CTX;
 
 export function initScene() {
@@ -67,8 +81,10 @@ export function initScene() {
       <div class="sc-notes" id="scNotes" aria-live="polite"></div>
       <div class="sc-tools"><button type="button" id="scLogBtn">로그</button><button type="button" id="scAutoBtn">자동</button><button type="button" id="scSkipBtn">건너뛰기 ▸▸</button></div>
       <div class="sc-place" id="scPlace" hidden></div>
+      <div class="sc-sys" id="scSys" hidden></div>
       <div class="pt pt-voice" id="ptVoice"><div class="pt-art" id="ptVoiceArt"></div></div>
       <div class="pt pt-hero" id="ptHero"><div class="pt-art" id="ptHeroArt"></div></div>
+      <div class="pt pt-guest pt-g2" id="ptGuest2"><div class="pt-art" id="ptGuest2Art"></div></div>
       <div class="pt pt-guest" id="ptGuest"><div class="pt-art" id="ptGuestArt"></div></div>
       <div class="sc-stage">
         <div class="pt pt-boss" id="ptBoss"><div class="mon"><div class="mon-screen" id="ptBossArt"></div><div class="mon-bar"><i class="rec"></i><span id="ptBossBar">감시망 방송</span></div></div></div>
@@ -121,8 +137,11 @@ export function playScene(script, opt = {}) {
     q('#scNotes').innerHTML = '';
     for (const id of ['scCg', 'scDial', 'scPaper']) q('#' + id).hidden = true;
     q('#scCg').innerHTML = ''; SC.papering = false;
-    for (const id of ['ptHero', 'ptGuest', 'ptBoss', 'ptVoice']) q('#' + id).classList.remove('in', 'on', 'off', 'swap');
-    q('#ptGuestArt').dataset.who = '';
+    for (const id of ['ptHero', 'ptGuest', 'ptGuest2', 'ptBoss', 'ptVoice']) q('#' + id).classList.remove('in', 'on', 'off', 'swap', 'low');
+    q('#ptGuestArt').dataset.who = ''; q('#ptGuest2Art').dataset.who = '';
+    SC.slot = { a: null, b: null }; SC.slotT = { a: 0, b: 0 };
+    q('#ptBoss').dataset.dmg = '';
+    q('#scSys').hidden = true;
     // 초상화 그림
     const hu = faceUrl('idle');
     q('#ptHero').classList.toggle('img', !!hu);
@@ -134,7 +153,7 @@ export function playScene(script, opt = {}) {
     q('#ptVoiceArt').innerHTML = bel ? `<img src="${bel}" alt="" draggable="false">` : '';
     setHeroFace('idle');
     dom.dataset.tint = '';
-    dom.classList.remove('duo');
+    dom.classList.remove('duo', 'trio', 'solo-b');
     q('#scPlace').hidden = true;
     q('#dname').hidden = true;
     q('#dtext').innerHTML = '';
@@ -185,7 +204,12 @@ function stage(step) {
   if (step.dial !== undefined) {
     q('#scDial').innerHTML = step.dial ? dialSVG(step.dial, step.pulse || '') : '';
     q('#scDial').hidden = !step.dial;
+    q('#scDial').classList.toggle('flicker', !!step.flicker);
   }
+  if (step.cg !== undefined) q('#scCg').classList.toggle('small', !!step.small);
+  if (step.hero !== undefined) q('#ptHero').classList.toggle('low', step.hero === 'low');
+  if (step.bossDmg !== undefined) q('#ptBoss').dataset.dmg = step.bossDmg || '';
+  if (step.amb !== undefined) SFX.amb(step.amb);
 }
 // 배경 이름 — { slot, base }면 slot 그림이 있을 때 slot (이야기 칸 전용 배경 bg-st-…)
 const bgKey = b => (!b ? '' : typeof b === 'string' ? b : art(b.slot) ? b.slot : b.base || '');
@@ -198,6 +222,7 @@ function hidePaper() {
   if (!SC.papering) return;
   SC.papering = false;
   q('#scPaper').hidden = true;
+  q('#scPaper').classList.remove('panel', 'deny');
   q('#dbox').classList.remove('paper');
 }
 
@@ -212,6 +237,7 @@ function next() {
     stage(step);
     if (step.tint !== undefined) dom.dataset.tint = step.tint;
     if (step.place) showPlace(step.place);
+    if (step.sys) showSys(step.sys);
     if (step.fx) sceneFx(step.fx);
     if (step.exit) { exitPortrait(step.exit); }
     if (step.blank) blankBox();
@@ -219,7 +245,7 @@ function next() {
     if (step.wait) { waitFor(step.wait); return; }
     if (step.input) { showInput(step); return; }
     if (step.choice) { showChoice(step.choice); return; }
-    if (step.paper) { showPaper(step); return; }
+    if (step.paper || step.panel) { showPaper(step); return; }
     if (step.text) { showLine(step); return; }
   }
 }
@@ -230,6 +256,15 @@ function showPlace(text) {
   p.style.animation = 'none'; void p.offsetWidth; p.style.animation = '';
   clearTimeout(SC.placeT);
   SC.placeT = setTimeout(() => { p.hidden = true; }, 3000);
+}
+// 상태 한 줄 — 기계의 표시 (외부 송신 격리 등). 멈추지 않고 잠깐 떴다 사라진다
+function showSys(text) {
+  const p = q('#scSys');
+  p.textContent = text; p.hidden = false;
+  p.style.animation = 'none'; void p.offsetWidth; p.style.animation = '';
+  clearTimeout(SC.sysT);
+  SC.sysT = setTimeout(() => { p.hidden = true; }, 4200);
+  SFX.panel();
 }
 function sceneFx(kind) {
   const fl = cls => { dom.classList.remove(cls); void dom.offsetWidth; dom.classList.add(cls); setTimeout(() => dom.classList.remove(cls), 820); };
@@ -247,6 +282,12 @@ function sceneFx(kind) {
   if (kind === 'clank') SFX.clank();
   if (kind === 'wind') SFX.wind();
   if (kind === 'steps') SFX.steps();
+  // 1장 대본 연출 — 소리만 (흔들림 · 번쩍임이 붙은 것은 따로)
+  if (['rumble', 'tickodd', 'cloth', 'breath', 'bells', 'whistle', 'announce', 'lights', 'murmur', 'train', 'sign', 'clink', 'powerdown'].includes(kind)) SFX[kind]();
+  if (kind === 'shutter') { SFX.shutter(); fl('sc-flicker'); if (SET.shake) { const w = q('.sc-wrap'); w.classList.remove('sc-shake'); void w.offsetWidth; w.classList.add('sc-shake'); setTimeout(() => w.classList.remove('sc-shake'), 480); } }
+  if (kind === 'collapse') { SFX.collapse(); fl('sc-red'); if (SET.shake) { const w = q('.sc-wrap'); w.classList.remove('sc-shake', 'sc-shake-l'); void w.offsetWidth; w.classList.add('sc-shake-l'); setTimeout(() => w.classList.remove('sc-shake-l'), 900); } }
+  if (kind === 'crack') { SFX.crack(); fl('sc-flash'); }
+  if (kind === 'hush') SFX.amb(null);   // 소리 작아짐 — 깔린 소리를 거둔다
   // 붉은 감시 빛 · 흰 탐조등이 화면을 한 번 훑는다
   if (kind === 'sweep' || kind === 'search') {
     const sw = document.createElement('div');
@@ -262,35 +303,62 @@ function waitFor(ms) {
   clearTimeout(SC.waitT);
   SC.waitT = setTimeout(() => { if (!SC.waiting) return; SC.waiting = false; next(); }, RM.matches ? Math.min(ms, 700) : ms);
 }
+// 물러나기 — 'hero' · 'boss' · 'guest'(손님 모두) · 인물 이름(그 사람만)
 function exitPortrait(which) {
-  const id = which === 'hero' ? 'ptHero' : which === 'boss' ? 'ptBoss' : 'ptGuest';
-  q('#' + id).classList.remove('in', 'on');
+  if (which === 'hero' || which === 'boss') { q(which === 'hero' ? '#ptHero' : '#ptBoss').classList.remove('in', 'on'); updateDuo(); return; }
+  for (const s of ['a', 'b']) {
+    if (which !== 'guest' && SC.slot[s] !== which) continue;
+    q('#' + SLOT_EL[s]).classList.remove('in', 'on');
+    SC.slot[s] = null;
+  }
   updateDuo();
 }
-function updateDuo() { dom.classList.toggle('duo', q('#ptGuest').classList.contains('in')); }
+// 손님이 하나면 오른쪽, 둘이면 가운데 · 오른쪽 (가운데 칸만 남으면 오른쪽 자리로 옮겨 선다)
+function updateDuo() {
+  const a = q('#ptGuest').classList.contains('in'), b = q('#ptGuest2').classList.contains('in');
+  dom.classList.toggle('duo', a || b);
+  dom.classList.toggle('trio', a && b);
+  dom.classList.toggle('solo-b', b && !a);
+}
+function slotOf(who) { return SC.slot.a === who ? 'a' : SC.slot.b === who ? 'b' : null; }
+function takeSlot(who) {
+  let s = slotOf(who);
+  if (!s) s = !SC.slot.a ? 'a' : !SC.slot.b ? 'b' : (SC.slotT.a <= SC.slotT.b ? 'a' : 'b');
+  SC.slot[s] = who;
+  SC.slotT[s] = ++SC.clock;
+  return s;
+}
 
 // 말하는 사람 — 장면마다 따로 부른 사람(cast) → 늘 있는 사람 → 적 이름
 function speakerOf(who) {
   const c = SC.cast[who];
-  if (c) return c.foe ? { name: c.name || FOES[c.foe].name, pt: 'guest', cls: 'foe', foe: c.foe } : { name: c.name || '', pt: c.pt || 'guest', cls: c.cls || 'npc', art: c.art, icon: c.icon };
+  if (c) return c.foe ? { name: c.name || FOES[c.foe].name, pt: 'guest', cls: 'foe', foe: c.foe, voice: 'machine' }
+    : { name: c.name || '', pt: c.pt === undefined ? 'guest' : c.pt, cls: c.cls || 'npc', art: c.art, alt: c.alt, tone: c.tone, icon: c.icon, voice: c.voice };
   if (SPEAKERS[who]) return SPEAKERS[who];
-  if (FOES[who]) return { name: FOES[who].name, pt: 'guest', cls: 'foe', foe: who };
+  if (FOES[who]) return { name: FOES[who].name, pt: 'guest', cls: 'foe', foe: who, voice: 'machine' };
   return SPEAKERS.nar;
 }
+const heroName = () => (RUN && RUN.name) || '???';
 const lineText = step => typeof step.text === 'function' ? step.text(ctxOf()) : step.text;
 // instant = 건너뛰기로 멈춘 자리에서 바로 앞 대사를 한 번에 보여 줄 때
 function showLine(step, instant = false) {
   const who = step.who;
   const sp = speakerOf(who);
-  const name = step.name || (who === 'hero' ? (RUN && RUN.name) || '???' : who === 'boss' ? SC.bossName : sp.name || '');
+  const name = step.name || (who === 'hero' ? heroName() : who === 'boss' ? SC.bossName : sp.name || '');
   const pt = step.vo ? null : sp.pt || null;
-  if (pt === 'guest') setGuest(who, sp);
-  const els = { hero: q('#ptHero'), guest: q('#ptGuest'), boss: q('#ptBoss'), voice: q('#ptVoice') };
+  const gs = pt === 'guest' ? takeSlot(who) : null;
+  if (gs) setGuest(gs, who, sp);
+  const els = { hero: q('#ptHero'), boss: q('#ptBoss'), voice: q('#ptVoice') };
   for (const [key, e] of Object.entries(els)) {
     if (key === 'voice') e.classList.toggle('in', pt === key);
     else if (pt === key) e.classList.add('in');
     e.classList.toggle('on', pt === key);
     e.classList.toggle('off', pt !== key);
+  }
+  for (const s of ['a', 'b']) {
+    const e = q('#' + SLOT_EL[s]);
+    e.classList.toggle('on', gs === s);
+    e.classList.toggle('off', gs !== s);
   }
   updateDuo();
   const nm = q('#dname');
@@ -300,8 +368,8 @@ function showLine(step, instant = false) {
   q('#dtext').className = 'dtext' + (sp.cls ? ' ' + sp.cls : '');
   if (who === 'hero') setHeroFace(step.face || 'idle');
   const html = fmt(lineText(step));
-  if (!instant) SC.log.push({ who, name, html });
-  SC.who = who;
+  if (!instant) SC.log.push({ who, name, html, cls: sp.cls || '' });
+  SC.who = who === 'hero' || who === 'boss' || who === 'voice' ? who : sp.voice || who;
   q('#dbox').classList.remove('blank');
   if (instant) { if (SC.tw) SC.tw.stop(); q('#dtext').innerHTML = html; SC.typing = false; q('#dbox').classList.add('done'); return; }
   typeText(html);
@@ -309,35 +377,42 @@ function showLine(step, instant = false) {
 // 종이 기록 — 낡은 종이 패널에 글을 찍는다. 대사창은 비우고, 인물은 뒤로 물린다
 function showPaper(step) {
   const p = q('#scPaper');
-  q('#scPaperT').textContent = step.paper;
+  const panel = !!step.panel;
+  q('#scPaperT').textContent = step.panel || step.paper;
   q('#scPaperE').innerHTML = step.emblem ? dialSVG(step.emblem) : '';
   q('#scPaperE').hidden = !step.emblem;
+  p.classList.toggle('panel', panel);
+  p.classList.toggle('deny', panel && step.tone === 'deny');
   p.hidden = false; p.classList.remove('in'); void p.offsetWidth; p.classList.add('in');
   q('#dname').hidden = true; q('#dtext').innerHTML = '';
   q('#dbox').classList.add('paper');
   q('#dbox').classList.remove('blank');
   for (const id of ['ptHero', 'ptGuest', 'ptBoss']) q('#' + id).classList.add('off');
   const html = fmt(lineText(step));
-  SC.log.push({ who: 'paper', name: step.paper, html });
+  SC.log.push({ who: 'paper', name: step.panel || step.paper, html });
   SC.who = 'nar'; SC.papering = true;
   const tmp = document.createElement('div'); tmp.innerHTML = html;
   SC.full = html; SC.plain = tmp.textContent; SC.typing = true;
   q('#dbox').classList.remove('done');
-  SFX.page();
+  if (!panel) SFX.page(); else if (step.tone === 'deny') SFX.refuse(); else SFX.panel();
   SC.tw = typeInto(q('#scPaperX'), html, { sound: 'soft', onDone: finishType });
 }
-function setGuest(who, sp) {
-  const box = q('#ptGuestArt');
-  q('#ptGuest').dataset.who = sp.foe ? 'foe' : SPEAKERS[who] ? who : 'npc';
+// 손님 칸에 인물을 세운다 — 전용 그림(art)이 없으면 대신 쓸 그림(alt)에 색조(tone)를 입힌다 (오르 · 에다 = 신도 그림)
+function setGuest(s, who, sp) {
+  const g = q('#' + SLOT_EL[s]), box = g.querySelector('.pt-art');
+  const own = sp.art && art(sp.art);
+  g.dataset.who = sp.foe ? 'foe' : SPEAKERS[who] ? who : sp.cls || 'npc';
+  g.dataset.tone = !own && sp.tone ? sp.tone : '';
+  g.classList.add('in');
   if (box.dataset.who === who) return;
   box.dataset.who = who;
   if (sp.foe) box.innerHTML = foeArtHTML(sp.foe);
   else {
     // 그림이 오기 전의 사람 · 물건은 실루엣 대신 상징 그림으로
-    const u = sp.art && art(sp.art);
+    const u = own || (sp.alt && art(sp.alt));
     box.innerHTML = u ? `<img src="${u}" alt="" draggable="false">` : sp.icon ? `<div class="pt-glyph">${icon(sp.icon)}</div>` : '<div class="pt-sil"></div>';
   }
-  const g = q('#ptGuest'); g.classList.remove('swap'); void g.offsetWidth; g.classList.add('swap');
+  g.classList.remove('swap'); void g.offsetWidth; g.classList.add('swap');
 }
 function setHeroFace(face) {
   const img = q('#ptHeroImg');
@@ -458,7 +533,7 @@ function toggleLog(open) {
   if (open) {
     clearTimeout(SC.autoT);
     const list = q('#scLogList');
-    list.innerHTML = SC.log.map(l => `<div class="lg-item${l.who === 'nar' ? ' nar' : l.who === 'pick' ? ' pick' : l.who === 'voice' ? ' voice' : ''}">${l.name ? `<b>${esc(l.name)}</b>` : ''}<p>${l.html}</p></div>`).join('') || '<p class="hint">아직 지나간 대사가 없어요.</p>';
+    list.innerHTML = SC.log.map(l => `<div class="lg-item${l.who === 'nar' ? ' nar' : l.who === 'pick' ? ' pick' : l.who === 'voice' ? ' voice' : l.who === 'paper' ? ' paper' : l.cls ? ' c-' + l.cls : ''}">${l.name ? `<b>${esc(l.name)}</b>` : ''}<p>${l.html}</p></div>`).join('') || '<p class="hint">아직 지나간 대사가 없어요.</p>';
     panel.hidden = false;
     list.scrollTop = list.scrollHeight;
     return;
@@ -490,12 +565,13 @@ function skip() {
     stage(step);
     if (step.tint !== undefined) dom.dataset.tint = step.tint;
     if (step.exit) exitPortrait(step.exit);
+    if (step.fx === 'hush') SFX.amb(null);
     if (step.blank) last = null;
-    if (step.paper) { SC.log.push({ who: 'paper', name: step.paper, html: fmt(lineText(step)) }); last = { who: 'nar', text: `〔${step.paper}〕 ${lineText(step)}` }; continue; }
+    if (step.paper || step.panel) { const t = step.panel || step.paper; SC.log.push({ who: 'paper', name: t, html: fmt(lineText(step)) }); last = { who: 'nar', text: `〔${t}〕 ${lineText(step)}` }; continue; }
     if (step.text) {
       const sp = speakerOf(step.who);
-      const name = step.name || (step.who === 'hero' ? (RUN && RUN.name) || '???' : step.who === 'boss' ? SC.bossName : sp.name || '');
-      SC.log.push({ who: step.who, name, html: fmt(lineText(step)) });
+      const name = step.name || (step.who === 'hero' ? heroName() : step.who === 'boss' ? SC.bossName : sp.name || '');
+      SC.log.push({ who: step.who, name, html: fmt(lineText(step)), cls: sp.cls || '' });
       last = step;
     }
   }
@@ -509,8 +585,9 @@ function skip() {
 function end() {
   if (SC.tw) SC.tw.stop();
   hidePaper();
-  clearTimeout(SC.autoT); clearTimeout(SC.cardT); clearTimeout(SC.placeT); clearTimeout(SC.waitT);
-  q('#scPlace').hidden = true;
+  clearTimeout(SC.autoT); clearTimeout(SC.cardT); clearTimeout(SC.placeT); clearTimeout(SC.waitT); clearTimeout(SC.sysT);
+  q('#scPlace').hidden = true; q('#scSys').hidden = true;
+  SFX.amb(null);
   SC.choosing = null; SC.carding = false; SC.typing = false; SC.inputting = false; SC.waiting = false;
   dom.hidden = true;
   $('#app').classList.remove('in-scene');

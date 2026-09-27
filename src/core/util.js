@@ -27,6 +27,9 @@ export const iya = w => hasBatchim(w) ? '이야' : '야';
 export const ah = w => hasBatchim(w) ? '아' : '야';   // 부를 때: 철수야 · 민준아
 export const iyeo = w => hasBatchim(w) ? '이여' : '여';   // 신이여 · 크로노스여
 export const isiyeo = w => hasBatchim(w) ? '이시여' : '시여';   // 신이시여 · 크로노스시여
+export const gwawa = w => hasBatchim(w) ? '과' : '와';   // 크로노스와 · 마르트와 · 에다와 — 받침이 있으면 과
+// 으로 · 로 — 받침이 없거나 ㄹ 받침이면 로 (서울로 · 집으로)
+export const euro = w => { const c = String(w ?? '').trim(); const k = c.charCodeAt(c.length - 1) - 0xAC00; return hasBatchim(c) && k % 28 !== 8 ? '으로' : '로'; };
 
 // 로마 숫자 (1~13)
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII'];

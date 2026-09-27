@@ -1,7 +1,7 @@
 // 전투 화면 — DOM 만들기 · 그리기 · 연출
 import {
   B, H, K, RC, COLS, DIRS, DIR_LABEL, inArea, liveFoes, foeAt, foeById, T, dueIn, validDirs, aimFor, shapeCells,
-  strikeTargets, reachText, leapOf, inFront, ambushOn, cardDamage, nextOl, wait, manh, helpers, bossPhaseName,
+  strikeTargets, reachText, leapOf, inFront, ambushOn, cardDamage, nextOl, wait, manh, helpers, bossPhaseName, log,
 } from './core.js';
 import { cardDef, SHAPES, KINDS, effectLine } from '../data/cards.js';
 import { FOE_BARKS, ELITE_TRAITS } from '../data/foes.js';
@@ -302,7 +302,10 @@ export function renderBoard() {
   pl.classList.toggle('down', B.over && !B.won);
   q('#frzBadge').textContent = B.freeze > 0 ? B.freeze : '';
   renderPose();
-  if (B.boss) q('#bossRow').classList.toggle('stunned', B.boss.stun > 0);
+  if (B.boss) {
+    q('#bossRow').classList.toggle('stunned', B.boss.stun > 0);
+    q('#bossRow').dataset.dmg = B.phase || '';   // 단계가 넘어갈수록 외장 손상 (대본 17 — 일러 밝기 · 흔들림)
+  }
 }
 
 function foeEl(f) {
@@ -703,6 +706,13 @@ export function foeSay(f, kind) {
   const lines = FOE_BARKS[f.type] && FOE_BARKS[f.type][kind];
   if (lines) FX.say(f, lines[Math.floor(Math.random() * lines.length)]);
 }
+// 주인공의 한마디 — 머리 위 말풍선 + 기록 (튜토리얼 · 대본의 전투 중 대사)
+export function heroSay(text) {
+  if (!root) return;
+  FX.say({ r: B.p.r, c: B.p.c }, text);
+  log(`${B.name || '???'} — 「${text}」`, 'dim');
+  render();
+}
 
 /* ═════════════ 연출 ═════════════ */
 const shakeOk = () => SET.shake;
@@ -906,6 +916,7 @@ export function wireHooks() {
   H.toast = btoast;
   H.bark = bark;
   H.say = foeSay;
+  H.heroSay = heroSay;
   H.pose = flashPose;
   H.fx = FX;
   H.sfx = SFX;

@@ -3,7 +3,7 @@ import { register, go } from '../ui/router.js';
 import { RUN, maxHp, mods, dm, chapterDef, bag, alertStageUp } from '../game/run.js';
 import { autosave } from '../game/save.js';
 import { encounterFor, rewardsFor, sceneOpts as sceneOptsFor, storyOf, TRIALS } from '../game/flow.js';
-import { B, H, setupBattle, startBattle, log } from '../battle/core.js';
+import { B, H, setupBattle, startBattle, log, SIGNAL_TURNS } from '../battle/core.js';
 import { mountView, setupBoard, render, wireHooks, viewRoot } from '../battle/view.js';
 import { bindInput, battleKey } from '../battle/input.js';
 import { startTutorial, stopTutorial } from '../battle/tutorial.js';
@@ -42,10 +42,12 @@ async function mount(holder, params = {}) {
   const ilKey = k => `il:${enc.story || ''}:${k}`;
   const seenIl = Object.keys(enc.interludes || {}).filter(k => (RUN.flags.seen || {})[ilKey(k)]);
   H.onInterlude = k => { RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [ilKey(k)]: true }); };
-  setupBattle(enc, { hp: RUN.hp, maxHp: maxHp(), deck: RUN.deck, mods: mods(), diff: dm(), seed: enc.seed, name: RUN.name, items: bag(), seen: seenIl });
+  setupBattle(enc, { hp: RUN.hp, maxHp: maxHp(), deck: RUN.deck, mods: mods(), diff: dm(), seed: enc.seed, name: RUN.name || '???', items: bag(), seen: seenIl });
   B.relicIds = RUN.relics.slice(); B.implantIds = RUN.implants.slice();
   B.onEnd = win => onEnd(win);
   if (params.alertGained > 0) log(`${chapterDef().hunted ? '추격' : '감시 톱니'} — 경계도 +${params.alertGained} (지금 ${RUN.alert})`, 'bad');
+  // 송신을 준비하는 전투 — 고른 경로의 이익을 판 옆 기록에 남긴다 (09)
+  if (enc.signal) log(enc.sig > SIGNAL_TURNS ? `가림길 — 벽이 가려 준다. 감시 시계의 송신까지 ${enc.sig}행동 (직행이면 ${SIGNAL_TURNS})` : `감시 시계의 송신까지 ${enc.sig || SIGNAL_TURNS}행동 — 그 전에 부수면 경계가 오르지 않는다`, enc.sig > SIGNAL_TURNS ? 'ok' : 'warn');
   setupBoard();
   bindInput();
   const vr = viewRoot();
@@ -62,7 +64,17 @@ async function mount(holder, params = {}) {
     vr.querySelector('.timeline').appendChild(tag);
   }
   render();
-  if (enc.intro) { await playScene(enc.intro, sceneOpts(enc)); if (!alive) return; }
+  // 보스 앞 대화(16) · 전투를 여는 한마디(17-001) — 처음 한 번만. 쓰러져 재귀하면 전투부터 (대본: 전투 패배는 그 전투의 재시도)
+  const once = async (k, script) => {
+    if (!script || (RUN.flags.seen || {})[ilKey(k)]) return true;
+    await playScene(script, sceneOpts(enc));
+    if (!alive) return false;
+    RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [ilKey(k)]: true });
+    autosave();
+    return true;
+  };
+  if (!await once('intro', enc.intro)) return;
+  if (!await once('start', (enc.interludes || {}).start)) return;
   startBattle();
   if (enc.kind === 'boss') setTimeout(() => H.bark('start'), 400);
   if (enc.tut && SET.tutorial && !(RUN.flags.tutorial || {})[enc.tut]) {

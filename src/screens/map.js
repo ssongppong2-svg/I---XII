@@ -78,8 +78,9 @@ function noOf(n) {
 }
 const KIND_TEXT = {
   battle: '대화 → 전투. 전투를 시작하기 직전에 재귀 지점이 저절로 새겨진다(저장 횟수를 쓰지 않는다).',
-  talk: '대화 · 선택. 고른 것에 따라 얻는 것과 뒷이야기가 달라진다.',
-  shop: '대화 · 상점. 질문 두 가지는 값을 받지 않는다.',
+  talk: '대화. 선택이 있으면 고른 것에 따라 얻는 것과 뒷이야기가 달라진다.',
+  safe: '숨은 곳 — 들어가면 먼저 회복한다(습격 없음). 그다음 대화.',
+  shop: '대화 · 상점. 사는 것은 고르기 나름이다.',
   rest: '휴식 · 확률 사건. 회복한 뒤 습격을 판정한다(이 칸에서 한 번).',
 };
 function goalHTML() {
@@ -145,11 +146,11 @@ function infoHTML(id) {
     const head = `<div class="mi-head" style="--tone:${T.tone}">${no ? `<span class="mi-no">${no}</span>` : icon(T.icon)}<b>${esc(labelOf(n))}</b>${state}</div>`;
     if (d) {
       const foes = d.enc ? `<p class="mi-foes">적: ${d.enc.foes.map(t => FOES[t].name).join(' · ')}</p>` : '';
-      const kind = d.kind === 'rest' ? `${KIND_TEXT.rest} 지금 습격 확률 ${Math.round(restAmbushChance() * 100)}%.` : KIND_TEXT[d.kind] || '';
+      const kind = d.kind === 'rest' ? `${KIND_TEXT.rest} 지금 습격 확률 ${Math.round(restAmbushChance() * 100)}%.` : d.safeRest ? KIND_TEXT.safe : KIND_TEXT[d.kind] || '';
       return { head, body: `<p>${esc(d.teaser || '')}</p>${d.kind === 'rest' ? '' : foes}<p class="mi-kind">${kind}</p>` };
     }
     const bd = BOSSES[ch.encounters.boss.boss];
-    return { head, body: `<p>${esc(bd.sub || T.desc)}</p><p class="mi-foes">${bd.name} · ${ch.encounters.boss.adds.map(t => FOES[t].name).join(' · ')}</p><p class="mi-kind">들어가는 순간 재귀 지점이 저절로 새겨진다. 쓰러지면 보스 앞 대화부터(건너뛸 수 있다).</p>` };
+    return { head, body: `<p>${esc(bd.sub || T.desc)}</p><p class="mi-foes">${bd.name} · ${ch.encounters.boss.adds.map(t => FOES[t].name).join(' · ')}</p><p class="mi-kind">16 출입 심사 → 17 보스전. 들어가는 순간 재귀 지점이 저절로 새겨진다. 앞 대화는 처음 한 번만 — 쓰러지면 전투부터 다시.</p>` };
   }
   if (n.type === 'start' && ch.start) return { head: `<div class="mi-head" style="--tone:${T.tone}">${icon(T.icon)}<b>${esc(ch.start.label)}</b>${state}</div>`, body: `<p>${esc(ch.start.desc)}</p>` };
   let extra = '';
@@ -233,7 +234,7 @@ async function mount(holder, params = {}) {
 async function banner(big, small, alarm = false) {
   const b = document.createElement('div');
   b.className = 'map-banner' + (alarm ? ' alarm' : '');
-  b.innerHTML = `<div><b>${esc(big)}</b><span>${esc(small)}</span>${alarm ? '' : `<small>${esc(RUN.name)} · 난이도 ${roman(RUN.diff)} · 재귀 저장 ${RUN.saves.left}번</small>`}</div>`;
+  b.innerHTML = `<div><b>${esc(big)}</b><span>${esc(small)}</span>${alarm ? '' : `<small>${esc(RUN.name || '???')} · 난이도 ${roman(RUN.diff)} · 재귀 저장 ${RUN.saves.left}번</small>`}</div>`;
   root.appendChild(b);
   if (alarm) SFX.alarm(); else SFX.chime();
   await sleep(2300);

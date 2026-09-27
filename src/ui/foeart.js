@@ -75,6 +75,7 @@ export function storyArtKeys(script = [], cast = {}) {
       const foe = st.who && (FOES[st.who] ? st.who : c && c.foe);
       if (foe && FOES[foe]) { keys.add(FOES[foe].art); keys.add(FOES[foe].art + '-sd'); }
       if (c && c.art) keys.add(c.art);
+      if (c && c.alt) keys.add(c.alt);
       if (st.bg && typeof st.bg === 'object') { keys.add(st.bg.slot); if (st.bg.base) keys.add(st.bg.base); }
       else if (typeof st.bg === 'string') keys.add(st.bg);
       if (st.cg) keys.add(st.cg);

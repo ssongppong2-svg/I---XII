@@ -7,7 +7,7 @@ import { ITEMS } from '../data/items.js';
 import { clamp } from '../core/util.js';
 
 export const BASE_HP = 5;
-export const SAVE_V = 2;   // 저장 판 — 2: 1장이 최종 대본(이야기 칸 · 가방 · 경계 단계)으로 바뀐 판. 예전 판은 이어 할 수 없다
+export const SAVE_V = 3;   // 저장 판 — 3: 1장이 전면 개작본(03~18 이야기 칸 · 두 줄 지도 · 이름은 04에서)으로 바뀐 판. 예전 판은 이어 할 수 없다
 export let RUN = null;
 export function setRun(r) { RUN = r; }
 

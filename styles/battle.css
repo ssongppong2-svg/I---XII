@@ -470,3 +470,9 @@
 .tut-btns button{padding:9px 14px;border-radius:5px;border:1px solid rgba(95,227,210,.5);background:rgba(95,227,210,.12);color:#E4FFFB;font:700 13.5px/1 var(--f-ui);cursor:pointer;white-space:nowrap}
 .tut-btns button.skip{border-color:var(--line-2);background:none;color:var(--mute)}
 .tut-hi{box-shadow:0 0 0 3px var(--aether),0 0 30px rgba(95,227,210,.5)!important;border-radius:10px}
+/* 보스 외장 손상 — 단계가 넘어갈수록 어둡고 떨린다 (대본 17) */
+.boss-row[data-dmg="1"] .boss-art{filter:brightness(.8) saturate(.85) contrast(1.08)}
+.boss-row[data-dmg="2"] .boss-art{filter:brightness(.62) saturate(.7) contrast(1.2);animation:bossDmg 2.6s steps(1) infinite}
+.boss-row[data-dmg="2"].stunned .boss-art{filter:grayscale(.85) brightness(.55)}
+@keyframes bossDmg{0%,100%{transform:none}37%{transform:translateX(-3px)}39%{transform:none}81%{transform:translateX(2px)}83%{transform:none}}
+@media (prefers-reduced-motion:reduce){ .boss-row[data-dmg="2"] .boss-art{animation:none} }

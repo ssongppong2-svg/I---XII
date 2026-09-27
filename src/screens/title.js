@@ -67,9 +67,9 @@ async function doAction(a) {
   SFX.click();
   if (a === 'start') {
     if (hasSave()) { showPage('start'); return; }
-    // 예전 판의 여정 — 1장이 최종 대본으로 바뀌어 이어 할 수 없다
+    // 예전 판의 여정 — 1장이 전면 개작본으로 바뀌어 이어 할 수 없다
     if (oldSave()) {
-      const ok = await confirmBox({ title: '예전 판의 여정이 있어요', text: '1장이 최종 대본(이야기 칸 · 가방 · 경계 단계)으로 바뀌어서 예전 여정은 이어 할 수 없어요. 새 게임을 시작하면 예전 여정은 지워져요.', buttons: [{ label: '새 게임', value: true, main: true }, { label: '돌아가기', value: false }] });
+      const ok = await confirmBox({ title: '예전 판의 여정이 있어요', text: '1장 이야기가 새로 쓰여서(전면 개작본) 예전 여정은 이어 할 수 없어요. 새 게임을 시작하면 예전 여정은 지워져요.', buttons: [{ label: '새 게임', value: true, main: true }, { label: '돌아가기', value: false }] });
       if (!ok) return;
       clearRun();
     }

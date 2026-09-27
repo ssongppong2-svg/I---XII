@@ -1,5 +1,5 @@
-// 튜토리얼 — 1장 이야기 전투 두 번(02 학습 전투 · 05 닫힌 시장)에 녹인 안내. 해 보면 넘어가고(until), '다음'으로 넘길 수도 있다
-// 대본 B01: 격자 이동 → 공격 예고 → 카드 → 재귀 설명 순서
+// 튜토리얼 — 1장 이야기 전투 두 번(03 학습 전투 B01 · 06 시장 B02)에 녹인 안내. 해 보면 넘어가고(until), '다음'으로 넘길 수도 있다
+// 대본 B01: 이동 · 위험 칸 · 카드 코스트 → 재귀 설명창(03-010 주인공의 한마디)
 import { H } from './core.js';
 import { viewRoot } from './view.js';
 import { SFX } from '../ui/sfx.js';
@@ -13,7 +13,7 @@ const STEPS = {
       text: '적은 <b>2코스트마다</b> 한 번 움직여요. 머리 위 숫자 <b>1</b>은 “내 다음 행동이 끝나면 움직인다”는 뜻. 분홍 표식이 뜬 칸에 공격이 떨어져요 — 그 칸 밖에서 행동을 끝내면 맞지 않아요.' },
     { title: '카드', until: 'card', hi: '#hand',
       text: '카드를 클릭하거나 <kbd>1</kbd>~<kbd>6</kbd>을 눌러 보세요. 공격 카드는 <b>적이 닿는 방향</b>으로 쏴요. 여러 방향이 가능하면 판의 칸을 눌러 조준하고, 한 번 더 누르면 써요.' },
-    { title: '재귀', until: 'next', sfx: 'tick',
+    { title: '재귀', until: 'next', sfx: 'tick', say: '이 감각…… 아까 눈을 떴을 때도.',
       text: '쓰러져도 끝이 아니에요 — <b>재귀</b>. 마지막으로 새긴 <b>재귀 지점</b>으로 돌아가요. 이야기 칸의 전투는 시작하기 직전에, 보스는 들어가는 순간에 저절로 새겨져요(횟수를 쓰지 않아요). 지도의 「저장」으로 직접 새길 수도 있어요.' },
     { title: '처치', until: 'next',
       text: '적을 모두 쓰러뜨리면 승리예요. 이기면 부품과 카드를 얻어요. 적을 누르면(마우스는 올리면) 체력과 다음 행동이 왼쪽에 나와요. 이 안내는 <kbd>H</kbd> 규칙에서 다시 볼 수 있어요.' },
@@ -72,6 +72,7 @@ function show() {
   T.box.style.animation = 'none'; void T.box.offsetWidth; T.box.style.animation = '';
   typeInto(T.box.querySelector('.tut-t'), s.text, { mul: 0.5, sound: 'soft' });
   if (s.sfx && SFX[s.sfx]) SFX[s.sfx]();   // 재귀 — 짧은 바늘 소리
+  if (s.say && H.heroSay) H.heroSay(s.say);   // 대본 03-010 — 설명창이 열리는 순간 주인공이 한마디
   if (s.hi) { const el = root.querySelector(s.hi); if (el) el.classList.add('tut-hi'); }
 }
 function advance() {

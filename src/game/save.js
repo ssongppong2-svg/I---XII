@@ -19,9 +19,10 @@ export function autosave() {
   stampPlayTime();
   write(AUTO, RUN);
 }
-export function hasSave() { const r = read(AUTO); return !!(r && r.v === SAVE_V && r.name); }
+// 이어 할 여정 — 이름은 04에서 정하므로(그 전에는 비어 있다) 이름이 아니라 판 번호와 만든 시각으로 본다
+export function hasSave() { const r = read(AUTO); return !!(r && r.v === SAVE_V && r.created); }
 export function peekSave() { const r = read(AUTO); return r && r.v === SAVE_V ? r : null; }
-// 예전 판의 여정 (1장 지도가 대본대로 바뀌기 전) — 이어 할 수 없어서 타이틀에서 알려 주고 지운다
+// 예전 판의 여정 (1장이 전면 개작본으로 바뀌기 전) — 이어 할 수 없어서 타이틀에서 알려 주고 지운다
 export function oldSave() { const r = read(AUTO); return !!(r && r.v !== SAVE_V); }
 export function loadAuto() {
   const r = read(AUTO);
