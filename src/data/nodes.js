@@ -17,7 +17,7 @@ export const NODE_TYPES = {
   ambush:     { label: '기습',       icon: 'burst',    tone: '#FF6A55', r: 36, desc: '적이 먼저 움직이는 전투. 부품 보상이 많다.' },
   alley:      { label: '골목',       icon: 'alley',    tone: '#B8A89A', r: 36, desc: '무슨 일이 생길지 모른다 — 숨을 곳 · 좁은 전투 · 뒷거래 · 지름길.' },
   tent:       { label: '천막',       icon: 'tent',     tone: '#F07A95', r: 36, desc: '당신을 숭배하는 신도들의 천막. 소식 · 회복 · 사이비 카드.' },
-  event:      { label: '사건',       icon: 'help',     tone: '#C9C0D3', r: 36, desc: '짧은 선택. 거래일 수도, 도박일 수도.' },
+  event:      { label: '사건',       icon: 'help',     tone: '#C9C0D3', r: 36, desc: '누군가를, 무언가를 만난다. 무엇을 고르느냐에 따라 얻고 잃는 것과 뒷이야기가 달라진다.' },
   shrine:     { label: '유물 제단',  icon: 'gem',      tone: '#F2D38F', r: 36, desc: '유물 두 개 중 하나를 얻는다.' },
 };
 

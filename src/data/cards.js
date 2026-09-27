@@ -11,7 +11,7 @@ export const SHAPES = {
   fan3:   { label: '앞 3칸 부채꼴',  cells: [[-1, -1], [-1, 0], [-1, 1]] },
   line2:  { label: '직선 2칸',       cells: [[-1, 0], [-2, 0]] },
   line3:  { label: '직선 3칸',       cells: [[-1, 0], [-2, 0], [-3, 0]] },
-  pierce: { label: '직선 관통',      cells: [[-1, 0], [-2, 0], [-3, 0], [-4, 0]] },
+  pierce: { label: '직선 관통',      cells: [[-1, 0], [-2, 0], [-3, 0], [-4, 0], [-5, 0], [-6, 0]] },   // 6×6 판 끝까지 (보스전 맨 아랫줄에서 보스 줄까지)
   far:    { label: '3~4칸 앞',       cells: [[-3, 0], [-4, 0]] },
   side2:  { label: '양옆 2칸',       cells: [[0, -1], [0, 1]] },
   cone4:  { label: '앞 원뿔 4칸',    cells: [[-1, 0], [-2, -1], [-2, 0], [-2, 1]] },
@@ -90,7 +90,7 @@ export const CARDS = {
   rewind_step: { name: '되감기', kind: 'move', rarity: 'rare', back: true, cool: 30, up: { cool: 50 },
     desc: '이번 루프에 처음 서 있던 칸으로 돌아가고 과부하를 낮춘다.' },
   heavy_mortar: { name: '대형 박격', kind: 'far', rarity: 'rare', shape: 'wide5', dmg: 8, up: { dmg: 11 },
-    desc: '두 칸 앞 가로줄 전체에 포탄을 쏟는다.' },
+    desc: '두 칸 앞 가로 5칸에 포탄을 쏟는다.' },
   overload_core: { name: '과부하 핵', kind: 'jam', rarity: 'rare', shape: 'line2', dmg: 2, bossOl: 80, ol: 30, up: { bossOl: 100 },
     desc: '보스 회로를 크게 흔드는 대신 내 몸도 달아오른다.' },
 

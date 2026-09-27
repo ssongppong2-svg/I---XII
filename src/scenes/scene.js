@@ -1,11 +1,16 @@
-// 대사 장면 — 프롤로그 · 정예/보스 이야기 · 재귀 · 천막
-// 대사 = { who, face?, text } · 선택지 = { choice: [{ label, then }] } · 챕터 카드 = { card: { num, title } }
-// 이름 입력 = { input: 'name', prompt, sub } · 연출 = { tint, place, fx, exit } · 조건 = { when: () => bool }
+// 대사 장면 — 프롤로그 · 정예/보스 이야기 · 재귀 · 사건
+// 대사 = { who, face?, name?, text } — text는 글 또는 ctx => 글. name을 적으면 그 이름으로 말한다
+// 선택지 = { choice: [{ label, desc?, when?, cond?, lack?, then }] } — when이 거짓이면 숨기고, cond가 거짓이면 흐리게 막는다(lack = 이유)
+// 갈림 = { if: ctx => bool, then: [...], else: [...] } · 운 = { roll: 0.5, win: [...], lose: [...] }
+// 효과 = { act: ctx => {} } · 결과 한 줄 = { after: '…' } (장면이 끝난 뒤 사건 화면에 남는 글)
+// 챕터 카드 = { card: { num, title } } · 이름 입력 = { input: 'name', prompt, sub } · 연출 = { tint, place, fx, exit } · 조건 = { when: ctx => bool }
+// ctx = playScene(…, { ctx })로 넘긴 도우미 (사건이면 부품 · 경계도 · 깃발 등 — screens/node.js)
 import { $, el, esc, iga, eulreul, eunneun, irago, ah, iyeo, isiyeo, iya } from '../core/util.js';
 import { SET, AUTO_SPEED } from '../core/settings.js';
 import { typeInto } from '../ui/typewriter.js';
 import { SFX } from '../ui/sfx.js';
-import { art, faceUrl, load } from '../ui/assets.js';
+import { art, faceUrl, load, bgImgHTML } from '../ui/assets.js';
+import { icon } from '../ui/icons.js';
 import { foeArtHTML } from '../ui/foeart.js';
 import { FOES } from '../data/foes.js';
 import { RUN } from '../game/run.js';
@@ -30,13 +35,18 @@ const SPEAKERS = {
 };
 const NAME_SUGGEST = ['크로노스', '아르케', '엘리오스', '호라', '제로', '시계공', '카이로스', '루멘', '에온', '헤임'];
 
-const SC = { queue: [], full: '', plain: '', tw: null, who: 'nar', typing: false, choosing: null, inputting: false, carding: false, auto: false, log: [], onEnd: null, autoT: 0, cardT: 0, placeT: 0, bossName: '대형 감시기계', onName: null };
+const SC = { queue: [], full: '', plain: '', tw: null, who: 'nar', typing: false, choosing: null, inputting: false, carding: false, auto: false, log: [], onEnd: null, autoT: 0, cardT: 0, placeT: 0, bossName: '대형 감시기계', onName: null, ctx: null, cast: {}, onChoice: null };
 let dom = null;
 const q = s => dom.querySelector(s);
+// ctx를 따로 넘기지 않은 장면(정예 · 보스 이야기)도 사건에서 세운 깃발은 볼 수 있다 — { when: G => G.has('pup') }
+const BASE_CTX = { has: k => !!(RUN && RUN.flags && (RUN.flags.ev || {})[k]) };
+const ctxOf = () => SC.ctx || BASE_CTX;
 
 export function initScene() {
   dom = el(`<div class="scene" id="scene" hidden>
     <div class="sc-wrap">
+      <div class="sc-bg" id="scBg" aria-hidden="true"></div>
+      <div class="sc-notes" id="scNotes" aria-live="polite"></div>
       <div class="sc-tools"><button type="button" id="scLogBtn">로그</button><button type="button" id="scAutoBtn">자동</button><button type="button" id="scSkipBtn">건너뛰기 ▸▸</button></div>
       <div class="sc-place" id="scPlace" hidden></div>
       <div class="pt pt-voice" id="ptVoice"><div class="pt-art" id="ptVoiceArt"></div></div>
@@ -76,10 +86,16 @@ export function initScene() {
 export const sceneOpen = () => dom && !dom.hidden;
 
 // 대사 장면 재생 — 끝나면 풀리는 Promise
-// opt: { bossName, bossArt, bossBar, onName(name) }
+// opt: { bossName, bossArt, bossBar, onName(name), ctx, cast: { 이름: { name, art?, icon?, foe? } }, bg: 배경 그림 이름, onChoice(label) }
 export function playScene(script, opt = {}) {
   return new Promise(res => {
-    Object.assign(SC, { queue: (script || []).slice(), log: [], onEnd: res, choosing: null, carding: false, typing: false, inputting: false, bossName: opt.bossName || '대형 감시기계', onName: opt.onName || null });
+    Object.assign(SC, { queue: (script || []).slice(), log: [], onEnd: res, choosing: null, carding: false, typing: false, inputting: false, bossName: opt.bossName || '대형 감시기계', onName: opt.onName || null,
+      ctx: opt.ctx || null, cast: opt.cast || {}, onChoice: opt.onChoice || null });
+    // 배경 그림 (사건) — 없으면 아래 화면이 어둡게 비친다
+    const bg = opt.bg ? bgImgHTML(opt.bg) : '';
+    q('#scBg').innerHTML = bg;
+    dom.classList.toggle('has-bg', !!bg);
+    q('#scNotes').innerHTML = '';
     for (const id of ['ptHero', 'ptGuest', 'ptBoss', 'ptVoice']) q('#' + id).classList.remove('in', 'on', 'off', 'swap');
     q('#ptGuestArt').dataset.who = '';
     // 초상화 그림
@@ -109,12 +125,27 @@ export function playScene(script, opt = {}) {
   });
 }
 
+// 보이지 않는 줄 — 갈림 · 운 · 효과 · 결과 한 줄. 처리했으면 true (건너뛰기에서도 똑같이 쓴다)
+function silent(step) {
+  const ctx = ctxOf();
+  if (step.if) { SC.queue.unshift(...((step.if(ctx) ? step.then : step.else) || [])); return true; }
+  if (step.roll !== undefined) {
+    const ok = ctx.chance ? ctx.chance(step.roll) : Math.random() < step.roll;
+    SC.queue.unshift(...((ok ? step.win : step.lose) || []));
+    return true;
+  }
+  if (step.act) step.act(ctx);
+  if (step.after !== undefined && SC.ctx) SC.ctx.afterText = typeof step.after === 'function' ? step.after(ctx) : step.after;
+  return false;
+}
+
 function next() {
   clearTimeout(SC.autoT);
   for (;;) {
     const step = SC.queue.shift();
     if (!step) { end(); return; }
-    if (step.when && !step.when()) continue;
+    if (step.when && !step.when(ctxOf())) continue;
+    if (silent(step)) continue;
     if (step.tint !== undefined) dom.dataset.tint = step.tint;
     if (step.place) showPlace(step.place);
     if (step.fx) sceneFx(step.fx);
@@ -147,15 +178,20 @@ function exitPortrait(which) {
 }
 function updateDuo() { dom.classList.toggle('duo', q('#ptGuest').classList.contains('in')); }
 
+// 말하는 사람 — 장면마다 따로 부른 사람(cast) → 늘 있는 사람 → 적 이름
 function speakerOf(who) {
+  const c = SC.cast[who];
+  if (c) return c.foe ? { name: c.name || FOES[c.foe].name, pt: 'guest', cls: 'foe', foe: c.foe } : { name: c.name || '', pt: 'guest', cls: c.cls || 'npc', art: c.art, icon: c.icon };
   if (SPEAKERS[who]) return SPEAKERS[who];
   if (FOES[who]) return { name: FOES[who].name, pt: 'guest', cls: 'foe', foe: who };
   return SPEAKERS.nar;
 }
-function showLine(step) {
+const lineText = step => typeof step.text === 'function' ? step.text(ctxOf()) : step.text;
+// instant = 건너뛰기로 멈춘 자리에서 바로 앞 대사를 한 번에 보여 줄 때
+function showLine(step, instant = false) {
   const who = step.who;
   const sp = speakerOf(who);
-  const name = who === 'hero' ? (RUN && RUN.name) || '???' : who === 'boss' ? SC.bossName : sp.name || '';
+  const name = step.name || (who === 'hero' ? (RUN && RUN.name) || '???' : who === 'boss' ? SC.bossName : sp.name || '');
   const pt = sp.pt || null;
   if (pt === 'guest') setGuest(who, sp);
   const els = { hero: q('#ptHero'), guest: q('#ptGuest'), boss: q('#ptBoss'), voice: q('#ptVoice') };
@@ -172,18 +208,23 @@ function showLine(step) {
   nm.className = 'dname' + (sp.cls && who !== 'nar' ? ' ' + sp.cls : '');
   q('#dtext').className = 'dtext' + (sp.cls ? ' ' + sp.cls : '');
   if (who === 'hero') setHeroFace(step.face || 'idle');
-  const html = fmt(step.text);
-  SC.log.push({ who, name, html });
+  const html = fmt(lineText(step));
+  if (!instant) SC.log.push({ who, name, html });
   SC.who = who;
+  if (instant) { if (SC.tw) SC.tw.stop(); q('#dtext').innerHTML = html; SC.typing = false; q('#dbox').classList.add('done'); return; }
   typeText(html);
 }
 function setGuest(who, sp) {
   const box = q('#ptGuestArt');
-  q('#ptGuest').dataset.who = sp.foe ? 'foe' : who;
+  q('#ptGuest').dataset.who = sp.foe ? 'foe' : SPEAKERS[who] ? who : 'npc';
   if (box.dataset.who === who) return;
   box.dataset.who = who;
   if (sp.foe) box.innerHTML = foeArtHTML(sp.foe);
-  else { const u = art(sp.art); box.innerHTML = u ? `<img src="${u}" alt="" draggable="false">` : '<div class="pt-sil"></div>'; }
+  else {
+    // 그림이 오기 전의 사람 · 물건은 실루엣 대신 상징 그림으로
+    const u = sp.art && art(sp.art);
+    box.innerHTML = u ? `<img src="${u}" alt="" draggable="false">` : sp.icon ? `<div class="pt-glyph">${icon(sp.icon)}</div>` : '<div class="pt-sil"></div>';
+  }
   const g = q('#ptGuest'); g.classList.remove('swap'); void g.offsetWidth; g.classList.add('swap');
 }
 function setHeroFace(face) {
@@ -225,23 +266,45 @@ function showCard(c) {
 }
 function hideCard() { clearTimeout(SC.cardT); SC.carding = false; q('#scCard').hidden = true; next(); }
 
+// 선택지 — when이 거짓이면 숨기고, cond가 거짓이면 막아 두고 이유(lack)를 보여 준다. desc = 무엇을 얻고 잃는지
 function showChoice(opts) {
-  SC.choosing = opts;
+  const ctx = ctxOf();
+  const list = opts.filter(o => !o.when || o.when(ctx)).map(o => ({ o, dis: !!(o.cond && !o.cond(ctx)) }));
+  SC.choosing = list;
   q('#dbox').classList.add('choosing');
   const box = q('#scChoices');
-  box.innerHTML = opts.map((o, i) => `<button type="button" data-i="${i}"><kbd>${i + 1}</kbd>${esc(o.label)}</button>`).join('');
+  box.innerHTML = list.map(({ o, dis }, i) => {
+    const desc = typeof o.desc === 'function' ? o.desc(ctx) : o.desc;
+    const sub = dis && o.lack ? o.lack : desc;
+    return `<button type="button" data-i="${i}"${dis ? ' disabled' : ''}><kbd>${i + 1}</kbd><span class="ch-t"><span class="ch-l">${fmt(o.label)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`;
+  }).join('');
+  box.classList.toggle('many', list.length > 3);
   box.hidden = false;
 }
 function chooseOption(i) {
-  const opts = SC.choosing;
-  if (!opts || !opts[i]) return;
+  const list = SC.choosing;
+  if (!list || !list[i]) return;
+  if (list[i].dis) { SFX.deny(); return; }
+  const o = list[i].o;
   SC.choosing = null;
   q('#scChoices').hidden = true;
   q('#dbox').classList.remove('choosing');
-  SC.log.push({ who: 'pick', name: '선택', html: esc(opts[i].label) });
-  SC.queue.unshift(...opts[i].then);
+  SC.log.push({ who: 'pick', name: '선택', html: fmt(o.label) });
+  if (SC.onChoice) SC.onChoice(o.label);
+  SC.queue.unshift(...(o.then || []));
   SFX.card();
   next();
+}
+
+// 얻고 잃은 것 — 장면 위쪽에 잠깐 떴다 사라진다 (사건의 부품 · 경계도 · HP …)
+export function sceneNote(html, kind = '') {
+  if (!sceneOpen()) return;
+  const box = q('#scNotes');
+  const n = document.createElement('div');
+  n.className = 'sc-note' + (kind ? ' ' + kind : '');
+  n.innerHTML = html;
+  box.appendChild(n);
+  setTimeout(() => n.remove(), 2800);
 }
 
 // 이름 입력
@@ -294,24 +357,35 @@ function toggleAuto() {
   clearTimeout(SC.autoT);
   if (SC.auto && !SC.typing && !SC.choosing && !SC.carding && !SC.inputting && q('#scLogPanel').hidden) SC.autoT = setTimeout(next, 600);
 }
-// 건너뛰기 — 이름 입력이 남아 있으면 거기까지만 건너뛴다
+// 건너뛰기 — 선택지 · 이름 입력 앞에서 멈춘다 (고르는 건 건너뛸 수 없다). 지나가는 효과 · 갈림은 그대로 처리하고, 대사는 기록에 남긴다
 function skip() {
-  if (SC.inputting) return;
-  const idx = SC.queue.findIndex(s => s.input);
+  if (SC.inputting || SC.choosing) return;
   if (SC.tw) SC.tw.stop();
   clearTimeout(SC.autoT); clearTimeout(SC.cardT);
   SC.carding = false; q('#scCard').hidden = true;
-  SC.choosing = null; q('#scChoices').hidden = true; q('#dbox').classList.remove('choosing');
-  if (idx >= 0) {
-    SC.queue.splice(0, idx);
-    SC.typing = false;
-    // 건너뛴 대사가 반쯤 찍힌 채 남지 않게
-    q('#dtext').innerHTML = '';
-    q('#dname').hidden = true;
-    next();
-    return;
+  let last = null;
+  for (;;) {
+    const step = SC.queue[0];
+    if (!step) break;
+    if (step.when && !step.when(ctxOf())) { SC.queue.shift(); continue; }
+    if (step.choice || step.input) break;
+    SC.queue.shift();
+    if (silent(step)) continue;
+    if (step.tint !== undefined) dom.dataset.tint = step.tint;
+    if (step.exit) exitPortrait(step.exit);
+    if (step.text) {
+      const sp = speakerOf(step.who);
+      const name = step.name || (step.who === 'hero' ? (RUN && RUN.name) || '???' : step.who === 'boss' ? SC.bossName : sp.name || '');
+      SC.log.push({ who: step.who, name, html: fmt(lineText(step)) });
+      last = step;
+    }
   }
-  end();
+  if (!SC.queue.length) { end(); return; }
+  // 멈춘 자리 — 바로 앞 대사를 한 번에 보여 주고(무엇을 고르는지 알 수 있게) 선택지 · 이름 입력으로
+  SC.typing = false;
+  if (last) showLine(last, true);
+  else { q('#dtext').innerHTML = ''; q('#dname').hidden = true; }
+  next();
 }
 function end() {
   if (SC.tw) SC.tw.stop();
@@ -329,10 +403,10 @@ export function sceneKey(e) {
   if (!sceneOpen()) return false;
   if (SC.inputting) return true;
   if (!q('#scLogPanel').hidden) { if (e.key === 'Escape' || e.code === 'KeyL') { e.preventDefault(); toggleLog(false); } return true; }
+  if (e.code === 'KeyL') { toggleLog(true); return true; }   // 고르는 중에도 기록을 다시 볼 수 있다 (건너뛰고 왔을 때)
   const pick = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
   if (SC.choosing) { if (pick) chooseOption(+pick[1] - 1); return true; }
   if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); advance(); return true; }
-  if (e.code === 'KeyL') { toggleLog(true); return true; }
   if (e.code === 'KeyA') { toggleAuto(); return true; }
   return true;
 }

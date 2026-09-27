@@ -14,11 +14,11 @@ export const CHAPTERS = {
       13: ['boss'],
     },
     weights: {                       // 나머지 칸의 비율
-      battle: 30, event: 8, rest: 6, shop: 4, elite: 8, alley: 6, tent: 5, abyss: 4,
+      battle: 30, event: 12, rest: 6, shop: 4, elite: 8, alley: 6, tent: 5, abyss: 4,
       trial: 4, forge: 4, implant: 3, shrine: 3, blackmarket: 3, ambush: 4,
     },
     atLeast: {                       // 지도 전체에 최소 이만큼은 있게
-      elite: 2, rest: 2, shop: 1, forge: 1, tent: 1, alley: 1, event: 2, abyss: 1,
+      elite: 2, rest: 2, shop: 1, forge: 1, tent: 1, alley: 1, event: 4, abyss: 1,
       trial: 1, implant: 1, shrine: 1, blackmarket: 1, ambush: 1,
     },
     from: { elite: 5, ambush: 4, blackmarket: 4, implant: 4, trial: 4 },   // 이 층부터 나온다

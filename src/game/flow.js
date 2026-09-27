@@ -10,6 +10,7 @@ import { RELIC_POOL, RELICS } from '../data/relics.js';
 import { CH1_STORY } from '../data/story/ch1.js';
 import { isFight } from '../data/nodes.js';
 import { go } from '../ui/router.js';
+import { seenEvents } from './profile.js';
 
 const STORIES = { 1: CH1_STORY };
 export const storyOf = n => STORIES[n] || {};
@@ -21,7 +22,7 @@ export function startChapter(n) {
   RUN.reward = null;
   const ch = CHAPTERS[n];
   if (!ch) { autosave(); go('chapterend', { soon: true }); return; }
-  RUN.map = genMap(ch, RUN.seed);
+  RUN.map = genMap(ch, RUN.seed, { seenEvents: seenEvents() });
   RUN.pos = RUN.map.start;
   RUN.visited = [RUN.map.start];
   RUN.pending = null;
@@ -92,6 +93,8 @@ export function encounterFor(node, extra = {}) {
     case 'elite': {
       const e = E.elite[(node.eliteIdx || 0) % E.elite.length];
       enc = { kind: 'normal', foes: e.foes.slice(), ambush: ch.ambush.elite, elite: true, story: e.story, sub: '정예' };
+      // 사건 「사냥개의 새끼」에서 새끼를 데려왔으면 우두머리 무리가 머뭇거린다 — 무리 전체 체력 −20%
+      if (e.id === 'alpha' && (RUN.flags.ev || {}).pup) enc.hpMul = 0.8;
       break;
     }
     case 'boss':

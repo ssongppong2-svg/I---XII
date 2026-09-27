@@ -10,6 +10,7 @@ import { cardStatHTML, cardTagsHTML, miniRangeHTML } from '../battle/view.js';
 import { art, loadAll, FACES } from './assets.js';
 import { FOES, BOSSES } from '../data/foes.js';
 import { NODE_TYPES } from '../data/nodes.js';
+import { EVENTS } from '../data/events.js';
 
 // ── 설정
 const OPT = [
@@ -121,6 +122,9 @@ function imageSlots() {
     ['bg-title', '배경 · 타이틀'], ['bg-battle', '배경 · 전투'], ['bg-rest-1', '배경 · 휴식 1'], ['bg-rest-2', '배경 · 휴식 2'],
     ['bg-shop', '배경 · 상점'], ['bg-alley', '배경 · 골목'], ['bg-event', '배경 · 사건'],
     ...['blackmarket', 'forge', 'implant', 'abyss', 'trial', 'tent', 'shrine'].map(t => [`bg-${t}`, `배경 · ${NODE_TYPES[t].label}`]),
+    // 사건 — 등장인물 스탠딩(대본의 cast.art) · 사건마다 배경(없으면 bg-event)
+    ...[...new Map(Object.values(EVENTS).flatMap(e => Object.values(e.cast || {})).filter(c => c.art).map(c => [c.art, `사건 인물 · ${c.name}`])).entries()],
+    ...Object.entries(EVENTS).map(([id, e]) => [`bg-ev-${id}`, `배경 · 사건 「${e.title}」`]),
   ];
 }
 

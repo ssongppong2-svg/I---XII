@@ -1,4 +1,4 @@
-// 전투 규칙 — 5×5 판 · 4코스트 루프 · 적은 2코스트마다 행동 · 2번째 행동 뒤 기습 폭격 · 보스 턴 공격 · 과부하
+// 전투 규칙 — 6×6 판(보스전은 맨 위 보스 줄 + 6×6) · 4코스트 루프 · 적은 2코스트마다 행동 · 2번째 행동 뒤 기습 폭격 · 보스 턴 공격 · 과부하
 // (테스트판 규칙을 옮김. 낮밤 · 핏빛 타일은 뺐다)
 // 화면(view) · 연출(fx)은 H에 끼워 넣는다 — 규칙은 화면을 모른다
 import { FOES, BOSSES, ELITE_TRAITS } from '../data/foes.js';
@@ -6,12 +6,13 @@ import { SHAPES, cardDef } from '../data/cards.js';
 import { makeRng, hashSeed } from '../core/rng.js';
 import { sleep, iga } from '../core/util.js';
 
-/* ── 판 좌표 — 보스전: 0행은 보스, 1~4행에서 싸운다 / 일반 전투: 0~4행 전부 ── */
-export const COLS = 5;
+/* ── 판 좌표 — 보스전: 0행은 보스, 1~6행에서 싸운다 / 일반 전투: 0~5행 전부 (6×6) ── */
+export const COLS = 6;
+export const START_C = Math.floor((COLS - 1) / 2);   // 시작 칸 — 맨 아랫줄 가운데(왼쪽)
 export const K = (r, c) => r * COLS + c;
 export const RC = k => [Math.floor(k / COLS), k % COLS];
 export const inCol = c => c >= 0 && c < COLS;
-export const inBoard = (r, c) => r >= 0 && r <= 4 && inCol(c);
+export const inBoard = (r, c) => r >= 0 && r < B.rows && inCol(c);   // 일반 6줄(0~5) · 보스전 7줄(0 보스 · 1~6 싸움판)
 export const DIRS = { up: [-1, 0], down: [1, 0], left: [0, -1], right: [0, 1] };
 export const DIR_LABEL = { up: '위', down: '아래', left: '왼', right: '오른' };
 export const dirOf = (dr, dc) => dr < 0 ? 'up' : dr > 0 ? 'down' : dc < 0 ? 'left' : 'right';
@@ -41,10 +42,11 @@ export const H = {
 class Abort extends Error {}
 export async function wait(ms) { const t = B.tok; await sleep(ms); if (t !== B.tok) throw new Abort(); }
 
-export const inArea = (r, c) => r >= B.top && r <= 4 && inCol(c) && !(B.blocked && B.blocked.has(K(r, c)));
+export const inArea = (r, c) => r >= B.top && r < B.rows && inCol(c) && !(B.blocked && B.blocked.has(K(r, c)));
 export const colCells = c => B.area.filter(k => k % COLS === c);
-export const rowCells = r => [0, 1, 2, 3, 4].map(c => K(r, c)).filter(k => r === 0 || B.area.includes(k));
-const HELP = { get AREA() { return B.area; }, RC, colCells, rowCells };
+export const rowCells = r => Array.from({ length: COLS }, (_, c) => K(r, c)).filter(k => r === 0 || B.area.includes(k));
+// 보스 패턴이 쓰는 판 도우미 — 판 크기가 바뀌어도 패턴은 그대로 맞게
+const HELP = { get AREA() { return B.area; }, get TOP() { return B.top; }, get LAST() { return B.rows - 1; }, COLS, RC, colCells, rowCells };
 
 export const liveFoes = () => B.foes.filter(f => f.hp > 0);
 export const foeAt = (r, c) => B.foes.find(f => f.hp > 0 && f.r === r && f.c === c) || null;
@@ -61,10 +63,11 @@ export function setupBattle(enc, ctx) {
   const mode = enc.kind === 'boss' ? 'boss' : 'normal';
   const m = ctx.mods, d = ctx.diff;
   const R = makeRng(hashSeed(ctx.seed, 'battle'));
+  const rows = mode === 'boss' ? 7 : 6;
   Object.assign(B, {
     enc, mode, R, name: ctx.name,
-    top: mode === 'boss' ? 1 : 0,
-    blocked: enc.narrow ? new Set([0, 1, 2, 3, 4].flatMap(r => [K(r, 0), K(r, 4)])) : null,
+    top: mode === 'boss' ? 1 : 0, rows,
+    blocked: enc.narrow ? new Set(Array.from({ length: rows }, (_, r) => [K(r, 0), K(r, COLS - 1)]).flat()) : null,
     loop: 0, loopCost: 4 + (m.costPerLoop || 0), costLeft: 0, spent: 0, totalP: 0,
     ambushAt: 2,
     hp: ctx.hp, maxHp: ctx.maxHp, shield: 0, ol: 0, freeze: 0,
@@ -75,7 +78,7 @@ export function setupBattle(enc, ctx) {
     mods: m, diff: d,
     boss: null,
     foes: [], foeUid: 0,
-    p: { r: 4, c: 2 }, loopStartP: { r: 4, c: 2 }, faceL: false, aim: null, inspect: null,
+    p: { r: rows - 1, c: START_C }, loopStartP: { r: rows - 1, c: START_C }, faceL: false, aim: null, inspect: null,
     deck: [], hand: [], discard: [], exhausted: [],
     amb: null, ambFired: false, prevAmbKey: '',
     intent: null, atk: null, prevPat: '',
@@ -88,8 +91,7 @@ export function setupBattle(enc, ctx) {
     logs: [], logSeq: 0,
   });
   B.area = [];
-  for (let r = B.top; r <= 4; r++) for (let c = 0; c < COLS; c++) if (inArea(r, c)) B.area.push(K(r, c));
-  if (B.blocked) B.p = { r: 4, c: 2 };
+  for (let r = B.top; r < B.rows; r++) for (let c = 0; c < COLS; c++) if (inArea(r, c)) B.area.push(K(r, c));
   // 덱 — 인스턴스를 섞어서
   B.deck = R.shuffle(ctx.deck.map(inst => ({ uid: inst.uid, id: inst.id, up: inst.up })));
   // 보스
@@ -168,8 +170,9 @@ export function dirAtCell(def, r, c) {
 }
 // 보스전: 위로 썼을 때 보스 줄(0행)에 닿는 거리
 export function reachText(shape) {
-  const rows = [1, 2, 3, 4].filter(r => SHAPES[shape].cells.some(([dr]) => r + dr === 0));
-  if (rows.length === 4) return '어디서나 명중';
+  const n = (B.rows || 7) - 1;
+  const rows = Array.from({ length: n }, (_, i) => i + 1).filter(r => SHAPES[shape].cells.some(([dr]) => r + dr === 0));
+  if (rows.length === n) return '어디서나 명중';
   if (!rows.length) return '위로 쓰면 닿지 않음';
   if (rows.length === 1) return `거리 ${rows[0]}에서만 명중`;
   return `거리 ${rows[0]}~${rows[rows.length - 1]}에서 명중`;
@@ -195,9 +198,9 @@ function canEscape(set, p) {
 }
 function genAmbush(n, p, prevKey) {
   const R = B.R, me = K(p.r, p.c);
-  const cols = [0, 1, 2, 3, 4].filter(c => B.area.some(k => k % COLS === c));
+  const cols = Array.from({ length: COLS }, (_, c) => c).filter(c => B.area.some(k => k % COLS === c));
   const c0 = Math.min(...cols), c1 = Math.max(...cols);
-  const rows = 5 - B.top;
+  const rows = B.rows - B.top, last = B.rows - 1;
   n = Math.min(n, B.area.length - 2);
   for (let t = 0; t < 2000; t++) {
     const set = new Set(), segs = [];
@@ -209,11 +212,11 @@ function genAmbush(n, p, prevKey) {
       const through = i === 0 && R.chance(0.8);        // 첫 줄은 대개 나를 노린다
       let idx, start;
       if (horiz) {
-        idx = through ? p.r : R.int(B.top, 4);
+        idx = through ? p.r : R.int(B.top, last);
         start = through ? R.int(Math.max(c0, p.c - len + 1), Math.min(p.c, c1 - len + 1)) : R.int(c0, c1 - len + 1);
       } else {
         idx = through ? p.c : R.pick(cols);
-        start = through ? R.int(Math.max(B.top, p.r - len + 1), Math.min(p.r, 5 - len)) : R.int(B.top, 5 - len);
+        start = through ? R.int(Math.max(B.top, p.r - len + 1), Math.min(p.r, B.rows - len)) : R.int(B.top, B.rows - len);
       }
       const cells = [];
       for (let j = 0; j < len; j++) cells.push(horiz ? K(idx, start + j) : K(start + j, idx));

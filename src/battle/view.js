@@ -18,12 +18,15 @@ let root = null;
 const q = s => root.querySelector(s);
 const CELLS = {}, BCELLS = [];
 const FOE_EL = new Map();
+const MID_C = (COLS - 1) / 2;   // 판 가운데 (6칸이면 두 칸 사이) — 보스 줄 알림 숫자 자리
 let handSig = '', beamSig = '', markSig = '', rosterSig = '', logSig = '', relicSig = '', logSeen = -1;
 export let lastPointer = window.matchMedia && window.matchMedia('(hover: hover)').matches ? 'mouse' : 'touch';
 document.addEventListener('pointerdown', e => { lastPointer = e.pointerType || 'mouse'; }, true);
 
 const HERO_SVG = `<svg class="hero-svg" viewBox="0 0 100 130" aria-hidden="true"><ellipse cx="50" cy="124" rx="25" ry="5" fill="#000" opacity=".5"/><g class="halo"><circle cx="50" cy="44" r="36" fill="none" stroke="#D6AE62" stroke-width="4" stroke-dasharray="5.6 3.8"/><circle cx="50" cy="44" r="30.5" fill="none" stroke="#7C6234" stroke-width="1.2"/></g><path d="M30 122 C31 98 38 86 50 84 C62 86 69 98 70 122 Z" fill="#2A2340" stroke="#D6AE62" stroke-width="1.6"/><path d="M50 86 V122" stroke="#D6AE62" stroke-width="1.2" opacity=".55"/><circle cx="31" cy="104" r="5.5" fill="#EFE8DC"/><circle cx="69" cy="104" r="5.5" fill="#EFE8DC"/><rect x="21" y="14" width="58" height="60" rx="27" fill="#F2ECE2"/><rect x="27" y="34" width="46" height="19" rx="9.5" fill="#15121D"/><circle class="eye" cx="40" cy="43.5" r="4.2" fill="#5FE3D2"/><circle class="eye" cx="60" cy="43.5" r="4.2" fill="#5FE3D2"/><path d="M50 3 L55 15 H45 Z" fill="#D6AE62"/></svg>`;
-const BOSS_SVG = `<svg class="boss-svg" viewBox="0 0 520 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="bgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B6572"/><stop offset=".5" stop-color="#2E353F"/><stop offset="1" stop-color="#15191F"/></linearGradient><pattern id="haz" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="12" fill="#D9A23C"/><rect x="6" width="6" height="12" fill="#17191D"/></pattern></defs><path d="M14 12 H506 L518 30 V60 L500 74 H20 L2 60 V30 Z" fill="url(#bgA)" stroke="#8793A1" stroke-width="1.5"/><rect x="22" y="64" width="476" height="7" fill="url(#haz)" opacity=".85"/>${[0, 1, 2, 3, 4].map(c => `<g class="brl" data-c="${c}"><rect x="${42 + c * 104}" y="70" width="20" height="17" rx="2" fill="#1C2027" stroke="#8793A1"/><rect x="${47 + c * 104}" y="86" width="10" height="11" fill="#0A0C0F" stroke="#8793A1"/><circle class="muz" cx="${52 + c * 104}" cy="97" r="4.5"/></g>`).join('')}<g><circle class="lamp" cx="52" cy="42" r="5"/><circle class="lamp" cx="156" cy="42" r="5"/><circle class="lamp" cx="364" cy="42" r="5"/><circle class="lamp" cx="468" cy="42" r="5"/></g><circle cx="260" cy="38" r="23" fill="#0F1318" stroke="#A7B2BF" stroke-width="3"/><circle class="eye" cx="260" cy="38" r="13"/><circle cx="260" cy="38" r="5" fill="#07090B"/></svg>`;
+// 보스 줄 임시 그림 — 포신은 칸마다 하나 (가로 520을 COLS칸으로 나눈 가운데), 등은 양쪽 바깥 두 칸 위
+const BRL_X = c => +(520 / COLS * (c + 0.5)).toFixed(1);
+const BOSS_SVG = `<svg class="boss-svg" viewBox="0 0 520 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="bgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B6572"/><stop offset=".5" stop-color="#2E353F"/><stop offset="1" stop-color="#15191F"/></linearGradient><pattern id="haz" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="12" fill="#D9A23C"/><rect x="6" width="6" height="12" fill="#17191D"/></pattern></defs><path d="M14 12 H506 L518 30 V60 L500 74 H20 L2 60 V30 Z" fill="url(#bgA)" stroke="#8793A1" stroke-width="1.5"/><rect x="22" y="64" width="476" height="7" fill="url(#haz)" opacity=".85"/>${Array.from({ length: COLS }, (_, c) => `<g class="brl" data-c="${c}"><rect x="${BRL_X(c) - 10}" y="70" width="20" height="17" rx="2" fill="#1C2027" stroke="#8793A1"/><rect x="${BRL_X(c) - 5}" y="86" width="10" height="11" fill="#0A0C0F" stroke="#8793A1"/><circle class="muz" cx="${BRL_X(c)}" cy="97" r="4.5"/></g>`).join('')}<g>${[0, 1, COLS - 2, COLS - 1].map(c => `<circle class="lamp" cx="${BRL_X(c)}" cy="42" r="5"/>`).join('')}</g><circle cx="260" cy="38" r="23" fill="#0F1318" stroke="#A7B2BF" stroke-width="3"/><circle class="eye" cx="260" cy="38" r="13"/><circle cx="260" cy="38" r="5" fill="#07090B"/></svg>`;
 
 export function mountView(holder, { theme = '', chapterNum = 'I', title = '', sub = '' } = {}) {
   root = document.createElement('div');
@@ -92,17 +95,8 @@ export function mountView(holder, { theme = '', chapterNum = 'I', title = '', su
 }
 export const viewRoot = () => root;
 
+// 보스 줄의 칸 (조준용) — 판 칸은 전투가 정해진 뒤 setupBoard에서 줄 수에 맞춰 만든다
 function buildBoard() {
-  const board = q('#board'), beams = q('#beams');
-  for (let r = 0; r <= 4; r++) for (let c = 0; c < COLS; c++) {
-    const el = document.createElement('div');
-    el.className = 'cell' + (r === 0 ? ' r0' : '');
-    el.style.gridRow = r + 1; el.style.gridColumn = c + 1;
-    el.innerHTML = `<i class="fmark"></i>${c === 0 && r > 0 ? `<span class="dist">${r}</span>` : ''}`;
-    el.dataset.r = r; el.dataset.c = c;
-    board.insertBefore(el, beams);
-    CELLS[K(r, c)] = el;
-  }
   const bc = q('#bcells');
   for (let c = 0; c < COLS; c++) {
     const d = document.createElement('div');
@@ -111,12 +105,23 @@ function buildBoard() {
   }
 }
 
-// 전투가 정해진 뒤 판 모양 (보스 줄 · 막힌 칸) 반영
+// 전투가 정해진 뒤 판 모양 반영 — 줄 수(일반 6 · 보스전 7) · 보스 줄 · 막힌 칸
 export function setupBoard() {
-  const board = q('#board');
+  const board = q('#board'), beams = q('#beams');
+  root.classList.toggle('b-boss', B.mode === 'boss');
   board.classList.toggle('mode-boss', B.mode === 'boss');
   board.classList.toggle('mode-normal', B.mode !== 'boss');
-  for (let r = 0; r <= 4; r++) for (let c = 0; c < COLS; c++) CELLS[K(r, c)].classList.toggle('blk', !!(B.blocked && B.blocked.has(K(r, c))));
+  board.querySelectorAll('.cell').forEach(el => el.remove());
+  Object.keys(CELLS).forEach(k => delete CELLS[k]);
+  for (let r = 0; r < B.rows; r++) for (let c = 0; c < COLS; c++) {
+    const el = document.createElement('div');
+    el.className = 'cell' + (r === 0 ? ' r0' : '') + (B.blocked && B.blocked.has(K(r, c)) ? ' blk' : '');
+    el.style.gridRow = r + 1; el.style.gridColumn = c + 1;
+    el.innerHTML = `<i class="fmark"></i>${c === 0 && r > 0 ? `<span class="dist">${r}</span>` : ''}`;
+    el.dataset.r = r; el.dataset.c = c;
+    board.insertBefore(el, beams);
+    CELLS[K(r, c)] = el;
+  }
   q('#foes').innerHTML = ''; FOE_EL.clear();
   if (B.mode === 'boss') {
     const strip = art(B.boss.def.art);
@@ -166,7 +171,7 @@ function renderHud() {
 function miniGrid(cells, cells2) {
   let h = '';
   const me = K(B.p.r, B.p.c);
-  for (let r = B.top; r <= 4; r++) for (let c = 0; c < COLS; c++) {
+  for (let r = B.top; r < B.rows; r++) for (let c = 0; c < COLS; c++) {
     const k = K(r, c);
     if (!inArea(r, c)) { h += '<i class="blk"></i>'; continue; }
     h += `<i class="${cells.has(k) ? 'on' : cells2 && cells2.has(k) ? 'on2' : ''}${k === me ? ' me' : foeAt(r, c) ? ' foe' : ''}"></i>`;
@@ -180,7 +185,7 @@ function renderIntent() {
   ac.classList.toggle('off', !ambushOn());
   ac.innerHTML = ambushOn() ? `${icon('cross')}<span>기습 <b>${n}</b>칸</span><span>${B.ambushAt}번째 뒤</span>` : `${icon('cross')}<span>기습</span><span>없음</span>`;
   q('#intMini').classList.toggle('foe-mode', B.mode !== 'boss');
-  q('#intMini').style.gridTemplateRows = `repeat(${5 - B.top},12px)`;
+  q('#intMini').style.gridTemplateRows = `repeat(${B.rows - B.top},12px)`;
   if (B.mode !== 'boss') { renderFoeIntent(); return; }
   q('#intIcon').setAttribute('href', '#i-hazard');
   q('#intTitle').textContent = '턴 공격 예고';
@@ -235,7 +240,7 @@ export function preview() {
     for (const [dir, [dr, dc]] of Object.entries(DIRS)) {
       for (let d = 1; d <= max; d++) {
         const r = B.p.r + dr * d, c = B.p.c + dc * d;
-        if (r < B.top || r > 4 || c < 0 || c >= COLS) break;
+        if (r < B.top || r >= B.rows || c < 0 || c >= COLS) break;
         if (!inArea(r, c)) continue;
         if (!foeAt(r, c)) out.leap.set(K(r, c), { dir, dist: d });
       }
@@ -472,11 +477,14 @@ export function cardTagsHTML(def, id, live) {
 }
 export function miniRangeHTML(def) {
   if (!def.shape) return `<span class="c-mini icon">${icon(KINDS[def.kind].icon)}</span>`;
-  const on = new Set(SHAPES[def.shape].cells.map(([dr, dc]) => `${dr},${dc}`));
-  const rows = SHAPES[def.shape].cells.some(([dr]) => dr > 0) ? [-2, 1] : [-4, 0];
-  const cols = SHAPES[def.shape].cells.some(([, dc]) => Math.abs(dc) > 1) ? [-2, 2] : [-1, 1];
+  const cells = SHAPES[def.shape].cells;
+  const on = new Set(cells.map(([dr, dc]) => `${dr},${dc}`));
+  const rows = cells.some(([dr]) => dr > 0) ? [-2, 1] : [-4, 0];
+  const cols = cells.some(([, dc]) => Math.abs(dc) > 1) ? [-2, 2] : [-1, 1];
+  // 칸이 5줄 그림보다 멀리 가면(관통 6칸) 맨 윗칸을 뾰족하게 — "더 이어진다"
+  const more = new Set(cells.filter(([dr]) => dr < rows[0]).map(([, dc]) => dc));
   let h = '';
-  for (let dr = rows[0]; dr <= rows[1]; dr++) for (let dc = cols[0]; dc <= cols[1]; dc++) h += `<i class="${dr === 0 && dc === 0 ? 'me' : on.has(`${dr},${dc}`) ? 'on' : ''}"></i>`;
+  for (let dr = rows[0]; dr <= rows[1]; dr++) for (let dc = cols[0]; dc <= cols[1]; dc++) h += `<i class="${dr === 0 && dc === 0 ? 'me' : on.has(`${dr},${dc}`) ? (dr === rows[0] && more.has(dc) ? 'on more' : 'on') : ''}"></i>`;
   return `<span class="c-mini" style="grid-template-columns:repeat(${cols[1] - cols[0] + 1},9px)">${h}</span>`;
 }
 
@@ -726,13 +734,13 @@ export const FX = {
     d.className = 'fx-nail';
     d.style.left = `calc(${c} * (var(--cs) + var(--gap)) + var(--cs) / 2)`;
     d.style.top = 'calc(var(--cs) * .9)';
-    d.style.height = 'calc(4 * (var(--cs) + var(--gap)))';
+    d.style.height = `calc(${B.rows - 1} * (var(--cs) + var(--gap)))`;
     q('#fx').appendChild(d);
     setTimeout(() => d.remove(), 420);
   },
   async cancel(cells) {
     [...(cells || [])].forEach(k => { const [r, c] = RC(k); this.at(r, c, 'fx-void', 520); });
-    this.num(0, 2, '무력화', 'ok');
+    this.num(0, MID_C, '무력화', 'ok');
     SFX.stun();
     await wait(360);
   },
@@ -834,7 +842,7 @@ export const FX = {
   },
   bossHit(cols, dmg, big) {
     flash(q('#bossRow'), 'hit', 340);
-    const c = cols.length ? cols[Math.floor(cols.length / 2)] : 2;
+    const c = cols.length ? cols[Math.floor(cols.length / 2)] : MID_C;
     this.num(0, c, `−${dmg}`, big ? 'big' : '');
     this.shake(big ? 'm' : 's');
   },
@@ -848,10 +856,10 @@ export const FX = {
   },
   async block() { SFX.block(); flash(q('#player'), 'blocked', 420); this.num(B.p.r, B.p.c, '막음', 'block'); await wait(280); },
   freeze() { SFX.zap(); flash(root, 'volt-vig', 700); this.num(B.p.r, B.p.c, '시스템 정지', 'volt'); },
-  stun() { SFX.stun(); flash(q('#bossRow'), 'hit', 340); this.num(0, 2, '보스 과부하 정지', 'volt'); },
+  stun() { SFX.stun(); flash(q('#bossRow'), 'hit', 340); this.num(0, MID_C, '보스 과부하 정지', 'volt'); },
   fizzle() { flash(q('#player'), 'fizz', 320); this.num(B.p.r, B.p.c, '마비', 'volt'); },
   async bossDown() {
-    for (let i = 0; i < 6; i++) setTimeout(() => { this.at(0, i % 5, 'fx-boom', 600); this.shake('l'); }, i * 120);
+    for (let i = 0; i < 6; i++) setTimeout(() => { this.at(0, (i * 2 + i % 2) % COLS, 'fx-boom', 600); this.shake('l'); }, i * 120);
     SFX.heavy();
     await wait(900);
   },

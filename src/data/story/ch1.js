@@ -1,4 +1,5 @@
-// 1장 이야기 — 정예 · 보스 전투에서만 (전부 초안. 바꾸고 싶은 대사는 여기서 고치면 된다)
+// 1장 이야기 — 정예 · 보스 전투 (전부 초안. 바꾸고 싶은 대사는 여기서 고치면 된다)
+// { if: G => G.has('깃발'), then: [...] } — 사건(data/events.js)에서 고른 것에 따라 덧붙는 대사 (뒷이야기)
 export const CH1_STORY = {
   // ── 정예: 수문장
   eliteGate: {
@@ -29,13 +30,25 @@ export const CH1_STORY = {
       { who: 'nar', text: '태엽 사냥개 무리. 그 한가운데, 목에 인류 정부군의 인식표를 단 우두머리가 이빨을 드러낸다.' },
       { who: 'alpha', text: '크르르르…!' },
       { who: 'hero', face: 'puzzled', text: '인식표… 「제3감시대 · 사냥 전용」. 사냥개한테 사냥을 시켰구나.' },
+      { if: G => G.has('third_squad'), then: [
+        { who: 'hero', face: 'angry', text: '제3감시대… 버려진 보급 상자에 찍혀 있던 이름이야. 너희 주인들, 부지런하네.' },
+      ] },
       { who: 'hero', face: 'angry', text: '원래 너희는 길을 찾는 개였어. 사람을 무는 개가 아니라.' },
+      { if: G => G.has('pup'), then: [
+        { who: 'nar', text: '품 안의 태엽 강아지가 우두머리를 보고 낑낑거렸다.' },
+        { who: 'alpha', text: '…크르…?' },
+        { who: 'nar', text: '우두머리가 멈칫했다. 목의 인식표 아래, 강아지와 같은 무늬가 새겨져 있다. 무리 전체가 머뭇거린다.' },
+        { who: 'hero', face: 'pain', text: '…네 새끼였구나. 미안. 그래도 길은 비켜 줘야겠어.' },
+      ] },
       { who: 'alpha', text: '크아아아…!' },
       { who: 'hero', face: 'aim', text: '…좋아. 이리 와.' },
     ],
     win: [
       { tint: 'warm' },
       { who: 'nar', text: '우두머리가 쓰러지자, 남은 사냥개들이 꼬리를 말고 어둠 속으로 흩어졌다.' },
+      { if: G => G.has('pup'), then: [
+        { who: 'nar', text: '태엽 강아지가 쓰러진 우두머리의 코끝을 핥았다. 우두머리의 렌즈가 마지막으로 한 번, 부드럽게 깜빡였다.' },
+      ] },
       { who: 'nar', text: '떨어진 인식표 뒷면에 누군가 긁어 쓴 글씨가 있었다. — 「2시가 깨어나면, 개들을 풀어라.」' },
       { who: 'hero', face: 'puzzled', text: '2시… 인류는 뭔가 알고 있는 거야.' },
       { who: 'voice', text: '서두르소서, 신이시여. 감시탑의 눈이 이쪽을 향하고 있습니다.' },
@@ -47,12 +60,25 @@ export const CH1_STORY = {
       { tint: 'cold', place: '감시탑 광장' },
       { who: 'nar', text: '도시 한가운데, 감시탑이 하늘을 찌르고 서 있다. 탑 아래 거대한 눈이 천천히 이쪽으로 돌아간다.' },
       { who: 'boss', text: '경고. 미등록 개체 반복 감지. 감시망 교란의 원인으로 판단.' },
+      { if: G => G.has('fake_log'), then: [
+        { who: 'boss', text: '감시망 기록 불일치. 남쪽 수로 추적 결과 — 공백. 교란 흔적 확인.' },
+        { who: 'hero', face: 'smug', text: '거기서 기다렸으면 재미없었을 텐데.' },
+      ] },
+      { if: G => G.has('eye_spared'), then: [
+        { who: 'boss', text: '감시 눈 7호, 보고 누락 반복. 회수 후 분해 예정.' },
+        { who: 'hero', face: 'angry', text: '걔는 건드리지 마.' },
+      ] },
       { who: 'boss', text: '개체 분석… 반응 패턴 일치율 97퍼센트. 대조 대상 — 처분 기록 제1호.' },
       { who: 'hero', face: 'surprised', text: '처분 기록…?' },
       { who: 'boss', text: '확인. 너는 열두 시의 신이다. 인류가 처분한.' },
       { who: 'hero', face: 'angry', text: '기억력은 좋네. 그럼 이것도 기록해 둬. {name}{name|은} 안 죽었어.' },
       { who: 'boss', text: '정정. 처분 미완료. 재처분을 개시한다.' },
       { who: 'boss', text: '장력 가속 못총, 장전.' },
+      { if: G => G.has('casing_read'), then: [
+        { who: 'hero', face: 'angry', text: '그 못총… 제1탄 탄피에 「미안합니다」라고 새겨져 있더라.' },
+        { who: 'boss', text: '감정 기록 없음. 장전 계속.' },
+        { who: 'hero', face: 'pain', text: '쏜 사람은 미안해했는데. 너는 아무렇지도 않구나.' },
+      ] },
       { who: 'nar', text: '태엽이 끝까지 감기는 소리. 심장이 그 소리를 기억하고 있었다.' },
       { who: 'hero', face: 'pain', text: '…이 소리.' },
       { who: 'voice', text: '신이시여. 이번에는 당신이 먼저입니다.' },
@@ -88,8 +114,17 @@ export const CH1_STORY = {
       { who: 'hero', face: 'puzzled', text: '…들킨 건가.' },
       { who: 'voice', text: '아직입니다. 저 신호가 인류의 귀에 닿기까지는 시간이 조금 남았습니다.' },
       { who: 'voice', text: '그 전에… 2시를 찾으소서.' },
+      { if: G => G.has('believer_safe'), then: [
+        { who: 'voice', text: '벽 틈에 숨어 있던 그 신도도 성당에 무사히 닿았습니다. 당신 덕분에요.' },
+      ] },
+      { if: G => G.has('child_home') || G.has('child_smiled'), then: [
+        { who: 'nar', text: '광장 가장자리 어둠 속에서 양철 새 하나가 날개를 파닥였다. 누군가 그것을 쥔 채, 쓰러진 탑을 올려다보고 있었다.' },
+      ] },
       { fx: 'shake' },
       { who: 'nar', text: '다시, 땅이 울렸다. 이번에는 훨씬 가까이서.' },
+      { if: G => G.has('heard_two'), then: [
+        { who: 'hero', face: 'puzzled', text: '…성소의 종. 기도하던 기계가 말한 게 이거였어. 둘, 둘, 둘.' },
+      ] },
       { who: 'hero', face: 'smug', text: '기다려. 곧 돌려받으러 갈게.' },
       { fx: 'tick' },
       { who: 'nar', text: '제단 위의 시계가 다시 째깍거린다. 시침이 「I」에서 「II」를 향해 천천히 기울기 시작했다.' },

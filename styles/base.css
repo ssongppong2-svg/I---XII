@@ -194,6 +194,7 @@ kbd{font-family:var(--f-ui)}
 .c-mini i{background:rgba(255,255,255,.08);border-radius:2px}
 .c-mini i.on{background:var(--k)}
 .c-mini i.me{background:var(--brass-hi)}
+.c-mini i.more{clip-path:polygon(50% 0,100% 48%,100% 100%,0 100%,0 48%)}
 .c-mini.icon{width:31px;height:53px;display:grid;place-items:center}
 .c-mini.icon svg{width:26px;height:26px;fill:var(--k)}
 .c-stat{display:flex;flex-direction:column;line-height:1;min-width:0}

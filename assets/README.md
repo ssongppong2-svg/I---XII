@@ -17,6 +17,9 @@
 | `bg-alley.webp` | 골목 칸 (숨기 · 좁은 골목 · 뒷골목 거래 · 지름길 모두) | 있음 |
 | `bg-event.webp` | 사건(?) 칸 | 있음 |
 | `bg-tent` · `bg-blackmarket` · `bg-forge` · `bg-implant` · `bg-abyss` · `bg-trial` · `bg-shrine` | 그 칸 | 없음 — 넣으면 자동으로 쓰임 |
+| `bg-ev-<사건 id>` | 그 사건 하나만 (대사 장면 · 결과 화면). 예: `bg-ev-rusted_doll` | 없음 — 없으면 `bg-event` |
+
+사건 id는 `src/data/events.js`의 이름(`broken_eye` · `supply_crate` · `stopped_clock` · `hidden_believer` · `searchlight` · `rusted_doll` · `blood_altar` · `nail_casing` · `music_box` · `patrol_board` · `crying_child` · `gear_graveyard` · `newspaper` · `praying_machine` · `mirror_room` · `clock_stairs` · `sealed_door` · `wandering_mechanic` · `black_rain` · `hound_pup` · `tower_well` · `human_flyer` · `recursion_trace` · `lost_gear`). 게임 안 **규칙과 조작** → 「이미지 슬롯」에도 전부 나옵니다.
 
 ## 나무판
 
@@ -97,11 +100,25 @@
 | `blackmarket.webp` | 암시장 상인 | 암시장 칸 | 있음 |
 | `believer.webp` | 미지의 신도 | 천막(사이비) 칸 · 대사 장면에서 「신도들의 속삭임」이 말할 때 뒤편에 흐릿하게 | 있음 |
 
+## 사건 인물 (대사 장면 오른쪽)
+
+주인공과 같은 규격(세로 2:3, 배경 투명, 전신). 그림이 없으면 둥근 틀 안의 상징 그림(톱니 · 렌치 · 깃털)으로 나옵니다.
+
+| 파일 | 인물 | 나오는 사건 |
+|---|---|---|
+| `npc-doll.webp` | 녹슨 자동인형 (1시 공방 시험작 3호) | 녹슨 자동인형 · 태엽 묘지 |
+| `npc-mechanic.webp` | 떠돌이 수리공 (기계를 몰래 고치는 인간) | 떠돌이 수리공 |
+| `npc-child.webp` | 다리 밑의 아이 | 우는 아이 |
+| `npc-mother.webp` | 아이의 엄마 | 우는 아이 |
+| `npc-prayer.webp` | 기도하는 기계 | 기도하는 기계 |
+
+감시 눈 · 태엽 강아지처럼 적 기계가 말하는 장면은 그 적의 그림(`machine-…`)을 씁니다. 순찰 기록판 · 거울 · 고철 더미처럼 사람이 아닌 것은 상징 그림 그대로 둡니다.
+
 ## 1장 보스 — 대형 감시기계
 
 | 파일 | 쓰이는 곳 | 규격 |
 |---|---|---|
-| `boss.webp` | 전투 판 맨 윗줄(보스 줄) | 배경 투명 · 가로 약 5:1 — 감시 눈이 든 윗부분을 잘라 만든 띠 (1040×199) |
+| `boss.webp` | 전투 판 맨 윗줄(보스 줄) | 배경 투명 · 가로 약 5:1 — 감시 눈이 든 윗부분을 잘라 만든 띠 (1040×199). 6×6 판의 보스 줄은 약 6.3:1(552×87)이라 위아래를 조금 잘라 보여 줌 |
 | `boss-full.webp` | 대사 장면의 감시망 방송 화면 | 배경 투명 · 전신 (1097×1200) |
 
 보스 줄의 탐조등은 띠 그림 속 감시 눈 위치(가로 40%)에서 나옵니다. 그림을 바꾸면 `styles/battle.css`의 `.boss-row.has-art .searchlight` 위치도 맞춰 주세요.

@@ -1,14 +1,16 @@
-/* ═════════════ 전투 화면 (5×5 판) ═════════════ */
+/* ═════════════ 전투 화면 (6×6 판 · 보스전은 보스 줄 + 6×6) ═════════════ */
 .battle{
   --sky-a:#0B1219; --sky-b:#16232F; --tile-a:#1A2531; --tile-edge:#2A3B4A; --eye:#D9F1FF;
-  --gap:6px; --board:640px;
-  --cs:calc((var(--board) - 4 * var(--gap)) / 5);
+  --gap:6px; --board:640px; --cols:6; --rows:6;
+  --cs:calc((var(--board) - (var(--cols) - 1) * var(--gap)) / var(--cols));
   position:absolute;inset:0;
   display:grid;grid-template-columns:1fr var(--board) 1fr;grid-template-rows:76px 1fr 236px;
   grid-template-areas:"top top top" "left center right" "hand hand hand";
   column-gap:64px;padding:0 64px;overflow:clip;
   background:radial-gradient(90% 75% at 50% -8%, var(--sky-b) 0%, var(--sky-a) 55%, var(--ink) 100%);
 }
+/* 보스전: 줄이 7개(보스 줄 + 6)라 판을 좁혀 세로를 맞춘다 — 칸 87px, 판 552×645 */
+.battle.b-boss{--board:552px;--rows:7}
 .battle.theme-elite{--sky-a:#140A0E;--sky-b:#2A1018;--tile-a:#221419;--tile-edge:#442430}
 .battle.theme-boss{--sky-a:#0A0D14;--sky-b:#1A2233;--tile-a:#182030;--tile-edge:#2E3C52}
 /* 전투 배경 그림 (bg-battle) — 어둡게 눌러 판 · 패널이 먼저 보이게 */
@@ -121,7 +123,7 @@
 /* ── 예고 ── */
 .intent{display:flex;align-items:center;gap:14px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:linear-gradient(90deg,rgba(255,184,74,.08),transparent 55%),var(--panel);box-shadow:0 12px 28px rgba(0,0,0,.35)}
 .intent.live{border-color:rgba(255,184,74,.55);background:linear-gradient(90deg,rgba(255,184,74,.18),transparent 70%),var(--panel)}
-.mini{display:grid;grid-template-columns:repeat(5,12px);grid-auto-rows:12px;gap:2px;flex:none}
+.mini{display:grid;grid-template-columns:repeat(6,12px);grid-auto-rows:12px;gap:2px;flex:none}
 .mini i{background:#ffffff12;border-radius:2px}
 .mini i.on{background:var(--warn)}
 .mini.foe-mode i.on{background:var(--foe)}
@@ -145,7 +147,7 @@
 /* ── 가운데: 판 · 코스트 칸 ── */
 .battle .center{grid-area:center;display:flex;flex-direction:column;align-items:center;gap:16px;min-height:0;padding-top:36px}
 .timeline{display:flex;flex-direction:column;align-items:center;gap:8px}
-.board{position:relative;z-index:1;flex:none;width:var(--board);height:var(--board);display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:var(--gap)}
+.board{position:relative;z-index:1;flex:none;width:var(--board);height:calc(var(--rows) * var(--cs) + (var(--rows) - 1) * var(--gap));display:grid;grid-template-columns:repeat(var(--cols),1fr);grid-template-rows:repeat(var(--rows),1fr);gap:var(--gap)}
 .cell{position:relative;border-radius:5px;background-color:var(--tile-a);border:1px solid var(--tile-edge);box-shadow:inset 0 -8px 14px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);cursor:pointer;overflow:hidden}
 .cell::before{content:"";position:absolute;inset:0;opacity:0;transition:opacity .15s}
 .cell::after{content:"";position:absolute;inset:4px;border:2px solid transparent;border-radius:4px;transition:border-color .12s,box-shadow .12s}
@@ -199,11 +201,11 @@
 .boss-row.stunned .boss-art{filter:grayscale(.85) brightness(.72);animation:flick 1.3s steps(3) infinite}
 @keyframes flick{40%{filter:grayscale(.9) brightness(.45)}}
 .stun-tag{position:absolute;left:24%;top:50%;translate:-50% -50%;padding:5px 12px;border-radius:3px;background:rgba(20,12,34,.88);border:1px solid var(--volt);color:var(--volt);font:700 14px/1.2 var(--f-ui);letter-spacing:.04em;white-space:nowrap;z-index:3;pointer-events:none}
-.bcells{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr);gap:var(--gap);pointer-events:none;z-index:2}
+.bcells{position:absolute;inset:0;display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:var(--gap);pointer-events:none;z-index:2}
 .bcell{position:relative;border-radius:4px;transition:box-shadow .12s;pointer-events:auto;cursor:pointer}
 .bcell.rng{box-shadow:inset 0 0 0 2px var(--aether),0 0 18px -3px var(--aether)}
 .bcell.rng::after{content:"";position:absolute;left:50%;top:55%;width:30px;height:30px;margin:-15px 0 0 -15px;border:2px solid var(--aether);border-radius:50%;box-shadow:0 0 8px var(--aether)}
-.searchlight{position:absolute;left:50%;top:42%;width:62%;height:520%;translate:-50% 0;transform-origin:50% 0;pointer-events:none;z-index:4;opacity:.5;mix-blend-mode:screen;
+.searchlight{position:absolute;left:50%;top:42%;width:62%;height:calc(var(--rows) * var(--cs) * 1.04);translate:-50% 0;transform-origin:50% 0;pointer-events:none;z-index:4;opacity:.5;mix-blend-mode:screen;
   background:linear-gradient(180deg,rgba(200,230,255,.26),rgba(200,230,255,0) 88%);clip-path:polygon(47% 0,53% 0,100% 100%,0 100%);animation:sweep 7s ease-in-out infinite alternate}
 @keyframes sweep{from{rotate:-26deg}to{rotate:26deg}}
 .bark{position:absolute;left:57%;top:50%;translate:0 -50%;z-index:9;max-width:41%;padding:8px 13px;border-radius:5px;background:rgba(12,14,18,.96);border:1px solid #7C8896;color:#E8F2FF;font:600 15px/1.4 var(--f-ui);pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.5);animation:barkIn 2.3s ease forwards}
@@ -245,7 +247,7 @@
 
 /* 주인공 */
 .unit{position:absolute;left:0;top:0;width:var(--cs);height:var(--cs);z-index:5;pointer-events:none;
-  transform:translate(calc(var(--c,2) * (var(--cs) + var(--gap))),calc(var(--r,4) * (var(--cs) + var(--gap))));transition:transform .15s cubic-bezier(.25,.8,.35,1)}
+  transform:translate(calc(var(--c,2) * (var(--cs) + var(--gap))),calc(var(--r,5) * (var(--cs) + var(--gap))));transition:transform .15s cubic-bezier(.25,.8,.35,1)}
 .hero-art{position:absolute;left:4%;right:4%;bottom:5%;height:128%;transform-origin:50% 100%;animation:bob 2.4s ease-in-out infinite}
 .hero-art svg,.hero-art img{width:100%;height:100%}
 .hero-art img{object-fit:contain;object-position:center bottom;filter:drop-shadow(0 4px 4px rgba(0,0,0,.55))}

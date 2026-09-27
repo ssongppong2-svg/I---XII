@@ -35,8 +35,8 @@ export const ELITE_TRAITS = {
   frenzy:  { name: '광폭', desc: 'HP가 절반 이하면 피해 +1' },
 };
 
-// 보스 — 맨 윗줄 5칸을 통째로 차지. 루프 시작 때 턴 공격 패턴 예고, 2번째 행동 뒤 기습 폭격, 마지막 행동 뒤 턴 공격
-// make(p, q, H): p = 내 위치, q = 패턴 무작위값, H = 판 도우미(colCells · rowCells · AREA · RC)
+// 보스 — 맨 윗줄(보스 줄)을 통째로 차지하고 그 아래 6×6에서 싸운다(1~6행). 루프 시작 때 턴 공격 패턴 예고, 2번째 행동 뒤 기습 폭격, 마지막 행동 뒤 턴 공격
+// make(p, q, H): p = 내 위치, q = 패턴 무작위값, H = 판 도우미(colCells · rowCells · AREA · RC · TOP 첫 줄 · LAST 끝 줄 · COLS 칸 수)
 export const BOSSES = {
   watchtower: {
     name: '대형 감시기계', sub: '인류 정부군 · 감시탑의 눈', hp: 150, art: 'boss', artFull: 'boss-full', nailOl: 30,
@@ -46,15 +46,15 @@ export const BOSSES = {
         make: (p, q, H) => H.colCells(p.c) },
       { id: 'volley',  name: '못총 일제사격',    dmg: 1, nail: true, aimed: true, desc: '내 세로줄과 멀리 떨어진 세로줄 하나',
         roll: R => ({ u: R.next() }),
-        make: (p, q, H) => { const far = [0, 1, 2, 3, 4].filter(c => Math.abs(c - p.c) >= 2); return [...H.colCells(p.c), ...H.colCells(far[Math.floor(q.u * far.length)])]; } },
+        make: (p, q, H) => { const far = Array.from({ length: H.COLS }, (_, c) => c).filter(c => Math.abs(c - p.c) >= 2); return [...H.colCells(p.c), ...H.colCells(far[Math.floor(q.u * far.length)])]; } },
       { id: 'front',   name: '정면 제압',        dmg: 2, desc: '보스 바로 앞 두 줄 (거리 1~2)',
-        make: (p, q, H) => [...H.rowCells(1), ...H.rowCells(2)] },
-      { id: 'rear',    name: '후방 포격',        dmg: 1, desc: '뒤쪽 두 줄 (거리 3~4)',
-        make: (p, q, H) => [...H.rowCells(3), ...H.rowCells(4)] },
+        make: (p, q, H) => [...H.rowCells(H.TOP), ...H.rowCells(H.TOP + 1)] },
+      { id: 'rear',    name: '후방 포격',        dmg: 1, desc: '맨 뒤 두 줄 (거리 5~6)',
+        make: (p, q, H) => [...H.rowCells(H.LAST - 1), ...H.rowCells(H.LAST)] },
       { id: 'checker', name: '바둑판 폭격',      dmg: 1, aimed: true, desc: '내 칸을 포함한 엇갈린 칸',
         make: (p, q, H) => H.AREA.filter(k => { const [r, c] = H.RC(k); return (r + c) % 2 === (p.r + p.c) % 2; }) },
       { id: 'ring',    name: '포위 사격',        dmg: 1, nail: true, desc: '가장자리 한 바퀴',
-        make: (p, q, H) => H.AREA.filter(k => { const [r, c] = H.RC(k); return r === 1 || r === 4 || c === 0 || c === 4; }) },
+        make: (p, q, H) => H.AREA.filter(k => { const [r, c] = H.RC(k); return r === H.TOP || r === H.LAST || c === 0 || c === H.COLS - 1; }) },
       { id: 'cross',   name: '십자 조준',        dmg: 2, aimed: true, desc: '내 가로줄과 세로줄',
         make: (p, q, H) => [...H.rowCells(p.r), ...H.colCells(p.c)] },
     ],

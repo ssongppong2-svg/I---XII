@@ -1,8 +1,10 @@
 // 톱니 칸 화면 — 휴식 · 상점 · 암시장 · 강화소 · 기계 이식소 · 심연 · 시험 · 골목 · 천막 · 사건 · 유물 제단
 import { register, go } from '../ui/router.js';
 import {
-  RUN, chapterDef, dm, mods, maxHp, gainParts, gainShards, heal, hurt, addAlert, addCard, removeCard, upgradeCard, addRelic, addImplant,
+  RUN, chapterDef, dm, mods, maxHp, fixHp, gainParts, gainShards, heal, hurt, addAlert, addCard, removeCard, upgradeCard, addRelic, addImplant,
 } from '../game/run.js';
+import { markEventSeen } from '../game/profile.js';
+import { playScene, sceneNote, fmt } from '../scenes/scene.js';
 import { autosave } from '../game/save.js';
 import { finishNode, encounterFor, cardChoices, relicChoice, TRIALS } from '../game/flow.js';
 import { NODE_TYPES } from '../data/nodes.js';
@@ -13,7 +15,7 @@ import { LORE } from '../data/lore.js';
 import { FOES, BOSSES } from '../data/foes.js';
 import { makeRng, hashSeed } from '../core/rng.js';
 import { icon } from '../ui/icons.js';
-import { art, load, bgImgHTML } from '../ui/assets.js';
+import { art, load, loadAll, bgImgHTML } from '../ui/assets.js';
 import { bigCardHTML, openDeck, relicTip, openSettings, openHelp, pauseMenu, toggleSound } from '../ui/menus.js';
 import { openSheet, closeSheet, confirmBox, toast, bindTips, hideTip } from '../ui/overlay.js';
 import { SFX } from '../ui/sfx.js';
@@ -29,6 +31,7 @@ const q = s => root.querySelector(s);
 // 칸 배경 그림 — bg-<칸 종류>. 휴식은 두 장(bg-rest-1 · 2)을 칸마다 번갈아, 골목은 네 가지 모두 bg-alley
 const NARROW = ['rest', 'alley', 'event', 'tent', 'abyss', 'trial'];   // 배경이 있을 때 글 판을 좁게(장면이 보이게)
 function bgKeyOf(n) {
+  if (n.type === 'event' && n.event && art(`bg-ev-${n.event}`)) return `bg-ev-${n.event}`;   // 사건마다 따로 넣은 배경이 있으면
   if (n.type === 'rest') {
     const k = `bg-rest-${1 + hashSeed(RUN.seed, n.id, 'bg') % 2}`;
     return art(k) ? k : 'bg-rest-1';
@@ -322,50 +325,17 @@ const HANDLERS = {
     ]);
   },
 
-  // ── 사건
-  event() {
-    const E = EVENTS[node.event] || Object.values(EVENTS)[0];
-    frame({ title: E.title, text: E.text, artHTML: glyph(E.icon || 'help') });
-    const pending = [];
-    const G = {
-      parts: n => gainParts(n), shards: n => gainShards(n), heal: n => heal(n), hurt: n => hurt(n), alert: n => addAlert(n),
-      chance: p => R.chance(p), hp: () => RUN.hp, partsNow: () => RUN.parts,
-      curse: id => addCard(id),
-      canUpgrade: () => RUN.deck.some(canUpgrade),
-      upgradeRandom: () => { const c = R.pick(RUN.deck.filter(canUpgrade)); upgradeCard(c.uid); return cardDef(c).name; },
-      relic: tier => { const id = relicChoice(R, [[tier, 100]])[0]; if (!id) { gainParts(50); return '부품 50'; } addRelic(id); return RELICS[id].name; },
-      removePick: () => pending.push({ t: 'remove' }),
-      cardPick: tier => pending.push({ t: 'cards', tier }),
-      fight: enc => pending.push({ t: 'fight', enc }),
-    };
-    const list = E.options.map(o => ({ label: o.label, desc: o.desc, dis: o.cond ? !o.cond(G) : false, on: () => {
-      const text = o.run(G);
-      hud(); autosave();
-      const lead = `<p class="nd-result">${esc(text)}</p>`;
-      q('#ndLeave').hidden = false;
-      leaveLabel('떠난다');
-      const p = pending.shift();
-      if (!p) { body(lead); return; }
-      // 이어지는 일 — 결과 글은 위에 남겨 두고 그 아래에
-      if (p.t === 'cards') { cardPick(cardChoices(R, p.tier, 3), { skip: '떠난다', lead }); return; }
-      if (p.t === 'remove') {
-        const pick = () => pickFromDeck({ title: '맡길 카드 (덱에서 없어짐)', onPick: uid => {
-          const c = removeCard(uid); hud(); autosave();
-          body(`${lead}<p class="nd-result">「${esc(cardDef(c).name)}」${eulreul(cardDef(c).name)} 맡겼다.</p>`);
-        } });
-        body(`${lead}<div class="nd-opts"><button class="nd-opt main" type="button" id="ndRemove"><b>맡길 카드를 고른다</b><small>덱에서 한 장이 없어진다 · 그냥 떠나도 된다</small></button></div>`);
-        q('#ndRemove').addEventListener('click', () => { SFX.click(); pick(); });
-        pick();
-        return;
-      }
-      if (p.t === 'fight') {
-        body(`${lead}<div class="nd-opts"><button class="nd-opt main" type="button" id="ndFight"><b>싸운다</b></button></div>`);
-        q('#ndLeave').hidden = true;
-        q('#ndFight').addEventListener('click', () => fight(encounterFor({ id: node.id + '#ev', type: 'battle', enc: { foes: p.enc.foes } }, { bonusParts: p.enc.bonusParts || 0, sub: E.title })));
-      }
-    } }));
-    opts(list);
-    q('#ndLeave').hidden = true;   // 사건은 하나를 골라야 떠날 수 있다
+  // ── 사건 — 대사 장면으로 겪고, 끝나면 결과를 이 화면에 남긴다 (다시 들어와도 두 번 받지 않는다)
+  async event() {
+    const here = node;
+    const id = EVENTS[node.event] ? node.event : Object.keys(EVENTS)[0];
+    const E = EVENTS[id];
+    await load(`bg-ev-${id}`);   // 사건마다 배경 그림 슬롯 — 없으면 사건 칸 공통 배경(bg-event)
+    if (!alive || node !== here) return;
+    if (node.ev && node.ev.done) { eventResult(E); return; }
+    frame({ title: E.title, artHTML: glyph(E.icon || 'help') });
+    q('#ndLeave').hidden = true;   // 장면을 끝까지 겪어야 떠날 수 있다
+    playEvent(id, E);
   },
 
   // ── 유물 제단 — 2개 중 1개
@@ -383,8 +353,139 @@ const HANDLERS = {
   },
 };
 
-// 천막 속삭임 — 다음 정예 · 보스
-function nextEliteBoss() {
+/* ═════════════ 사건 ═════════════ */
+// 장면 속 도우미 — 사건 대본(data/events.js)의 act · if · cond가 부른다.
+// 효과는 바로 RUN에 들어가지만 저장은 장면이 끝난 뒤 한 번 — 도중에 끄면 장면을 처음부터 다시 본다(두 번 받지 않는다)
+const sgn = n => (n > 0 ? '+' : '−') + Math.abs(n);
+function eventCtx() {
+  const res = [];
+  const note = (t, k, i) => { res.push({ t, k, i }); sceneNote(`${icon(i)}<span>${esc(t)}</span>`, k); hud(); };
+  const G = {
+    res, pending: null, afterText: '', vars: {},
+    // 얻고 잃기 — 결과 목록에 저절로 적힌다
+    parts(n) { const b = RUN.parts; gainParts(n); const d = RUN.parts - b; if (d) { note(`부품 ${sgn(d)}`, d > 0 ? 'good' : 'bad', 'parts'); d > 0 ? SFX.coin() : SFX.click(); } },
+    shards(n) { const b = RUN.shards; gainShards(n); const d = RUN.shards - b; if (d) { note(`톱니 조각 ${sgn(d)}`, d > 0 ? 'good' : 'bad', 'shard'); if (d > 0) SFX.gain(); } },
+    heal(n) { const d = heal(n); if (d) { note(`HP +${d}`, 'good', 'heart'); SFX.heal(); } },
+    hurt(n) { const b = RUN.hp; hurt(Math.max(0, Math.min(n, RUN.hp - 1))); const d = b - RUN.hp; if (d) { note(`HP −${d}`, 'bad', 'heart'); SFX.hurt(); } },   // 사건에서는 쓰러지지 않는다 — HP 1까지만
+    alert(n) { const d = addAlert(n); if (d) { note(`경계도 ${sgn(d)}`, d > 0 ? 'bad' : 'good', 'eye'); d > 0 ? SFX.warn() : SFX.cool(); } },
+    maxHp(n, fill = true) { RUN.maxHpBase += n; if (n > 0 && fill) heal(n); else fixHp(); note(`최대 HP ${sgn(n)}`, n > 0 ? 'good' : 'bad', 'heart'); n > 0 ? SFX.heal() : SFX.hurt(); },   // fill = 늘어난 만큼 채우기
+    card(cid) { if (!addCard(cid)) return; const c = CARDS[cid]; const bad = c.rarity === 'curse'; note(`${bad ? '저주' : '카드'} 「${c.name}」`, bad ? 'bad' : 'good', bad ? 'nail' : 'deck'); bad ? SFX.hurt() : SFX.gain(); },
+    relic(tier = 'common') {
+      const rid = relicChoice(R, [[tier, 100]])[0];
+      if (!rid) { G.parts(50); return '부품 50'; }
+      addRelic(rid); note(`유물 「${RELICS[rid].name}」`, 'good', RELICS[rid].icon); SFX.gain();
+      return RELICS[rid].name;
+    },
+    upgradeRandom() {
+      const list = RUN.deck.filter(canUpgrade);
+      if (!list.length) return '';
+      const c = R.pick(list); upgradeCard(c.uid);
+      note(`「${CARDS[c.id].name}」 강화`, 'good', 'up'); SFX.gain();
+      return CARDS[c.id].name;
+    },
+    removeCurse() {
+      const c = RUN.deck.find(x => CARDS[x.id] && CARDS[x.id].rarity === 'curse');
+      if (!c) return '';
+      removeCard(c.uid); note(`저주 「${CARDS[c.id].name}」 없어짐`, 'good', 'check'); SFX.cool();
+      return CARDS[c.id].name;
+    },
+    shortcut() { RUN.flags.shortcut = true; note('지름길 — 다음엔 두 칸 앞 톱니로', 'good', 'leap'); },
+    // 장면이 끝난 뒤 이 화면에서 이어지는 일 (하나만)
+    cardPick(tier = 'normal') { G.pending = { t: 'cards', ids: cardChoices(R, tier, 3) }; },
+    removePick() { G.pending = { t: 'remove' }; },
+    upgradePick() { G.pending = { t: 'upgrade' }; },
+    fight(enc) { G.pending = { t: 'fight', enc }; },
+    // 판단
+    chance: p => R.chance(p),
+    hp: () => RUN.hp, maxHpNow: () => maxHp(), partsNow: () => RUN.parts, shardsNow: () => RUN.shards, alertNow: () => RUN.alert,
+    canUpgrade: () => RUN.deck.some(canUpgrade),
+    hasCurse: () => RUN.deck.some(c => CARDS[c.id] && CARDS[c.id].rarity === 'curse'),
+    deaths: () => RUN.stats.deaths || 0,
+    intel: () => nextEliteBoss({ plain: true }),   // 다음 정예 · 보스 공략 (천막 속삭임과 같은 내용, 글만)
+    // 이야기 깃발 — 이 판 동안 남아 다른 사건 · 정예 · 보스 대사가 달라진다 (재귀하면 그 시점으로 함께 돌아간다)
+    flag(k, v = true) { RUN.flags.ev = Object.assign({}, RUN.flags.ev, { [k]: v }); },
+    has: k => !!(RUN.flags.ev || {})[k],
+    // 이 장면 안에서만
+    set(k, v = true) { G.vars[k] = v; },
+    is: k => !!G.vars[k],
+  };
+  return G;
+}
+// 재귀 기시감 — 되감기 전에 본 사건을 다시 만나면
+const DEJA = [
+  '…이 장면. 본 적이 있어.',
+  '째깍 — 같은 장면이 머릿속에서 한 번 더 겹쳐.',
+  '또 여기야. 되감기기 전에도… 여기 섰었어.',
+];
+function dejaLines(E, before) {
+  const lines = E.deja ? E.deja.slice() : [{ who: 'hero', face: 'puzzled', text: DEJA[hashSeed(RUN.seed, node.id, RUN.recur) % DEJA.length] }];
+  if (typeof before === 'string') lines.push({ who: 'nar', text: `재귀하기 전의 기억이 겹친다. 그때 고른 것은 — 「${before}」.` });
+  return [{ fx: 'tick' }, ...lines];
+}
+async function playEvent(id, E) {
+  const here = node;
+  await loadAll(Object.values(E.cast || {}).map(c => c.art).filter(Boolean));
+  if (!alive || node !== here) return;
+  const G = eventCtx();
+  const key = 'ev:' + id;
+  const before = RUN.flags.seen[key];
+  const script = [
+    { tint: E.tint || '', place: E.place || chapterDef().place },
+    ...(before ? dejaLines(E, before) : []),
+    ...E.scene,
+  ];
+  let picked = '';
+  await playScene(script, { ctx: G, cast: E.cast, bg: bgKeyOf(node), onChoice: l => { if (!picked) picked = l; } });
+  if (!alive || node !== here) return;
+  node.ev = { done: true, after: G.afterText || '', res: G.res, pending: G.pending };
+  RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [key]: picked || true });
+  markEventSeen(id);
+  autosave();
+  eventResult(E);
+}
+// 싸울 상대 이름 — 「감시 눈 ×2」
+const foesText = list => Object.entries(list.reduce((m, t) => (m[t] = (m[t] || 0) + 1, m), {})).map(([t, n]) => `${FOES[t].name}${n > 1 ? ` ×${n}` : ''}`).join(' · ');
+// 장면이 끝난 뒤 — 결과 한 줄 · 얻고 잃은 것 · 이어지는 일(카드 고르기 · 내려놓기 · 강화 · 전투)
+function eventResult(E) {
+  const ev = node.ev;
+  frame({ title: E.title, text: ev.after ? fmt(ev.after) : esc(E.teaser || ''), artHTML: glyph(E.icon || 'help') });
+  const p = ev.pending;
+  // 얻고 잃은 것 — 아무것도 없고 이어지는 일(카드 고르기 등)도 없을 때만 「없다」고 적는다
+  const list = ev.res.length
+    ? `<ul class="ev-res">${ev.res.map(r => `<li class="${r.k || ''}">${icon(r.i)}<span>${esc(r.t)}</span></li>`).join('')}</ul>`
+    : p ? '' : '<p class="ev-none">얻은 것도, 잃은 것도 없다.</p>';
+  const settle = () => { ev.pending = null; hud(); autosave(); };
+  if (!p) { body(list); return; }
+  if (p.t === 'cards') { cardPick(p.ids, { skip: '떠난다', lead: list, onPick: settle }); return; }
+  if (p.t === 'remove' || p.t === 'upgrade') {
+    const up = p.t === 'upgrade';
+    const cards = up ? RUN.deck.filter(canUpgrade) : RUN.deck.slice();
+    if (!cards.length) { ev.pending = null; autosave(); body(list); return; }
+    const b = body(`${list}<p class="nd-sub">${up ? '강화할 카드를 한 장 고르세요 — 강화된 모습으로 보여 줘요. 그냥 떠나도 돼요.' : '내려놓을 카드를 한 장 고르세요 — 덱에서 없어져요. 그냥 떠나도 돼요.'}</p>
+      <div class="deck-grid pick">${cards.map(c => bigCardHTML(up ? Object.assign({}, c, { up: 1 }) : c, { pick: true, mid: true, showUp: up, extra: `data-uid="${c.uid}"` })).join('')}</div>`);
+    b.querySelector('.deck-grid').addEventListener('click', e => {
+      const el = e.target.closest('.card[data-uid]');
+      if (!el) return;
+      const c = RUN.deck.find(x => x.uid === +el.dataset.uid);
+      if (!c) return;
+      const nm = cardDef(c).name;
+      if (up) upgradeCard(c.uid); else removeCard(c.uid);
+      SFX.gain();
+      ev.res.push({ t: up ? `「${nm}」 강화` : `「${nm}」 내려놓음`, k: 'good', i: up ? 'up' : 'check' });
+      settle();
+      eventResult(E);
+    });
+    return;
+  }
+  if (p.t === 'fight') {
+    body(`${list}<div class="nd-opts"><button class="nd-opt main" type="button" id="ndFight"><b>싸운다</b><small>${foesText(p.enc.foes)}${p.enc.bonusParts ? ` · 이기면 부품 +${p.enc.bonusParts}` : ''}</small></button></div>`);
+    q('#ndLeave').hidden = true;
+    q('#ndFight').addEventListener('click', () => { SFX.click(); fight(encounterFor({ id: node.id + '#ev', type: 'battle', enc: { foes: p.enc.foes } }, { bonusParts: p.enc.bonusParts || 0, sub: E.title })); });
+  }
+}
+
+// 천막 속삭임 — 다음 정예 · 보스 (plain이면 대사로 읽을 글 한 덩어리)
+function nextEliteBoss({ plain = false } = {}) {
   const ch = chapterDef();
   const map = RUN.map;
   const reach = new Set(), stack = [...map.nodes[RUN.pos].next];
@@ -400,11 +501,12 @@ function nextEliteBoss() {
     const e = ch.encounters.elite[(n.eliteIdx || 0) % ch.encounters.elite.length];
     if (seen.has(e.id)) continue;
     seen.add(e.id);
-    lines.push(`<p><b>정예 · ${FOES[e.foes[0]].name}</b> — ${TIPS[e.id] || FOES[e.foes[0]].desc}</p>`);
+    lines.push([`정예 · ${FOES[e.foes[0]].name}`, TIPS[e.id] || FOES[e.foes[0]].desc]);
   }
   const bd = BOSSES[ch.encounters.boss.boss];
-  lines.push(`<p><b>보스 · ${bd.name}</b> — 루프마다 턴 공격 하나를 예고하고, 마지막 행동 뒤에 쏩니다. 「역류 주입」 같은 교란으로 과부하시키면 4코스트 동안 멈춥니다.</p>`);
-  return lines.join('');
+  lines.push([`보스 · ${bd.name}`, '루프마다 턴 공격 하나를 예고하고, 마지막 행동 뒤에 쏩니다. 「역류 주입」 같은 교란으로 과부하시키면 4코스트 동안 멈춥니다.']);
+  if (plain) return lines.map(([h, t]) => `「${h}」 — ${t}`).join(' ');
+  return lines.map(([h, t]) => `<p><b>${h}</b> — ${t}</p>`).join('');
 }
 
 // 상점 그리기

@@ -33,7 +33,8 @@ function linkLayers(m, n, R) {
   return edges;
 }
 
-export function genMap(ch, seed) {
+// opt.seenEvents = { 사건 id: 본 횟수 } — 예전 판에서 덜 본 사건부터 나온다
+export function genMap(ch, seed, opt = {}) {
   const R = makeRng(hashSeed(seed, 'map', ch.num));
   const L = ch.layers;
   // 1) 층마다 톱니 수 (옆 층과 너무 차이 나지 않게)
@@ -73,7 +74,8 @@ export function genMap(ch, seed) {
     }
   }
   // 칸마다 내용 씨앗 · 전투 구성 · 사건
-  for (const id of Object.keys(nodes)) fillContent(ch, nodes[id], R, seed);
+  const events = eventBag(makeRng(hashSeed(seed, 'events', ch.num)), EVENT_POOL[ch.num] || EVENT_POOL[1], opt.seenEvents || {});
+  for (const id of Object.keys(nodes)) fillContent(ch, nodes[id], R, seed, events);
   // 4) 위치 · 크기 · 도는 방향
   layout(nodes, layers, L, R);
   return { chapter: ch.num, nodes, layers, edges, arc: 0, start: layers[0][0] };
@@ -114,7 +116,18 @@ function assignTypes(ch, nodes, layers, R) {
   }
 }
 
-function fillContent(ch, n, R, seed) {
+// 사건 주머니 — 한 지도에 같은 사건이 두 번 나오지 않게 하나씩 꺼낸다. 안 본 것(섞어서) → 덜 본 것 순, 다 꺼내면 새로 섞는다
+function eventBag(r, pool, seen) {
+  const fresh = r.shuffle(pool.filter(id => !seen[id]));
+  const old = r.shuffle(pool.filter(id => seen[id])).sort((a, b) => seen[a] - seen[b]);
+  let list = [...fresh, ...old], i = 0;
+  return () => {
+    if (i >= list.length) { list = r.shuffle(pool.slice()); i = 0; }
+    return list[i++];
+  };
+}
+
+function fillContent(ch, n, R, seed, events) {
   n.seed = hashSeed(seed, ch.num, n.id);
   const r = makeRng(n.seed);
   const E = ch.encounters;
@@ -125,7 +138,7 @@ function fillContent(ch, n, R, seed) {
   }
   else if (n.type === 'elite') n.enc = null;       // 지도 전체를 본 뒤 번갈아 정한다(아래 layout 전에 처리)
   else if (n.type === 'boss') n.enc = Object.assign({ kind: 'boss' }, E.boss);
-  else if (n.type === 'event') n.event = r.pick(EVENT_POOL[ch.num] || EVENT_POOL[1]);
+  else if (n.type === 'event') n.event = events();
   else if (n.type === 'alley') n.alley = r.pick(['hide', 'narrow', 'deal', 'shortcut']);
   if (n.type === 'trial') n.trial = r.pick(['untouched', 'swift', 'frugal']);
   if (n.type === 'elite') n.eliteIdx = null;

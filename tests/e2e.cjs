@@ -38,13 +38,16 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
 
   const shot = async name => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, name + '.png') }); };
   const sceneOpen = () => page.evaluate(() => !document.querySelector('#scene').hidden);
+  // 장면 끝까지 — 건너뛰기는 선택지 앞에서 멈추므로, 선택지가 뜨면 고를 수 있는 첫 번째를 누른다
   const clearScene = async () => {
     for (let i = 0; i < 100 && await sceneOpen(); i++) {
-      if (await page.evaluate(() => !document.querySelector('#scChoices').hidden)) await page.keyboard.press('Digit1');
+      if (await page.evaluate(() => !document.querySelector('#scChoices').hidden)) await page.click('#scChoices button:not([disabled])').catch(() => {});
       else await page.click('#scSkipBtn').catch(() => {});
       await page.waitForTimeout(250);
     }
   };
+  const choicesShown = () => page.evaluate(() => !document.querySelector('#scChoices').hidden);
+  const logText = async () => { await page.keyboard.press('KeyL'); const t = await page.evaluate(() => document.querySelector('#scLogList').textContent); await page.keyboard.press('Escape'); return t; };
   const waitScreen = (cls, timeout = 20000) => page.waitForFunction(c => { const s = document.querySelector('#screen .screen'); return s && s.classList.contains(c); }, cls, { timeout });
   const waitMap = () => page.waitForFunction(() => document.querySelector('.scr-map .gn.avail'), null, { timeout: 25000 });
   const battleReady = () => page.waitForFunction(() => I12.B.started && !I12.B.over && !I12.B.busy && document.querySelector('#scene').hidden, null, { timeout: 15000 });
@@ -105,6 +108,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await page.waitForSelector('.tut', { timeout: 10000 });
   check(true, '튜토리얼 안내가 뜬다');
   check(await page.evaluate(() => !!document.querySelector('.battle-bg img.scr-bg')), '전투 배경 그림');
+  check(await page.evaluate(() => I12.B.rows === 6 && document.querySelectorAll('#board .cell').length === 36 && I12.B.p.r === 5 && I12.B.p.c === 2), '6×6 판 · 맨 아랫줄 가운데에서 시작');
   const cardBg = await page.evaluate(() => getComputedStyle(document.querySelector('.hand .card')).backgroundImage);
   const bgOk = await page.evaluate(async u => { const m = /url\("([^"]*card-bg[^"]*)"\)/.exec(u); if (!m) return false; const r = await fetch(m[1]); return r.ok; }, cardBg);
   check(bgOk, `카드에 양피지 그림이 실제로 깔린다`);
@@ -135,6 +139,66 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
     check(true, `${t}: 떠난다 → 지도`);
   }
 
+  console.log('3b. 사건 — 대사 장면 · 결과 · 새로고침 · 건너뛰기 · 기시감');
+  const evIds = nodes.event || [];
+  const evNames = await page.evaluate(ids => ids.map(id => I12.RUN.map.nodes[id].event), evIds);
+  check(evIds.length >= 4 && new Set(evNames).size === evNames.length, `지도: 사건 칸 ${evIds.length}개 · 같은 사건 없음`);
+  // (1) 끝까지 한 줄씩 → 결과 화면 → 새로고침해도 결과만
+  await page.evaluate(id => { I12.RUN.alert = 0; I12.RUN.parts = 300; I12.RUN.hp = 3; I12.flow.enterNode(id); }, evIds[0]);
+  await waitScreen('scr-node');
+  await page.waitForFunction(() => !document.querySelector('#scene').hidden, null, { timeout: 10000 });
+  check(await page.evaluate(() => !!document.querySelector('#scBg img.scr-bg') && document.querySelector('#scene').classList.contains('has-bg')), '사건: 대사 장면에 배경 그림');
+  for (let i = 0; i < 80 && !(await choicesShown()); i++) { await page.click('#dbox'); await page.waitForTimeout(120); }
+  const chs = await page.evaluate(() => [...document.querySelectorAll('#scChoices button')].map(b => !!b.querySelector('small')));
+  check(chs.length >= 2 && chs.every(Boolean), `사건: 선택지 ${chs.length}개 — 모두 얻고 잃는 것 표시`);
+  await shot('06-event-choice');
+  await page.click('#scChoices button:not([disabled])');
+  for (let i = 0; i < 60 && await sceneOpen(); i++) { if (await choicesShown()) await page.click('#scChoices button:not([disabled])'); else await page.click('#dbox'); await page.waitForTimeout(120); }
+  await page.waitForFunction(() => document.querySelector('.nd .ev-res, .nd .ev-none'), null, { timeout: 15000 });
+  await page.waitForTimeout(500);
+  await shot('06-event-result');
+  const e1 = await run();
+  check(e1.map.nodes[evIds[0]].ev && e1.map.nodes[evIds[0]].ev.done && e1.flags.seen['ev:' + evNames[0]], '사건: 끝나면 결과가 저장된다');
+  await toTitleAndContinue();
+  await waitScreen('scr-node');
+  await page.waitForFunction(() => document.querySelector('.nd .ev-res, .nd .ev-none'), null, { timeout: 10000 });
+  const e2 = await run();
+  check(!(await sceneOpen()) && e2.parts === e1.parts && e2.hp === e1.hp && e2.alert === e1.alert && e2.deck.length === e1.deck.length && e2.relics.length === e1.relics.length, '사건: 새로고침해도 장면을 다시 보거나 두 번 받지 않는다');
+  const leaveEvent = async () => {
+    if (await page.$('#ndFight')) { await page.click('#ndFight'); await winToReward(); await page.click('#rwGo'); }
+    else await page.click('#ndLeave');
+    await waitMap();
+  };
+  await leaveEvent();
+  // (2) 장면 도중에 끄면 처음부터 — 효과는 한 번만
+  await page.evaluate(id => { I12.RUN.alert = 10; I12.RUN.parts = 300; I12.RUN.hp = 3; I12.flow.enterNode(id); }, evIds[1]);
+  await waitScreen('scr-node');
+  const pre = await run();
+  await page.waitForFunction(() => !document.querySelector('#scene').hidden, null, { timeout: 10000 });
+  await page.click('#scSkipBtn');
+  await page.waitForFunction(() => !document.querySelector('#scChoices').hidden, null, { timeout: 5000 });
+  check(true, '사건: 건너뛰기는 선택지 앞에서 멈춘다');
+  await page.click('#scChoices button:not([disabled])');
+  await page.click('#dbox');
+  await toTitleAndContinue();
+  await waitScreen('scr-node');
+  await page.waitForFunction(() => !document.querySelector('#scene').hidden, null, { timeout: 10000 });
+  const post = await run();
+  check(post.parts === pre.parts && post.alert === pre.alert && post.hp === pre.hp && post.deck.length === pre.deck.length && !post.map.nodes[evIds[1]].ev, '사건: 장면 도중에 끄면 처음부터 — 효과가 두 번 들어가지 않는다');
+  await clearScene();
+  await page.waitForFunction(() => document.querySelector('.nd .ev-res, .nd .ev-none'), null, { timeout: 15000 });
+  await leaveEvent();
+  // (3) 재귀 전에 본 사건 — 기시감
+  await page.evaluate(([id, name]) => { I12.RUN.alert = 0; I12.RUN.flags.seen['ev:' + name] = '지난번의 선택'; I12.flow.enterNode(id); }, [evIds[2], evNames[2]]);
+  await waitScreen('scr-node');
+  await page.waitForFunction(() => !document.querySelector('#scene').hidden, null, { timeout: 10000 });
+  await page.click('#scSkipBtn');
+  await page.waitForFunction(() => !document.querySelector('#scChoices').hidden, null, { timeout: 5000 });
+  check((await logText()).includes('재귀하기 전의 기억'), '사건: 재귀 전에 본 사건이면 기시감 대사');
+  await clearScene();
+  await page.waitForFunction(() => document.querySelector('.nd .ev-res, .nd .ev-none'), null, { timeout: 15000 });
+  await leaveEvent();
+
   console.log('4. 정예 — 승리 대사 도중 새로고침 · 보상 두 번 받지 않기');
   await page.evaluate(id => { I12.RUN.alert = 0; I12.flow.enterNode(id); }, nodes.elite[0]);
   await waitScreen('scr-battle');
@@ -153,7 +217,9 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await toTitleAndContinue();
   await waitScreen('scr-reward');
   const a2 = await run();
-  check(a1.parts > before.parts && a1.shards === before.shards + 1 && a1.relics.length === before.relics.length + 1, '정예 보상: 부품 · 조각 1 · 유물 1');
+  // 사건에서 「톱니 조각 주머니」(정예 · 보스 조각 +1)를 얻었을 수도 있다
+  const shardGain = 1 + (before.relics.includes('shard_pouch') ? 1 : 0);
+  check(a1.parts > before.parts && a1.shards === before.shards + shardGain && a1.relics.length === before.relics.length + 1, `정예 보상: 부품 · 조각 ${shardGain} · 유물 1 (부품 ${before.parts}→${a1.parts} · 조각 ${before.shards}→${a1.shards} · 유물 ${before.relics.length}→${a1.relics.length})`);
   check(a1.parts === a2.parts && a1.relics.length === a2.relics.length, '보상 화면에서 새로고침해도 두 번 받지 않는다');
   await page.click('#rwGo');
   await waitMap();
@@ -187,11 +253,16 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check((await run()).alert === 50, '발각 전투를 이기면 경계도 50');
 
   console.log('7. 보스 → 보스 유물 → 챕터 끝 → 준비 중');
-  await page.evaluate(id => { I12.RUN.alert = 0; I12.flow.enterNode(id); }, nodes.boss[0]);
+  await page.evaluate(id => { I12.RUN.alert = 0; I12.RUN.flags.ev = Object.assign({}, I12.RUN.flags.ev, { casing_read: true }); I12.flow.enterNode(id); }, nodes.boss[0]);
   await waitScreen('scr-battle');
   await page.waitForFunction(() => !document.querySelector('#scene').hidden, null, { timeout: 10000 });
+  await page.click('#scSkipBtn');
+  await page.waitForFunction(() => !document.querySelector('#scChoices').hidden, null, { timeout: 5000 });
+  check((await logText()).includes('미안합니다'), '보스: 사건에서 세운 깃발로 대사가 달라진다 (탄피 각인)');
   await clearScene();
   await battleReady();
+  const lay = await page.evaluate(() => { const b = document.querySelector('#board').getBoundingClientRect(), t = document.querySelector('.timeline').getBoundingClientRect(), h = document.querySelector('.hand-row').getBoundingClientRect(); return { rows: I12.B.rows, cells: document.querySelectorAll('#board .cell').length, r: I12.B.p.r, fit: b.bottom <= t.top + 1 && t.bottom <= h.top + 1 }; });
+  check(lay.rows === 7 && lay.cells === 42 && lay.r === 6 && lay.fit, '보스전: 보스 줄 + 6×6 (7줄) · 카드 줄과 겹치지 않음');
   await shot('08-boss');
   await winToReward();
   check(await page.evaluate(() => document.querySelector('#rwGo').disabled), '보스 유물을 고르기 전에는 넘어갈 수 없다');

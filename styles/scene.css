@@ -3,6 +3,23 @@
   background:radial-gradient(90% 75% at 50% 32%,rgba(9,8,13,.72),rgba(5,4,8,.95) 72%),rgba(5,4,8,.45);cursor:pointer;animation:scIn .45s ease-out}
 @keyframes scIn{from{opacity:0}}
 .sc-wrap{position:absolute;inset:0}
+/* 장면 배경 그림 (사건) — 그림을 어둡게 깔고 그 위에 색조(tint)를 얹는다 */
+.scene.has-bg{background:#050408}
+.sc-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.sc-bg:empty{display:none}
+.sc-bg .scr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.62) saturate(.88);animation:bgDrift 24s ease-in-out infinite alternate}
+@keyframes bgDrift{to{transform:scale(1.04)}}
+.sc-bg::after{content:"";position:absolute;inset:0;background:radial-gradient(90% 75% at 50% 32%,rgba(9,8,13,.18),rgba(5,4,8,.78) 76%),linear-gradient(180deg,rgba(5,4,8,.35),transparent 30%)}
+.scene.has-bg[data-tint="warm"] .sc-bg::after{background:radial-gradient(90% 75% at 50% 30%,rgba(70,42,16,.3),rgba(10,6,4,.82) 76%)}
+.scene.has-bg[data-tint="cold"] .sc-bg::after{background:radial-gradient(90% 75% at 50% 18%,rgba(46,78,110,.3),rgba(4,8,14,.82) 76%)}
+.scene.has-bg[data-tint="blood"] .sc-bg::after{background:radial-gradient(90% 75% at 50% 42%,rgba(120,12,34,.34),rgba(12,2,6,.86) 76%)}
+/* 얻고 잃은 것 — 위쪽 가운데에 잠깐 */
+.sc-notes{position:absolute;left:50%;top:34px;translate:-50% 0;z-index:7;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.sc-note{display:flex;align-items:center;gap:9px;padding:10px 20px;border-radius:6px;background:rgba(14,12,18,.94);border:1px solid var(--brass-lo);box-shadow:0 10px 26px rgba(0,0,0,.55);font:700 18px/1.2 var(--f-ui);color:var(--bone);white-space:nowrap;animation:noteIn 2.8s ease forwards}
+.sc-note svg{width:18px;height:18px;fill:currentColor;flex:none}
+.sc-note.good{border-color:rgba(126,214,160,.65);color:#C4F3D5}
+.sc-note.bad{border-color:rgba(255,124,112,.65);color:#FFC7BF}
+@keyframes noteIn{0%{opacity:0;transform:translateY(-10px)}10%{opacity:1;transform:none}82%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
 .sc-tools{position:absolute;right:40px;top:28px;z-index:6;display:flex;gap:8px}
 .sc-tools button{padding:10px 16px;border-radius:6px;border:1px solid var(--line-2);background:rgba(21,19,27,.9);font:700 14px/1 var(--f-ui);color:var(--ash);cursor:pointer}
 .sc-tools button:hover{color:var(--bone);border-color:var(--brass-lo)}
@@ -32,6 +49,13 @@
 .pt-guest[data-who="black"]::before{background:radial-gradient(ellipse at 45% 62%,rgba(240,176,78,.22),transparent 66%)}
 .pt-guest[data-who="merchant"]::before{background:radial-gradient(ellipse at 50% 62%,rgba(214,174,98,.2),transparent 66%)}
 .pt-guest .pt-art img{filter:drop-shadow(0 0 1.5px rgba(255,214,200,.6))}
+.pt-guest[data-who="npc"]::before{background:radial-gradient(ellipse at 50% 62%,rgba(214,200,160,.18),transparent 66%)}
+/* 그림이 오기 전의 사람 · 물건 — 상징 그림을 둥근 틀에 */
+.pt-glyph{position:absolute;left:50%;bottom:30%;width:50%;aspect-ratio:1;translate:-50% 0;display:grid;place-items:center;border-radius:50%;
+  background:radial-gradient(circle at 50% 40%,rgba(46,39,34,.9),rgba(14,12,11,.94) 72%);border:1.5px solid rgba(214,174,98,.32);box-shadow:0 0 0 10px rgba(214,174,98,.045),0 24px 50px rgba(0,0,0,.55),inset 0 0 36px rgba(0,0,0,.65);animation:glyphFloat 6s ease-in-out infinite}
+.pt-glyph svg{width:42%;height:42%;fill:#B9A57E;opacity:.9;filter:drop-shadow(0 0 10px rgba(214,174,98,.25))}
+.pt-guest.off .pt-glyph{animation-play-state:paused}
+@keyframes glyphFloat{50%{translate:-50% -8px}}
 .pt-guest[data-who="foe"] .pt-art svg{width:78%;height:60%;margin:0 auto;position:absolute;left:11%;bottom:4%}
 /* 신도들의 속삭임 — 말하는 동안 가운데 뒤편에 흐릿하게 */
 .pt-voice{z-index:0;left:50%;top:0;height:100%;aspect-ratio:2/3;translate:-50% 0;transform:translateY(14px) scale(.97);transition:opacity .8s ease,transform 1.2s ease}
@@ -58,8 +82,19 @@
 .sc-choices{position:absolute;left:50%;top:42%;translate:-50% -50%;z-index:5;width:760px;display:flex;flex-direction:column;gap:12px}
 .sc-choices button{padding:20px 28px;border-radius:6px;border:1px solid var(--brass);background:linear-gradient(180deg,rgba(64,51,26,.97),rgba(36,28,14,.97));color:var(--brass-hi);font:700 22px/1.35 var(--f-serif);text-align:left;cursor:pointer;box-shadow:0 14px 32px rgba(0,0,0,.55);animation:choiceIn .35s ease-out both}
 .sc-choices button:nth-child(2){animation-delay:.08s}
-.sc-choices button:hover{background:linear-gradient(180deg,rgba(86,68,34,.97),rgba(46,36,18,.97))}
+.sc-choices button:hover:not(:disabled){background:linear-gradient(180deg,rgba(86,68,34,.97),rgba(46,36,18,.97))}
 .sc-choices button kbd{display:inline-block;min-width:26px;margin-right:14px;padding:2px 6px;border-radius:4px;border:1px solid var(--brass-lo);font:700 15px/1.3 var(--f-ui);text-align:center;color:var(--brass)}
+.sc-choices button{display:flex;align-items:flex-start}
+.sc-choices button kbd{flex:none;margin-top:3px}
+.ch-t{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ch-t small{font:600 15px/1.35 var(--f-ui);color:#CDB98C;letter-spacing:.01em}
+.sc-choices button:nth-child(3){animation-delay:.16s}
+.sc-choices button:nth-child(4){animation-delay:.24s}
+.sc-choices.many{gap:10px}
+.sc-choices.many button{padding:15px 26px}
+.sc-choices button:disabled{cursor:not-allowed;border-color:#4A4032;background:linear-gradient(180deg,rgba(34,30,24,.95),rgba(20,18,14,.95));color:#8D8272}
+.sc-choices button:disabled kbd{color:#6E6556;border-color:#4A4032}
+.sc-choices button:disabled small{color:#A07F74}
 @keyframes choiceIn{from{opacity:0;transform:translateY(10px)}}
 /* 이름 입력 */
 .sc-input{position:absolute;left:50%;top:40%;translate:-50% -50%;z-index:5;width:720px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:36px 44px 32px;border-radius:10px;border:1px solid var(--brass);
@@ -85,6 +120,7 @@
 .dname.voice{color:#FFC9D4}
 .dname.foe{color:#FFD6E0}
 .dname.black{color:#F6D7B0}
+.dname.npc{color:#F3E6C8}
 .dtext{margin:0;max-width:1480px;min-height:3.5em;font:500 25px/1.75 var(--f-serif);color:var(--bone);white-space:pre-wrap}
 .dtext .nm{color:var(--brass-hi);font-weight:900}
 .dtext.nar{color:#C9C0D3}
@@ -93,6 +129,7 @@
 .dtext.voice{color:#F2BCC6;font-style:italic}
 .dtext.foe{color:#F4DDE3}
 .dtext.black{color:#F1DEC8}
+.dtext.npc{color:#EDE3CE}
 .sc-place{position:absolute;left:48px;top:40px;z-index:6;padding:12px 26px 12px 16px;border-left:3px solid var(--brass);background:linear-gradient(90deg,rgba(12,10,16,.92),rgba(12,10,16,0));font:700 18px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--bone);pointer-events:none;animation:placeIn 3s ease forwards}
 @keyframes placeIn{0%{opacity:0;transform:translateX(-12px)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
 .scene[data-tint="warm"]{background:radial-gradient(90% 75% at 50% 30%,rgba(70,42,16,.62),rgba(10,6,4,.94) 72%),rgba(12,8,4,.46)}
@@ -123,3 +160,5 @@
 .lg-item.voice b,.lg-item.voice p{color:#F2BCC6}
 .lg-item.voice p{font-style:italic}
 .lg-list .hint{color:var(--mute)}
+/* 움직임 줄이기 — 잠깐 떴다 사라지는 알림(얻고 잃은 것 · 장소)은 애니메이션 없이 제시간 동안 보이게 */
+@media (prefers-reduced-motion:reduce){ .sc-note,.sc-place{animation:none!important} }
