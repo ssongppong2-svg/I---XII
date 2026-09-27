@@ -110,9 +110,12 @@ function assignTypes(ch, nodes, layers, R) {
     if (t === 'rest' && n.next.some(x => nodes[x].type === 'rest')) return false;
     return true;
   };
-  // 최소 개수부터 채운다
+  // 최소 개수부터 채운다 — 놓을 자리가 적은 종류부터 (휴식은 이야기 칸 옆 · 오르를 잃은 뒤에는 못 놓아 자리가 가장 적다.
+  // 정해 둔 순서대로 채우면 앞 종류가 그 몇 안 되는 자리를 먼저 차지해 휴식이 하나도 없는 지도가 생긴다)
   const order = R.shuffle(free.slice());
-  for (const [t, cnt] of Object.entries(ch.atLeast)) {
+  const room = t => free.filter(id => okAt(t, nodes[id])).length;
+  const need = Object.entries(ch.atLeast).map(([t, cnt]) => [t, cnt, room(t)]).sort((x, y) => x[2] - y[2]);
+  for (const [t, cnt] of need) {
     let placed = 0;
     for (const id of order) {
       if (placed >= cnt) break;

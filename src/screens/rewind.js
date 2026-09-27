@@ -85,7 +85,7 @@ register('chapterend', {
     // 준비 중 — 다음 챕터가 아직 없다
     const n = RUN ? RUN.chapter : 2;
     holder.innerHTML = `<div class="ce">
-      <p class="ce-kick">${RUN ? esc(RUN.name) + '의 여정 · 저장됨' : ''}</p>
+      <p class="ce-kick">${RUN ? esc(RUN.name || '???') + '의 여정 · 저장됨' : ''}</p>
       <div class="ce-num">${roman(n)}</div>
       <h2 class="ce-title">${n}시 — 준비 중</h2>
       <p class="ce-sub">${n <= LAST_CHAPTER ? `${n}장은 아직 만들고 있어요. 지금까지의 여정은 저장돼 있어서, ${n}장이 추가되면 「이어 하기」로 바로 이어져요.` : '끝.'}</p>

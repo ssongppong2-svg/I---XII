@@ -129,6 +129,8 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check(rows.top && rows.bottom && rows.dir, '지도: 두 줄 — 위 줄 왼→오, 아래 줄 오→왼 (끝에 보스)');
   check(await page.evaluate(() => document.querySelectorAll('.mech .gn.t-story .sno').length === 13 && /출고되지 않은 물건/.test(document.querySelector('.mech').textContent) && /16·17/.test(document.querySelector('.mech').textContent)), '지도: 이야기 칸 13개 · 보스 16·17');
   check(!nodes.elite && nodes.boss.length === 1 && R.map.layers.every(l => l.length <= 2), '1장: 정예 없음 · 사이 층은 톱니 두 개');
+  const least = await page.evaluate(() => I12.ch.CHAPTERS[1].atLeast);
+  check(Object.entries(least).every(([t, c]) => (nodes[t] || []).length >= c), `지도: 사이 칸 최소 개수 — ${Object.entries(least).map(([t, c]) => `${t} ${(nodes[t] || []).length}/${c}`).join(' · ')}`);
 
   console.log('2. 03 출고되지 않은 물건 — 재귀 지점 · 학습 전투(재귀 설명창 + 03-010) · 쓰러지면 곧장 재도전 · 승리 대사');
   const s03 = R.map.layers[1][0];

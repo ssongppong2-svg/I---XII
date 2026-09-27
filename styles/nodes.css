@@ -182,3 +182,7 @@
 .ce.quiet .ce-title{animation:fadeIn 1.6s ease-out .4s both}
 .ce.quiet .ce-sub{animation:fadeIn 1.6s ease-out .9s both}
 .ce-left{margin:-4px 0 6px;max-width:760px;font:500 17px/1.8 var(--f-serif);color:var(--ash);animation:fadeIn 1.6s ease-out 1.2s both}
+/* 조용한 끝은 차례로 — 문자판 → 이름 → 목적지 → 남은 것 → 기록 → 버튼 (기록이 글보다 먼저 떠 있지 않게) */
+.ce.quiet .ce-kick{animation:fadeIn 1.4s ease-out both}
+.ce.quiet .ce-stats{animation:fadeIn 1.2s ease-out 2.4s both}
+.ce.quiet #ceGo{animation:fadeIn 1s ease-out 3s both}
