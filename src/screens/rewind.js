@@ -54,7 +54,7 @@ register('chapterend', {
     const st = RUN.stats;
     if (params.clear) {
       const ch = chapterDef();
-      // 장 끝 장면(1장 = 대본 12 「문밖의 한 시」) — 한 번만. 보다가 끄면 이어 할 때 다시
+      // 장 끝 장면(1장 = 대본 18 「외투 한 벌의 빚」) — 한 번만. 보다가 끄면 이어 할 때 다시
       const S = storyOf(ch.num), key = `end:${ch.num}`;
       if (S.ending && !(RUN.flags.seen || {})[key]) {
         holder.innerHTML = '<div class="ce-dark"></div>';

@@ -478,7 +478,7 @@ async function storyShopLeave(d) {
   leave();
 }
 
-// 꺼지지 않는 화로 — 휴식할지, 정비만 하고 떠날지
+// 이야기 칸의 휴식(1장 = 14 「불을 끄는 값」) — 회복하고 쉴지, 물품만 정리하고 떠날지
 function storyRestChoose(d) {
   const h = restHeal(), p = restAmbushChance();
   frame({ title: esc(d.title), artHTML: glyph('flame'),

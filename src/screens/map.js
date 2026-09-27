@@ -84,7 +84,15 @@ const KIND_TEXT = {
   rest: '휴식 · 확률 사건. 회복한 뒤 습격을 판정한다(이 칸에서 한 번).',
 };
 function goalHTML() {
-  return RUN.goal ? `${icon('compass')}<small>목표</small><span>${esc(RUN.goal)}</span>` : '';
+  return RUN.goal ? `${icon('compass')}<small>${RUN.flags.goalSeen === RUN.goal ? '목표' : '새 목표'}</small><span>${esc(RUN.goal)}</span>` : '';
+}
+// 목표가 바뀐 뒤 처음 보는 지도 — 목표 띠를 한 번 빛내고 「새 목표」로 알린다 (본 목표는 적어 두어 다시 빛나지 않게)
+function markGoal() {
+  if (!RUN.goal || RUN.flags.goalSeen === RUN.goal) return;
+  const g = root.querySelector('#mapGoal');
+  g.classList.add('new');
+  RUN.flags.goalSeen = RUN.goal;
+  setTimeout(() => { if (alive) SFX.tick(); }, 350);
 }
 
 function refreshHud() {
@@ -203,6 +211,7 @@ async function mount(holder, params = {}) {
   svg = holder.querySelector('svg.mech');
   turner = makeTurner(svg, map);
   refreshHud();
+  markGoal();
   markerAtNode(RUN.pos);
   avail = choices();
   paint(false);

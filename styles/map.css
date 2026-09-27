@@ -143,5 +143,9 @@
 .map-goal svg{width:18px;height:18px;fill:var(--brass-hi);flex:none}
 .map-goal small{font:700 12px/1 var(--f-ui);letter-spacing:.14em;color:var(--brass)}
 .map-goal:empty{display:none}
+/* 새 목표 — 지도에 들어올 때 한 번 빛난다 */
+.map-goal.new{animation:goalNew 2.6s ease-out .3s both}
+.map-goal.new small{color:var(--brass-hi)}
+@keyframes goalNew{0%{border-color:var(--line);box-shadow:0 8px 20px rgba(0,0,0,.4)}18%{border-color:var(--brass-hi);box-shadow:0 0 0 5px rgba(242,211,143,.22),0 0 34px rgba(242,211,143,.4)}100%{border-color:var(--line);box-shadow:0 8px 20px rgba(0,0,0,.4)}}
 .map-info .mi-no{font:800 13px/1 var(--f-num);color:var(--brass);padding:4px 7px;border:1px solid var(--brass-lo);border-radius:3px}
 .map-info .mi-kind{margin-top:8px;font-size:13.5px;color:var(--brass-hi)}

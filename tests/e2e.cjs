@@ -171,7 +171,8 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await page.click('.rw-cards .card');
   await page.click('#rwGo');
   await waitMap();
-  check((await run()).deck.length === cards0 + 1, '보상 카드가 덱에 들어간다');
+  R = await run();
+  check(R.deck.length === cards0 + 1 && R.goal === '추위를 피할 곳으로 간다', `보상 카드가 덱에 들어간다 · 03 뒤 목표 (${R.goal})`);
 
   console.log('3. 04 그 이름을 아는 사람 — 안전한 휴식(회복) · 이름 입력 · 지원 받기 · 새로고침');
   await page.evaluate(() => { I12.RUN.hp = 2; });
@@ -200,7 +201,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check(!(await sceneOpen()) && (await run()).items.potion === 1 && (await run()).hp === 4, '04: 새로고침해도 결과만 (회복 · 지원을 두 번 받지 않는다)');
   await page.click('#ndLeave');
   await waitMap();
-  check(await page.evaluate(() => /오르를 만난다/.test(document.querySelector('#mapGoal').textContent)), '지도 위쪽에 목표');
+  check(await page.evaluate(() => /오르를 만난다/.test(document.querySelector('#mapGoal').textContent) && document.querySelector('#mapGoal').classList.contains('new') && /새 목표/.test(document.querySelector('#mapGoal').textContent)), '지도 위쪽에 목표 — 바뀐 뒤 처음이면 「새 목표」로 빛난다');
   await page.evaluate(() => { I12.RUN.hp = 2; I12.router.go('map', {}); });
   await waitMap();
   await page.click('#mapRes [data-bag="potion"]');

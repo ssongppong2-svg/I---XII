@@ -133,6 +133,7 @@ export const CH1_STORY = {
       me('pain', '그건 저것이 고른 게 아니야.'),
       mh('저도 여기 내려올 때 싸우러 온 건 아니었어요.'),
       nar('그는 명령판만 떼어 챙겼다. 휘어진 바늘은 그대로 남았다.'),
+      act(G => G.goal('추위를 피할 곳으로 간다')),   // (추가) 03-022 「밖이 더 추우니까 옷부터 구해요」 — 04 배관 뒤 은신처로
     ],
   },
 
@@ -228,7 +229,7 @@ export const CH1_STORY = {
   // ── 05 녹슨 자동인형 — 기계를 대할 때 달라지는 태도 (수리 여부는 오르의 생사를 바꾸지 않는다)
   s05: {
     no: '05', title: '녹슨 자동인형', kind: 'talk', icon: 'spring', place: '회종시 · 골목', tone: '#C9C0D3',
-    teaser: '사건 — 골목 벽에 운반용 자동인형이 앉아 있다',
+    teaser: '대화 · 선택 — 골목 벽에 운반용 자동인형이 앉아 있다',
     scene: [
       { ...bg('s05'), tint: 'cold', amb: 'street', place: '회종시 · 골목' },
       nar('골목 벽에 운반용 자동인형이 앉아 있었다. 바퀴 하나가 벽을 향해 천천히 돌았다.'),
@@ -398,7 +399,7 @@ export const CH1_STORY = {
   // ── 08 신을 앉힐 의자가 없다 — 생활 · 과거의 노동자 · 동행자 관계 (은신처의 기본 회복)
   s08: {
     no: '08', title: '신을 앉힐 의자가 없다', kind: 'talk', safeRest: true, icon: 'tent', place: '회종시 · 신도 은신처', tone: '#F2BCC6',
-    teaser: '은신처 · 대화 — 에다가 다친 데부터 본다',
+    teaser: '안전한 휴식 · 대화 — 에다가 다친 데부터 본다',
     noLoot: true,
     scene: [
       { ...bg('s08'), tint: 'warm', amb: 'fire', place: '회종시 · 신도 은신처' },
