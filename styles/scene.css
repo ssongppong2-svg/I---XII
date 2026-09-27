@@ -162,3 +162,65 @@
 .lg-list .hint{color:var(--mute)}
 /* 움직임 줄이기 — 잠깐 떴다 사라지는 알림(얻고 잃은 것 · 장소)은 애니메이션 없이 제시간 동안 보이게 */
 @media (prefers-reduced-motion:reduce){ .sc-note,.sc-place{animation:none!important} }
+
+/* 목소리만 있는 사람 — 인간의 목소리 · 녹음 방송 · 알 수 없는 목소리 */
+.dname.human{color:#E8E2D6}
+.dname.broadcast{color:#BFD8E8;letter-spacing:.14em}
+.dname.unknown{color:#D9C8FF}
+.dtext.human{color:#E4DDD0}
+.dtext.broadcast{color:#C9DCE8;letter-spacing:.03em}
+.dtext.unknown{color:#DCCBFF;font-style:italic}
+/* 한 장 그림 (장력 가속 못총 등) — 인물보다 앞, 대사창 위 */
+.sc-cg{position:absolute;left:50%;top:44px;z-index:3;width:1180px;max-width:calc(100% - 120px);translate:-50% 0;pointer-events:none;animation:cgIn 1.1s ease-out}
+.sc-cg img{display:block;width:100%;height:auto;border-radius:6px;box-shadow:0 30px 80px rgba(0,0,0,.75),0 0 0 1px rgba(214,174,98,.25);-webkit-mask-image:radial-gradient(120% 110% at 50% 45%,#000 62%,transparent 100%);mask-image:radial-gradient(120% 110% at 50% 45%,#000 62%,transparent 100%)}
+@keyframes cgIn{from{opacity:0;transform:scale(1.03)}}
+/* 권능 문자판 — I만 켜진 열두 시 */
+.sc-dial{position:absolute;left:50%;top:110px;z-index:1;width:330px;translate:-50% 0;pointer-events:none;animation:cgIn .9s ease-out}
+.sc-dial svg,.sp-emb svg{display:block;width:100%;height:auto}
+.dring{fill:rgba(12,10,14,.82);stroke:#6E5A3A;stroke-width:2}
+.dring2{fill:none;stroke:rgba(214,174,98,.18);stroke-width:1;stroke-dasharray:3 4}
+.dhand{stroke:#F2D38F;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 4px rgba(242,211,143,.8))}
+.dcore{fill:#F2D38F}
+.dn circle{fill:#15121A;stroke:#3A3440;stroke-width:1.5}
+.dn text{fill:#4E4758;font:700 12px/1 var(--f-num);text-anchor:middle;dominant-baseline:middle}
+.dn.on circle{fill:#3A2A10;stroke:#F2D38F;stroke-width:2;filter:drop-shadow(0 0 8px rgba(242,211,143,.9))}
+.dn.on text{fill:#FFE7B0}
+.dn.pulse circle{stroke:#C9B8FF;animation:dialPulse 1.2s ease-in-out 3}
+@keyframes dialPulse{50%{stroke-width:4;filter:drop-shadow(0 0 10px rgba(201,184,255,.9))}}
+/* 종이 기록 — 낡은 종이 패널 (양피지 그림이 있으면 그 위에) */
+.sc-paper{position:absolute;left:50%;top:40%;z-index:5;width:780px;translate:-50% -50%;padding:44px 60px 48px;border-radius:6px;cursor:pointer;
+  background:var(--card-art,linear-gradient(180deg,#E9DCC0,#CDB894)) center/cover no-repeat;box-shadow:0 30px 70px rgba(0,0,0,.7),inset 0 0 60px rgba(90,60,20,.35);color:#2A1E12;text-align:center}
+.sc-paper.in{animation:paperIn .45s ease-out}
+@keyframes paperIn{from{opacity:0;transform:translateY(14px) rotate(-.6deg)}}
+.sc-paper>b{display:block;margin-bottom:16px;font:900 16px/1 var(--f-ui);letter-spacing:.3em;color:#6A4A22}
+.sc-paper>b::before,.sc-paper>b::after{content:"—";margin:0 12px;opacity:.5}
+.sc-paper p{margin:0;font:700 27px/1.65 var(--f-serif);color:#2A1E12;white-space:pre-wrap}
+.sp-emb{width:170px;margin:0 auto 16px}
+.sp-emb .dring{fill:rgba(60,40,20,.12);stroke:#6A4A22}
+.sp-emb .dn circle{fill:rgba(255,245,225,.5);stroke:#8A6A3A}
+.sp-emb .dn text{fill:#8A7050}
+.sp-emb .dn.on circle{fill:#5A3A12;stroke:#3A2208}
+.sp-emb .dn.on text{fill:#FFE7B0}
+.dbox.paper .dtext,.dbox.paper .dname{visibility:hidden}
+/* 대사창 비우기 — 검은 화면 · 멈춤에서는 빈 대사창을 감춘다 */
+.dbox{transition:opacity .35s ease}
+.dbox.blank:not(.choosing){opacity:0;pointer-events:none}
+/* 색조 — 검정(대본의 암전) · 어둡게(폐기 보관소 · 옛 수리소 · 문밖) */
+.scene[data-tint="black"]{background:#000}
+.scene[data-tint="black"] .sc-bg{opacity:0;transition:opacity .8s ease}
+.scene[data-tint="dark"]{background:radial-gradient(90% 75% at 50% 35%,rgba(26,22,30,.6),rgba(3,2,5,.97) 72%),rgba(3,2,5,.5)}
+.scene.has-bg[data-tint="dark"] .sc-bg::after{background:radial-gradient(90% 75% at 50% 35%,rgba(12,10,16,.4),rgba(3,2,5,.92) 74%),linear-gradient(180deg,rgba(3,2,5,.5),transparent 35%)}
+.sc-bg{transition:opacity .8s ease}
+.sc-bg .scr-bg.fade{animation:fadeIn .9s ease-out,bgDrift 24s ease-in-out infinite alternate}
+/* 감시 빛 · 탐조등이 화면을 한 번 훑는다 */
+.sc-sweep{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.sc-sweep::before{content:"";position:absolute;top:-20%;bottom:-20%;left:-45%;width:38%;transform:skewX(-14deg);
+  background:linear-gradient(90deg,transparent,rgba(255,50,64,.16),rgba(255,110,100,.32),rgba(255,50,64,.16),transparent);animation:sweepX 2.7s ease-in-out forwards}
+.sc-sweep.white::before{background:linear-gradient(90deg,transparent,rgba(210,228,255,.12),rgba(236,244,255,.28),rgba(210,228,255,.12),transparent)}
+@keyframes sweepX{to{left:112%}}
+@media (prefers-reduced-motion:reduce){ .sc-sweep::before{animation-duration:.01s} }
+/* 이름 카드 (보스 이름 · 현 소유자) · 챕터 카드 아래 한 줄 */
+.sc-card small{display:block;margin-top:16px;font:700 18px/1.3 var(--f-ui);letter-spacing:.3em;color:var(--mute)}
+.sc-card .nm-card small{margin:0 0 18px;color:#FF8A96;letter-spacing:.5em}
+.sc-card .nm-card b{font:900 76px/1.15 var(--f-serif);letter-spacing:.08em;color:var(--bone);text-shadow:0 0 40px rgba(255,59,78,.35)}
+.sc-card .nm-card span{margin-top:18px;font:700 24px/1.3 var(--f-ui);letter-spacing:.2em;color:#E8B8B0}

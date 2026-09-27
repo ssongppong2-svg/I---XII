@@ -64,3 +64,24 @@ export function foeArtHTML(type) {
   return u ? `<img src="${u}" alt="" draggable="false">` : (SVG[type] || SVG.watcher);
 }
 export const foeArtKeys = types => types.flatMap(t => FOES[t] ? [FOES[t].art, FOES[t].art + '-sd'] : []);
+
+// 대사 장면에 필요한 그림 이름 — 말하는 적(스탠딩 · SD) · 이 장의 인물 · 배경 슬롯 · 한 장 그림 (선택지 · 갈림 안쪽까지)
+export function storyArtKeys(script = [], cast = {}) {
+  const keys = new Set();
+  const walk = list => {
+    for (const st of list || []) {
+      if (!st) continue;
+      const c = st.who && cast[st.who];
+      const foe = st.who && (FOES[st.who] ? st.who : c && c.foe);
+      if (foe && FOES[foe]) { keys.add(FOES[foe].art); keys.add(FOES[foe].art + '-sd'); }
+      if (c && c.art) keys.add(c.art);
+      if (st.bg && typeof st.bg === 'object') { keys.add(st.bg.slot); if (st.bg.base) keys.add(st.bg.base); }
+      else if (typeof st.bg === 'string') keys.add(st.bg);
+      if (st.cg) keys.add(st.cg);
+      walk(st.then); walk(st.else); walk(st.win); walk(st.lose);
+      if (st.choice) st.choice.forEach(o => walk(o.then));
+    }
+  };
+  walk(script);
+  return [...keys].filter(Boolean);
+}

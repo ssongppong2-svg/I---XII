@@ -1,7 +1,7 @@
 // 전리품 — 부품 · 톱니 조각 · 유물은 바로 들어오고, 카드는 3장 중 1장 (건너뛰기 가능), 보스 유물은 3개 중 1개
 // 받을 것은 RUN.reward 에 적혀 있다 — 이 화면에서 꺼도 이어 할 때 다시 여기로, 두 번 받지 않게
 import { register, go } from '../ui/router.js';
-import { RUN, gainParts, gainShards, addRelic, addCard, heal, dm, mods } from '../game/run.js';
+import { RUN, gainParts, gainShards, addRelic, addCard } from '../game/run.js';
 import { autosave } from '../game/save.js';
 import { finishNode, storyOf, sceneOpts } from '../game/flow.js';
 import { RELICS } from '../data/relics.js';
@@ -9,6 +9,8 @@ import { icon } from '../ui/icons.js';
 import { bigCardHTML, relicTip } from '../ui/menus.js';
 import { bindTips, hideTip } from '../ui/overlay.js';
 import { playScene } from '../scenes/scene.js';
+import { loadAll } from '../ui/assets.js';
+import { storyArtKeys } from '../ui/foeart.js';
 import { SFX } from '../ui/sfx.js';
 
 let root = null, W = null;
@@ -19,8 +21,12 @@ async function mount(holder) {
   if (!W) { finishNode(); return; }
   // 승리 대사를 보다가 껐다 — 대사부터
   if (W.win) {
-    const st = storyOf(RUN.chapter)[W.win.story];
-    if (st && st.win) await playScene(st.win, sceneOpts(W.win.boss));
+    const S = storyOf(RUN.chapter), st = S[W.win.story];
+    if (st && st.win) {
+      await loadAll(storyArtKeys(st.win, S.cast || {}));
+      if (root !== holder) return;
+      await playScene(st.win, sceneOpts(W.win.boss));
+    }
     if (root !== holder) return;
     W.win = null;
     autosave();
@@ -31,12 +37,12 @@ async function mount(holder) {
     gainParts(rw.parts);
     if (rw.shards) gainShards(rw.shards);
     rw.relics.forEach(id => addRelic(id));
-    if (rw.after === 'rest') W.restGot = heal(Math.max(1, 2 + dm().restHeal + mods().restHeal));
     W.granted = true;
     autosave();
     SFX.coin();
   }
-  const restNote = rw.after === 'rest' ? `기습을 물리친 뒤 쉬었다 — ${W.restGot ? `HP +${W.restGot}` : 'HP는 이미 가득 차 있었다'}` : '';
+  // 휴식은 회복을 먼저 한 뒤 습격을 판정한다(대본 09) — 싸운 뒤에 다시 쉬지는 않는다
+  const restNote = rw.after === 'rest' ? '쉬던 자리를 습격한 기계를 물리쳤다' : '';
   const rows = [
     `<div class="rw-row">${icon('parts')}<b>부품 +${rw.parts}</b><small>지금 ${RUN.parts}</small></div>`,
     rw.shards ? `<div class="rw-row shard">${icon('shard')}<b>톱니 조각 +${rw.shards}</b><small>지금 ${RUN.shards}</small></div>` : '',
@@ -93,9 +99,11 @@ function proceed() {
   if (!W || needBoss()) return;
   SFX.click();
   hideTip();
-  const boss = W.boss;
+  const boss = W.boss, back = W.rewards.back;
   RUN.reward = null;
   if (boss) { RUN.pending = null; RUN.cleared = RUN.chapter; autosave(); go('chapterend', { clear: true }); return; }
+  // 칸 안의 전투였다 — 그 칸 화면으로 (들어가 있던 칸은 그대로)
+  if (back && RUN.map.nodes[back]) { autosave(); go('node', { nodeId: back, back: true }); return; }
   finishNode();
 }
 function onKey(e) {

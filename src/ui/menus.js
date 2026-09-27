@@ -11,6 +11,7 @@ import { art, loadAll, FACES } from './assets.js';
 import { FOES, BOSSES } from '../data/foes.js';
 import { NODE_TYPES } from '../data/nodes.js';
 import { EVENTS } from '../data/events.js';
+import { CH1_STORY } from '../data/story/ch1.js';
 
 // ── 설정
 const OPT = [
@@ -19,7 +20,7 @@ const OPT = [
   { k: 'textSpeed', label: '대사 글자 속도', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게'], ['instant', '바로']] },
   { k: 'autoSpeed', label: '자동 넘김 빠르기', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게']] },
   { k: 'shake', label: '화면 흔들림', type: 'toggle', sub: '폭발 · 피격 때 판이 흔들린다' },
-  { k: 'tutorial', label: '튜토리얼 안내', type: 'toggle', sub: '1장 첫 전투의 단계별 안내' },
+  { k: 'tutorial', label: '튜토리얼 안내', type: 'toggle', sub: '1장 이야기 전투(02 · 05)의 단계별 안내' },
 ];
 export function openSettings() {
   const render = () => OPT.map(o => {
@@ -89,8 +90,10 @@ export function openRelics(relics, implants) {
 export function openHelp() {
   openSheet({ title: '규칙과 조작', wide: true, body: `
   <section><h4>톱니 지도</h4><p>챕터 하나가 커다란 톱니 장치예요. 칸(톱니)을 끝내면 장치가 돌고, <b>지금 톱니와 축으로 이어진 톱니</b>가 빛나요(축에 빛이 흘러요) — 그중 하나를 골라 나아가요. 톱니가 전부 보이니 보스까지 길을 미리 짤 수 있어요.</p>
-    <p><b>경계도</b>: 눈 표시가 붙은 감시 톱니에 들어가면 +20, 쉬면 +10. 높을수록 휴식 중 기습이 잦아지고, 50을 넘으면 전투에 적이 한 명 더 나와요. 100이 되면 발각 — 곧바로 강한 전투가 벌어져요.</p>
-    <p><b>재귀(저장)</b>: 지도 오른쪽 위 「저장」으로 지금을 재귀 지점으로 새겨요. 챕터마다 횟수가 정해져 있고(난이도마다 다름), 챕터를 시작할 때 자동으로 한 번 새겨져요. 전투에서 쓰러지면 마지막 재귀 지점으로 돌아가요 — 덱 · 유물 · HP · 지도 모두 그때로.</p></section>
+    <p><b>이야기 칸</b>(금빛 톱니 · 가운데 대본 번호): 반드시 지나는 뼈대 칸이에요. 그 사이의 위아래 두 톱니 중 하나를 골라 전투 · 사건 · 상점 · 휴식 등을 겪어요. 위쪽 가운데의 <b>목표</b>는 이야기가 바꿔요.</p>
+    <p><b>경계도</b>: 0~100 게이지 · <b>0 · 1 · 2단계</b>(34 · 67에서 한 단계씩). 감시 톱니에 들어가면 +20, 쉬면 +10. 대본의 「경계 +1」은 한 단계예요. 단계가 높을수록 휴식 중 습격 확률이 올라가요(15 · 25 · 35%). 50을 넘으면 전투에 적이 한 명 더, 100이면 발각 — 곧바로 강한 전투가 벌어져요.</p>
+    <p><b>가방</b>: <b>회복약</b>은 HP +2 — 지도 · 칸 화면에서는 언제든(눌러서), 전투 중에는 1코스트(<kbd>E</kbd>). <b>정비 부품</b>은 멈춘 기계를 고치는 선택지에 써요. 부품(돈)과는 따로 세요.</p>
+    <p><b>재귀(저장)</b>: 지도 오른쪽 위 「저장」으로 지금을 재귀 지점으로 새겨요. 챕터마다 횟수가 정해져 있어요(난이도마다 다름). 챕터를 시작할 때 · <b>이야기 칸의 전투 직전</b> · <b>보스 앞</b>에서는 저절로 새겨져요(횟수를 쓰지 않아요). 전투에서 쓰러지면 마지막 재귀 지점으로 돌아가요 — 덱 · 유물 · HP · 지도 모두 그때로.</p></section>
   <section><h4>전투 — 한 루프의 흐름</h4><ol>
     <li>루프 시작 — 코스트 4 충전, 손패 3장까지 보충, <b>빨간 기습 줄</b>(보스전은 턴 공격 패턴도) 예고</li>
     <li>행동할 때마다(이동 · 카드 · 뽑기 = 1코스트) — 순번이 된 <b>적</b>이 예고대로 이동 또는 공격하고, 다음 행동을 새로 예고</li>
@@ -125,6 +128,10 @@ function imageSlots() {
     // 사건 — 등장인물 스탠딩(대본의 cast.art) · 사건마다 배경(없으면 bg-event)
     ...[...new Map(Object.values(EVENTS).flatMap(e => Object.values(e.cast || {})).filter(c => c.art).map(c => [c.art, `사건 인물 · ${c.name}`])).entries()],
     ...Object.entries(EVENTS).map(([id, e]) => [`bg-ev-${id}`, `배경 · 사건 「${e.title}」`]),
+    // 1장 대본 — 한 장 그림 · 이야기 칸마다 전용 배경(없으면 대본이 말한 기존 배경) · 인물
+    ['story-nailgun', '한 장 그림 · 장력 가속 못총 (01)'],
+    ...Object.keys(CH1_STORY.bgs).map(id => [`bg-st-${id}`, `배경 · 이야기 ${id.slice(1)} ${(CH1_STORY[id] || (id === 's11' ? CH1_STORY.boss1 : id === 's12' ? { title: '문밖의 한 시' } : {})).title || ''}`]),
+    ...Object.values(CH1_STORY.cast).filter(c => c.art).map(c => [c.art, `인물 · ${c.name}`]),
   ];
 }
 

@@ -8,6 +8,7 @@ import { playScene } from '../scenes/scene.js';
 import { PROLOGUE } from '../data/story/prologue.js';
 import { startChapter } from '../game/flow.js';
 import { resetClock } from '../game/save.js';
+import { loadAll } from '../ui/assets.js';
 
 let root = null, sel = 1;
 
@@ -82,8 +83,9 @@ register('prologue', {
   async mount(holder) {
     holder.style.background = 'radial-gradient(70% 60% at 50% 45%,#120E16,#050407)';
     await new Promise(r => setTimeout(r, 300));
-    await playScene(PROLOGUE, { onName: n => { RUN.name = n; }, bossBar: '감시망 방송 · 대형 감시기계', bossArt: 'boss-full' });
-    if (!RUN.name) RUN.name = '이름 없는 신';
+    await loadAll(['story-nailgun', 'bg-battle']);
+    await playScene(PROLOGUE, { onName: n => { RUN.name = n; } });
+    if (!RUN.name) RUN.name = '크로노스';   // 대본의 표기
     startChapter(1);
   },
 });

@@ -2,7 +2,7 @@
 // Start: 저장이 있으면 Continue · New Game 중에서, 없으면 바로 난이도로
 import { register, go } from '../ui/router.js';
 import { bgImgHTML } from '../ui/assets.js';
-import { hasSave, peekSave, loadAuto, clearRun } from '../game/save.js';
+import { hasSave, peekSave, loadAuto, clearRun, oldSave } from '../game/save.js';
 import { confirmBox } from '../ui/overlay.js';
 import { openSettings, openHelp, toggleSound } from '../ui/menus.js';
 import { SFX, initAudio } from '../ui/sfx.js';
@@ -66,8 +66,14 @@ async function doAction(a) {
   initAudio();
   SFX.click();
   if (a === 'start') {
-    if (hasSave()) showPage('start');
-    else go('difficulty');
+    if (hasSave()) { showPage('start'); return; }
+    // 예전 판의 여정 — 1장이 최종 대본으로 바뀌어 이어 할 수 없다
+    if (oldSave()) {
+      const ok = await confirmBox({ title: '예전 판의 여정이 있어요', text: '1장이 최종 대본(이야기 칸 · 가방 · 경계 단계)으로 바뀌어서 예전 여정은 이어 할 수 없어요. 새 게임을 시작하면 예전 여정은 지워져요.', buttons: [{ label: '새 게임', value: true, main: true }, { label: '돌아가기', value: false }] });
+      if (!ok) return;
+      clearRun();
+    }
+    go('difficulty');
     return;
   }
   if (a === 'back') { showPage('main'); return; }

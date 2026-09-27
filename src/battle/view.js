@@ -1,7 +1,7 @@
 // 전투 화면 — DOM 만들기 · 그리기 · 연출
 import {
   B, H, K, RC, COLS, DIRS, DIR_LABEL, inArea, liveFoes, foeAt, foeById, T, dueIn, validDirs, aimFor, shapeCells,
-  strikeTargets, reachText, leapOf, inFront, ambushOn, cardDamage, nextOl, wait, manh, helpers,
+  strikeTargets, reachText, leapOf, inFront, ambushOn, cardDamage, nextOl, wait, manh, helpers, bossPhaseName,
 } from './core.js';
 import { cardDef, SHAPES, KINDS, effectLine } from '../data/cards.js';
 import { FOE_BARKS, ELITE_TRAITS } from '../data/foes.js';
@@ -56,6 +56,7 @@ export function mountView(holder, { theme = '', chapterNum = 'I', title = '', su
       <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>이동 (카드를 고른 뒤엔 조준)</span>
       <span><kbd>1</kbd>–<kbd>6</kbd></span><span>카드 고르기 · 한 번 더 누르면 사용</span>
       <span><kbd>Q</kbd></span><span>카드 1장 뽑기</span>
+      <span><kbd>E</kbd></span><span>회복약 (1코스트 · HP +2)</span>
       <span><kbd>클릭</kbd></span><span>옆 칸으로 이동 · 카드 사용</span>
     </div></section>
   </aside>
@@ -82,7 +83,7 @@ export function mountView(holder, { theme = '', chapterNum = 'I', title = '', su
     </main>
     <div class="timeline"><div class="pips" id="pips" aria-label="이번 루프 코스트"></div><div class="coach" id="coach"></div></div>
   </div>
-  <section class="hand-row"><div class="hand" id="hand"></div><button class="draw-btn" id="drawBtn" type="button" tabindex="-1"></button></section>`;
+  <section class="hand-row"><div class="hand" id="hand"></div><button class="draw-btn" id="drawBtn" type="button" tabindex="-1"></button><button class="draw-btn potion-btn" id="potionBtn" type="button" tabindex="-1"></button></section>`;
   holder.appendChild(root);
   Object.keys(CELLS).forEach(k => delete CELLS[k]); BCELLS.length = 0; FOE_EL.clear();
   handSig = beamSig = markSig = rosterSig = logSig = relicSig = ''; logSeen = -1;
@@ -149,10 +150,11 @@ function renderHud() {
   const ol = q('#bossOl');
   if (B.mode === 'boss') {
     q('#bossName').textContent = B.boss.def.name;
-    q('#bossSub').textContent = total ? `${B.boss.def.sub} · 졸개 ${alive} / ${total}` : B.boss.def.sub;
+    const ph = bossPhaseName();
+    q('#bossSub').textContent = [ph, B.boss.def.sub, total ? `졸개 ${alive} / ${total}` : ''].filter(Boolean).join(' · ');
     setBar(q('#bossHp'), B.boss.hp / B.boss.max, `<span>HP</span><span>${B.boss.hp} / ${B.boss.max}</span>`);
     ol.classList.remove('kills');
-    setBar(ol, B.boss.ol / 100, `<span>과부하</span><span>${B.boss.ol} / 100</span>`);
+    setBar(ol, B.boss.ol / 100, `<span>${B.boss.def.olName || '과부하'}</span><span>${B.boss.ol} / 100</span>`);
   } else {
     const hp = B.foes.reduce((s, f) => s + f.hp, 0), max = B.foes.reduce((s, f) => s + f.max, 0) || 1;
     q('#bossName').textContent = B.enc.foeTitle || '적';
@@ -340,6 +342,16 @@ function renderFoes() {
     }
     el.querySelector('.foe-hp > i > i').style.width = `${f.hp / f.max * 100}%`;
     el.querySelector('.foe-hp b').textContent = f.hp;
+    // 송신 준비 — 남은 행동 수. 0이면 이미 송신함
+    let sg = el.querySelector('.foe-sig');
+    if (f.sig !== undefined) {
+      if (!sg) { sg = document.createElement('span'); sg.className = 'foe-sig'; el.appendChild(sg); }
+      sg.classList.toggle('sent', f.sig <= 0);
+      sg.classList.toggle('near', f.sig === 1);
+      sg.hidden = f.hp <= 0 || !B.started || B.over;
+      sg.innerHTML = f.sig > 0 ? `${icon('bolt')}송신 ${f.sig}` : `${icon('eye')}송신함`;
+      sg.title = f.sig > 0 ? `제 행동 ${f.sig}번 뒤 위치를 송신 — 그 전에 부수면 경계가 오르지 않는다` : '위치를 송신했다 (경계 +1단계)';
+    }
   }
 }
 function renderFoeMarks() {
@@ -355,7 +367,15 @@ function renderFoeMarks() {
       parts.push(DIRS[it.dir][0]
         ? `<i class="laser v n${n}" style="--x:${f.c};--y:${r0};--n:${cells.length}"></i>`
         : `<i class="laser h n${n}" style="--x:${c0};--y:${f.r};--n:${cells.length}"></i>`);
-    } else if (it.kind === 'atk' && ai === 'bomber') parts.push(`<i class="fbomb n${n}" style="--r:${it.center.r};--c:${it.center.c}"></i>`);
+    } else if (it.kind === 'atk' && ai === 'charge' && it.path.length) {
+      // 돌진 — 길 전체에 굵은 화살 줄 (끝에 화살촉)
+      const last = it.path[it.path.length - 1];
+      const r0 = Math.min(f.r, last[0]), c0 = Math.min(f.c, last[1]);
+      const len = it.path.length + 1;
+      parts.push(DIRS[it.dir][0]
+        ? `<i class="fcharge v ${it.dir} n${n}" style="--x:${f.c};--y:${r0};--n:${len}"></i>`
+        : `<i class="fcharge h ${it.dir} n${n}" style="--x:${c0};--y:${f.r};--n:${len}"></i>`);
+    } else if (it.kind === 'atk' && (ai === 'bomber' || ai === 'mortar')) parts.push(`<i class="fbomb${it.ring ? ' ring' : ''}${ai === 'mortar' ? ' shell' : ''} n${n}" style="--r:${it.center.r};--c:${it.center.c}"></i>`);
   }
   const html = parts.join('');
   if (html !== markSig) { markSig = html; q('#fmarks').innerHTML = html; }
@@ -515,6 +535,11 @@ function renderHand() {
   const canDraw = B.hand.length < B.handMax && (B.deck.length + B.discard.length) > 0;
   db.classList.toggle('dis', B.freeze <= 0 && !canDraw);
   db.innerHTML = `<kbd>Q</kbd><span class="c-cost">1</span>${icon('deck')}<b>뽑기</b><small>덱 ${B.deck.length}<br>버림 ${B.discard.length}</small>`;
+  // 회복약 — 가방에서 1코스트
+  const pb = q('#potionBtn'), pn = B.items.potion;
+  pb.classList.toggle('dis', B.freeze <= 0 && (!pn || B.hp >= B.maxHp));
+  pb.innerHTML = `<kbd>E</kbd><span class="c-cost">1</span>${icon('drop')}<b>회복약</b><small>${pn}개<br>HP +2</small>`;
+  pb.title = !pn ? '가방에 회복약이 없어요' : B.hp >= B.maxHp ? 'HP가 가득 차 있어요' : '1코스트 — HP +2';
 }
 function fitHand() {
   const hand = q('#hand');
@@ -586,14 +611,15 @@ function detailHTML(i) {
 }
 function foeDetailHTML(f) {
   const D = T(f), it = f.intent, n = dueIn(f);
-  const next = it && it.skipped ? '<b class="g">행동을 건너뜀</b>' : !it || it.kind === 'wait' ? '대기' : it.kind === 'atk' ? `<b class="fo">${D.atk}</b> · 피해 ${D.dmg}` : `${DIR_LABEL[it.dir]}쪽으로 ${it.dist > 1 ? `${it.dist}칸 ` : ''}이동`;
+  const next = it && it.skipped ? '<b class="g">행동을 건너뜀</b>' : it && it.close ? '<b class="g">너무 가까워 쏘지 못함</b>' : !it || it.kind === 'wait' ? '대기' : it.kind === 'atk' ? `<b class="fo">${D.atk}${it.ring ? ' (둘레)' : D.ai === 'mortar' ? ' (십자)' : ''}</b> · 피해 ${D.dmg}` : `${DIR_LABEL[it.dir]}쪽으로 ${it.dist > 1 ? `${it.dist}칸 ` : ''}이동`;
+  const sig = f.sig === undefined ? '' : f.sig > 0 ? `<span class="st bad">송신까지 제 행동 ${f.sig}번 — 그 전에 부수면 경계가 오르지 않음</span>` : '<span class="st bad">송신함 — 경계 +1단계</span>';
   const guard = D.guard ? (inFront(f, B.p) ? '<span class="st bad">지금 정면 · 피해 ½</span>' : '<span class="st good">옆·뒤 · 피해 그대로</span>') : '';
   const traits = f.traits.map(t => `<span class="st bad">${ELITE_TRAITS[t].name} — ${ELITE_TRAITS[t].desc}</span>`).join('');
   return `<div class="d-head"><span class="d-kind k-foe">${icon('foe')}${D.elite ? '정예' : D.machine ? '기계' : '인류'}</span></div>
     <div class="d-title"><span class="d-sd">${foeSdHTML(f.type)}</span><b class="d-name">${D.name}</b></div>
     <p class="d-text">${D.desc}</p>
     <dl class="d-facts"><dt>체력</dt><dd><b>${f.hp}</b> / ${f.max}</dd><dt>순번</dt><dd>${f.ph ? '1·3' : '2·4'}번째 행동 뒤에 움직임</dd><dt>다음</dt><dd><b>${n}</b>번째 행동 뒤 ${next}</dd></dl>
-    ${guard || traits ? `<div class="d-foot">${guard}${traits}</div>` : ''}`;
+    ${guard || traits || sig ? `<div class="d-foot">${guard}${traits}${sig}</div>` : ''}`;
 }
 
 let rosterPrevLive = null;
@@ -602,7 +628,7 @@ function renderRoster() {
   box.hidden = !B.foes.length;
   if (!B.foes.length) return;
   const live = B.started && !B.over;
-  const sig = [B.mode, live, B.inspect, B.totalP, ...B.foes.map(f => `${f.uid}:${f.hp}:${f.intent ? f.intent.kind + (f.intent.dir || '') + (f.intent.skipped ? 's' : '') : '-'}`)].join('|');
+  const sig = [B.mode, live, B.inspect, B.totalP, ...B.foes.map(f => `${f.uid}:${f.hp}:${f.sig}:${f.intent ? f.intent.kind + (f.intent.dir || '') + (f.intent.skipped ? 's' : '') : '-'}`)].join('|');
   if (sig === rosterSig) return;
   rosterSig = sig;
   const alive = liveFoes().length;
@@ -615,7 +641,7 @@ function renderRoster() {
       : `<span class="ro-next ${it.kind} n${n}" title="${n}번째 행동 뒤 ${it.kind === 'atk' ? D.atk : '이동'}"><b>${n}</b>${it.kind === 'atk' ? D.atkShort : '이동'}</span>`;
     return `<div class="ro-row${dead ? ' dead' : ''}${B.inspect === f.uid ? ' on' : ''}" data-uid="${f.uid}">
       <span class="ro-art">${foeSdHTML(f.type)}</span>
-      <span class="ro-main"><span class="ro-name">${D.name}${D.elite ? '<span class="elite">정예</span>' : ''}<small>${f.ph ? '1·3' : '2·4'}번째 뒤</small></span><span class="ro-hp"><i><i style="width:${f.hp / f.max * 100}%"></i></i>${f.hp}</span></span>
+      <span class="ro-main"><span class="ro-name">${D.name}${D.elite ? '<span class="elite">정예</span>' : ''}${f.sig !== undefined && !dead ? `<span class="sig${f.sig <= 0 ? ' sent' : ''}">${f.sig > 0 ? `송신 ${f.sig}` : '송신함'}</span>` : ''}<small>${f.ph ? '1·3' : '2·4'}번째 뒤</small></span><span class="ro-hp"><i><i style="width:${f.hp / f.max * 100}%"></i></i>${f.hp}</span></span>
       ${act}</div>`;
   }).join('');
 }
@@ -771,6 +797,13 @@ export const FX = {
       cells.forEach(([r, c], i) => setTimeout(() => this.at(r, c, 'fx-boom rose', 420), 60 + i * 30));
       this.shake('s');
       await wait(300);
+    } else if (ai === 'charge') {
+      // 돌진 — 길을 따라 먼지가 번지고, 부딪치면 크게 흔들림
+      SFX.heavy();
+      const path = it.path.slice(0, it.hit ? it.path.findIndex(([r, c]) => r === B.p.r && c === B.p.c) + 1 : it.path.length);
+      path.forEach(([r, c], i) => setTimeout(() => this.at(r, c, 'fx-boom amber', 480), i * 45));
+      this.shake(it.hit ? 'm' : 's');
+      await wait(150 + path.length * 45);
     } else if (ai === 'guard' || ai === 'chaser') {
       await wait(90);
       ai === 'chaser' ? SFX.bite() : SFX.heavy();

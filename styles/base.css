@@ -97,6 +97,22 @@ kbd{font-family:var(--f-ui)}
 .alert-g .bar.hot>i{background:linear-gradient(90deg,#A0202E,#FF3B4E);animation:blink 1s steps(2) infinite}
 .alert-g b{font:800 16px/1 var(--f-num);color:#FFC2B8;min-width:34px;font-variant-numeric:tabular-nums}
 .alert-g{position:relative}
+/* 경계 단계 — 게이지 위 34 · 67 눈금과 「n단계」 */
+.alert-g .bar{position:relative}
+.alert-g .bar>em{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:rgba(255,236,220,.55);box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+.alert-g .stg{padding:3px 7px;border-radius:4px;font:800 12px/1 var(--f-ui);letter-spacing:.02em;white-space:nowrap;background:#2A2320;color:#E9D7C8;border:1px solid #5A4A3C}
+.alert-g.st1 .stg{background:#4A2A12;color:#FFD2A0;border-color:#B8743A}
+.alert-g.st2 .stg{background:#4A1220;color:#FFC2C8;border-color:#FF5C6E}
+/* 가방 — 회복약(누르면 씀) · 정비 부품 */
+.bag{display:inline-flex;align-items:center;gap:8px}
+.bag-it{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 10px 0 8px;border-radius:6px;border:1px solid var(--line-2);background:rgba(20,17,24,.8);font:800 16px/1 var(--f-num);color:var(--bone);white-space:nowrap}
+.bag-it svg{width:18px;height:18px}
+.bag-it small{font:700 12px/1 var(--f-ui);color:var(--mute)}
+.bag-it.potion svg{fill:#FF7A8A}
+.bag-it.kit svg{fill:#D8B878}
+button.bag-it{cursor:pointer}
+button.bag-it:not(:disabled):hover{border-color:#FF7A8A;background:rgba(58,20,30,.85)}
+button.bag-it:disabled{opacity:.55;cursor:default}
 .alert-g.bump .bar{animation:alertBump .5s ease-out 2}
 .alert-g.bump>svg{animation:alertBump .5s ease-out 2}
 .alert-pop{position:absolute;left:31px;top:calc(100% + 12px);display:flex;align-items:baseline;gap:7px;white-space:nowrap;padding:6px 11px;border-radius:5px;border:1px solid #7A2A22;background:rgba(40,12,12,.94);font:800 18px/1 var(--f-num);font-style:normal;color:#FF9C8C;box-shadow:0 6px 18px rgba(0,0,0,.5);pointer-events:none;animation:alertPop 3.2s ease-out forwards}

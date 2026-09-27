@@ -33,17 +33,20 @@ function bolts(n) {
   return s;
 }
 
-// 나무판 이름표 — 글자 폭에 맞춰 판 길이를 정한다
+// 나무판 이름표 — 글자 폭에 맞춰 판 길이를 정한다. n.tag = 'up'이면 톱니 위에 (옆 이름표와 겹치지 않게 — map/gen.js)
+// no = 이야기 칸 번호(대본 02 · 03 …) — 이름 앞에 작게
 const textW = s => [...s].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? 15.5 : ch === ' ' ? 5 : 9), 0);
-function tag(n, label) {
-  const w = Math.round(textW(label) + 40), h = 32, y = n.r + 24;
+function tag(n, label, no = '') {
+  const off = n.r + 24 + (n.tagDy || 0);   // tagDy = 옆 이름표와 겹칠 때 바깥으로 비켜 둔 만큼 (map/gen.js)
+  const w = Math.round(textW(label) + (no ? textW(no) + 8 : 0) + 40), h = 32, y = n.tag === 'up' ? -off : off;
   const plank = art('ui-plank-thin');
   const board = plank ? `<image href="${plank}" x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" preserveAspectRatio="none"/>`
     : `<rect class="tag-bg" x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="4"/>`;
-  return `<g class="tag" transform="translate(0 ${y})">${board}<text class="lbl" y="1">${label}</text></g>`;
+  return `<g class="tag${n.tag === 'up' ? ' up' : ''}" transform="translate(0 ${y})">${board}<text class="lbl" y="1">${no ? `<tspan class="no">${no}</tspan> ` : ''}${label}</text></g>`;
 }
 
-export function buildMapSVG(map, { hour = 'I' } = {}) {
+// opt.label(n) · opt.no(n) — 칸 이름표를 챕터 · 이야기에 맞게 (없으면 칸 종류 이름)
+export function buildMapSVG(map, { hour = 'I', label = null, no = null } = {}) {
   const nodes = Object.values(map.nodes);
   let links = '', nds = '';
   for (const [A, B] of map.edges) {
@@ -56,20 +59,22 @@ export function buildMapSVG(map, { hour = 'I' } = {}) {
   for (const n of nodes) {
     const T = NODE_TYPES[n.type] || NODE_TYPES.battle;
     const big = n.type === 'boss';
+    const num = no ? no(n) : '';
     nds += `<g class="gn t-${n.type}${n.watched ? ' watched' : ''}" data-id="${n.id}" transform="translate(${n.x} ${n.y})" style="--tone:${T.tone}">
       <circle class="halo" r="${n.r + 16}"/>
       <circle class="shade" r="${n.r + 3}" cy="6"/>
       <g class="rot"><path class="body" d="${gearD(n.r, teethOf(n.r), n.r * 0.22)}"/><circle class="groove" r="${f1(n.r * 0.8)}"/>${bolts(n)}</g>
       <circle class="plate" r="${f1(n.r * (big ? 0.62 : 0.5))}"/>
       ${big ? bossDial(n, hour) : ''}
-      <use class="ico" href="#i-${T.icon}" x="${big ? -22 : -13}" y="${big ? -4 : -13}" width="${big ? 44 : 26}" height="${big ? 44 : 26}"/>
+      ${n.type === 'story' && num ? `<text class="sno" y="1">${num}</text>` : `<use class="ico" href="#i-${T.icon}" x="${big ? -22 : -13}" y="${big ? -4 : -13}" width="${big ? 44 : 26}" height="${big ? 44 : 26}"/>`}
       ${n.watched ? `<g class="watch" transform="translate(${f1(n.r * 0.74)} ${f1(-n.r * 0.74)})"><circle r="11"/><use href="#i-eye" x="-8" y="-8" width="16" height="16"/></g>` : ''}
-      ${tag(n, T.label)}
+      ${tag(n, label ? label(n) : T.label, num)}
     </g>`;
   }
   return `<svg class="mech" viewBox="0 0 1920 1080" aria-label="톱니 지도">
     <defs>
       <linearGradient id="gBrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E7C27A"/><stop offset=".55" stop-color="#B58A45"/><stop offset="1" stop-color="#7A5A28"/></linearGradient>
+      <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE6A6"/><stop offset=".5" stop-color="#D9A94E"/><stop offset="1" stop-color="#8E6522"/></linearGradient>
       <linearGradient id="gIron" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9C8F86"/><stop offset=".6" stop-color="#5C5250"/><stop offset="1" stop-color="#342E2E"/></linearGradient>
       <linearGradient id="gBlood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D0705F"/><stop offset=".55" stop-color="#8A2A24"/><stop offset="1" stop-color="#4A1214"/></linearGradient>
       <linearGradient id="gDark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6A5E52"/><stop offset="1" stop-color="#352E28"/></linearGradient>

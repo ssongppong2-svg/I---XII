@@ -17,9 +17,29 @@
 | `bg-alley.webp` | 골목 칸 (숨기 · 좁은 골목 · 뒷골목 거래 · 지름길 모두) | 있음 |
 | `bg-event.webp` | 사건(?) 칸 | 있음 |
 | `bg-tent` · `bg-blackmarket` · `bg-forge` · `bg-implant` · `bg-abyss` · `bg-trial` · `bg-shrine` | 그 칸 | 없음 — 넣으면 자동으로 쓰임 |
-| `bg-ev-<사건 id>` | 그 사건 하나만 (대사 장면 · 결과 화면). 예: `bg-ev-rusted_doll` | 없음 — 없으면 `bg-event` |
+| `bg-ev-<사건 id>` | 그 사건 하나만 (대사 장면 · 결과 화면). 예: `bg-ev-gear_graveyard` | 없음 — 없으면 `bg-event` |
+| `bg-st-<이야기 칸>` | 1장 대본의 이야기 칸 하나 (장면 · 칸 화면). `bg-st-s02` ~ `bg-st-s10`, 보스 앞 `bg-st-s11`, 끝 장면 `bg-st-s12` | 없음 — 없으면 대본이 말한 기존 배경을 어둡게 (아래 표) |
 
-사건 id는 `src/data/events.js`의 이름(`broken_eye` · `supply_crate` · `stopped_clock` · `hidden_believer` · `searchlight` · `rusted_doll` · `blood_altar` · `nail_casing` · `music_box` · `patrol_board` · `crying_child` · `gear_graveyard` · `newspaper` · `praying_machine` · `mirror_room` · `clock_stairs` · `sealed_door` · `wandering_mechanic` · `black_rain` · `hound_pup` · `tower_well` · `human_flyer` · `recursion_trace` · `lost_gear`). 게임 안 **규칙과 조작** → 「이미지 슬롯」에도 전부 나옵니다.
+사건 id는 `src/data/events.js`의 이름(`broken_eye` · `supply_crate` · `stopped_clock` · `hidden_believer` · `searchlight` · `blood_altar` · `nail_casing` · `music_box` · `patrol_board` · `crying_child` · `gear_graveyard` · `newspaper` · `praying_machine` · `mirror_room` · `clock_stairs` · `sealed_door` · `wandering_mechanic` · `black_rain` · `young_charger` · `tower_well` · `human_flyer` · `recursion_trace` · `lost_gear`). 게임 안 **규칙과 조작** → 「이미지 슬롯」에도 전부 나옵니다.
+
+### 1장 이야기 칸의 배경 (전용 그림이 없을 때)
+
+| 칸 | 대본의 지시 | 지금 쓰는 배경 |
+|---|---|---|
+| 01 · 02 폐기 보관소 | 일반 전투 배경을 어둡게 | `bg-battle` (어둡게) |
+| 03 골목의 속삭임 · 07 눈이 돌아가는 골목 | 골목 | `bg-alley` |
+| 04 녹슨 자동인형 | 사건용 바닥 | `bg-event` |
+| 05 영업이 끝난 시장 · 06 천막 아래의 거래 | 시장 · 골목 끝 천막 | `bg-shop` (05는 차갑게, 06은 따뜻하게) |
+| 08 지워진 첫 번째 자리 | 실내 배경을 어둡게 | `bg-shop` (어둡게) |
+| 09 꺼지지 않는 화로 | 모닥불 쉼터 | `bg-rest-1` |
+| 10 신호교 · 11 외곽 출입문 | 일반 전투 배경 · 붉은 보스전 배경 | `bg-battle` (10 차갑게 · 11 붉게) |
+| 12 문밖의 한 시 | 쉼터 배경을 어둡게 | `bg-rest-2` (어둡게) |
+
+## 한 장 그림 (대사 장면)
+
+| 파일 | 쓰이는 곳 | 상태 |
+|---|---|---|
+| `story-nailgun.webp` | 01 — 「장력 가속 못총. 인간들이 붙인 이름이었다.」 | 있음 (받은 그림 · 1536×1024, 어두운 둥근 바탕 위에) |
 
 ## 나무판
 
@@ -30,13 +50,24 @@
 
 받은 나무판 그림(체크무늬가 그림에 박혀 있던 것)의 바탕을 걷어내 `ui-plank`을 만들고, 위 널빤지와 아래 널빤지를 이어 붙여 가는 판 `ui-plank-thin`을 만들었습니다 (늘여서 찌그러지지 않게).
 
-## 1 · 2장 기계 적 — 그림을 기다리는 중
+## 1장 기계 적 (대본)
 
-지금은 임시 그림(SVG)으로 나옵니다. 받으면 아래 이름으로 넣기만 하면 됩니다. 이름 · 수치는 `src/data/foes.js`.
+이름 · 수치는 `src/data/foes.js`.
 
-| 적 | 격자 SD | 스탠딩 (대사 · 적 목록) | 하는 일 (임시) |
+| 적 | 격자 SD | 스탠딩 (대사 · 적 목록) | 하는 일 | 상태 |
+|---|---|---|---|---|
+| 감시 시계 | `machine-watcher-sd` | `machine-watcher` | 같은 줄 광선 · (07) 위치 송신 | 둘 다 있음 (받은 그림) |
+| 돌진 기계 | `machine-charger-sd` | `machine-charger` | 같은 줄로 부딪칠 때까지 돌진 | 둘 다 있음 (받은 그림) |
+| 곡사포 기계 | `machine-mortar-sd` | `machine-mortar` | 십자 5칸 · 둘레 8칸 낙하 | SD만 있음 — 스탠딩 자리에도 SD |
+
+받은 SD는 둘레를 걷어내고(반투명 가장자리는 선명하게, 작은 얼룩은 지움) 캐릭터 둘레로 잘라 높이 480px로 맞췄고, 스탠딩은 검은 바탕을 걷어내 세로 2:3(800×1200) 캔버스에 아래 정렬했습니다.
+
+## 2장용으로 보관한 기계 적 — 그림을 기다리는 중
+
+1장 대본에서 빠져 2장에서 쓸 적입니다. 지금은 임시 그림(SVG)으로 나옵니다.
+
+| 적 | 격자 SD | 스탠딩 | 하는 일 (임시) |
 |---|---|---|---|
-| 감시 눈 | `machine-watcher-sd` | `machine-watcher` | 같은 줄에 서면 관통 광선 |
 | 태엽 사냥개 | `machine-hound-sd` | `machine-hound` | 2칸씩 달려와 물기 |
 | 방벽 기계 | `machine-warden-sd` | `machine-warden` | 정면 피해 절반 · 앞 3칸 내려찍기 |
 | 폭뢰 딱정벌레 | `machine-beetle-sd` | `machine-beetle` | 폭탄 투척 · 쓰러지면 자폭 |
@@ -53,7 +84,7 @@
 |---|---|---|---|
 | `hero-sd.webp` | 주인공 | 정면 | 있음 — 새 픽셀 그림 |
 | `enemy-rifle-sd.webp` | 시계 사수 (3장부터) | 오른쪽 | 있음 — 새 픽셀 그림 |
-| `enemy-shield-sd.webp` | 방패 기사 (3장부터) | 왼쪽 | 있음 — 예전 그림체 (새 픽셀 그림을 받으면 교체) |
+| `enemy-shield-sd.webp` | 방패 기사 (3장부터) | 왼쪽 | 있음 — 새 픽셀 그림 (방패병 SD 도트) |
 | `enemy-bomb-sd.webp` | 폭탄병 (3장부터) | 왼쪽 | 있음 — 새 픽셀 그림 |
 
 새 픽셀 SD는 둘레의 옅은 반투명 안개를 걷어내고, 캐릭터 둘레로 잘라 높이 480px로 맞췄습니다.
@@ -98,7 +129,7 @@
 | `shopkeeper.webp` | 상점 주인 | 상점 칸 ("뭐 필요한 거 있어?") | 있음 |
 | `shopkeeper-hmph.webp` | 상점 주인 "흥." 표정 | (예비) | 없음 |
 | `blackmarket.webp` | 암시장 상인 | 암시장 칸 | 있음 |
-| `believer.webp` | 미지의 신도 | 천막(사이비) 칸 · 대사 장면에서 「신도들의 속삭임」이 말할 때 뒤편에 흐릿하게 | 있음 |
+| `believer.webp` | 이름 없는 신도 (후드) | 천막 칸 · 1장 대본의 신도 · 「신도들의 속삭임」과 03 첫머리(어둠 속)에는 가운데에 흐릿하게 | 있음 |
 
 ## 사건 인물 (대사 장면 오른쪽)
 
@@ -106,20 +137,20 @@
 
 | 파일 | 인물 | 나오는 사건 |
 |---|---|---|
-| `npc-doll.webp` | 녹슨 자동인형 (1시 공방 시험작 3호) | 녹슨 자동인형 · 태엽 묘지 |
+| `npc-doll.webp` | 운반용 자동인형 (1장 대본 04) | 이야기 04 · 10 · 12 · 태엽 묘지 |
 | `npc-mechanic.webp` | 떠돌이 수리공 (기계를 몰래 고치는 인간) | 떠돌이 수리공 |
 | `npc-child.webp` | 다리 밑의 아이 | 우는 아이 |
 | `npc-mother.webp` | 아이의 엄마 | 우는 아이 |
 | `npc-prayer.webp` | 기도하는 기계 | 기도하는 기계 |
 
-감시 눈 · 태엽 강아지처럼 적 기계가 말하는 장면은 그 적의 그림(`machine-…`)을 씁니다. 순찰 기록판 · 거울 · 고철 더미처럼 사람이 아닌 것은 상징 그림 그대로 둡니다.
+감시 시계 · 새끼 돌진 기계처럼 적 기계가 말하는 장면은 그 적의 그림(`machine-…`)을 씁니다. 순찰 기록판 · 거울 · 고철 더미처럼 사람이 아닌 것은 상징 그림 그대로 둡니다.
 
 ## 1장 보스 — 대형 감시기계
 
 | 파일 | 쓰이는 곳 | 규격 |
 |---|---|---|
 | `boss.webp` | 전투 판 맨 윗줄(보스 줄) | 배경 투명 · 가로 약 5:1 — 감시 눈이 든 윗부분을 잘라 만든 띠 (1040×199). 6×6 판의 보스 줄은 약 6.3:1(552×87)이라 위아래를 조금 잘라 보여 줌 |
-| `boss-full.webp` | 대사 장면의 감시망 방송 화면 | 배경 투명 · 전신 (1097×1200) |
+| `boss-full.webp` | 대사 장면의 출입 통제 방송 화면 | 배경 투명 · 전신 (1097×1200) |
 
 보스 줄의 탐조등은 띠 그림 속 감시 눈 위치(가로 40%)에서 나옵니다. 그림을 바꾸면 `styles/battle.css`의 `.boss-row.has-art .searchlight` 위치도 맞춰 주세요.
 2장부터의 보스는 `src/data/foes.js`의 `BOSSES`에 `art`(띠) · `artFull`(전신) 이름을 적으면 같은 방식으로 불러옵니다.

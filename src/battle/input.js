@@ -99,6 +99,7 @@ export function battleKey(e) {
   }
   if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); useSelected(); return true; }
   if (e.code === 'KeyQ') { act({ type: 'draw' }); return true; }
+  if (e.code === 'KeyE') { act({ type: 'potion' }); return true; }
   if (e.key === 'Escape' && (B.sel !== null || B.inspect)) { B.sel = null; B.inspect = null; render(); return true; }
   return false;
 }
@@ -130,6 +131,9 @@ export function bindInput() {
   const db = root.querySelector('#drawBtn');
   db.addEventListener('mousedown', e => e.preventDefault());
   db.addEventListener('click', () => act({ type: 'draw' }));
+  const pb = root.querySelector('#potionBtn');
+  pb.addEventListener('mousedown', e => e.preventDefault());
+  pb.addEventListener('click', () => act({ type: 'potion' }));
   root.querySelector('#detail').addEventListener('click', e => { if (e.target.closest('#btnUse')) useSelected(); });
   // 적 목록: 올리면 판에서 짚고, 누르면 고정
   const rl = root.querySelector('#roList');

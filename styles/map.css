@@ -130,3 +130,18 @@
 .map-banner.alarm>div{filter:drop-shadow(0 0 30px rgba(255,75,55,.5)) drop-shadow(0 26px 40px rgba(0,0,0,.7))}
 .map-banner.alarm b{color:#FF6A55;font-size:64px}
 @keyframes bannerIn{0%{opacity:0;transform:scale(1.08)}12%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+/* 이야기 칸 (대본의 뼈대) — 금빛 톱니 · 가운데에 대본 번호 · 이름표 앞 번호 */
+.gn.t-story .body{fill:url(#gGold)}
+.gn.t-story .plate{fill:#1C140A;stroke:#F2D38F;stroke-width:2.6}
+.gn .sno{fill:#F6DDA0;font:800 20px var(--f-num);text-anchor:middle;dominant-baseline:central;letter-spacing:.02em;pointer-events:none}
+.gn.done .sno{fill:#8A7E6E}
+.gn.done.cur .sno{fill:#F2D38F}
+.gn .lbl .no{fill:#F2C46A;font-size:13px;font-weight:800}
+.gn.t-story .lbl{font-size:15.5px}
+/* 목표 — 이야기가 정한 한 줄 (지도 위쪽 가운데) */
+.map-goal{position:absolute;left:50%;top:116px;translate:-50% 0;z-index:10;display:flex;align-items:center;gap:10px;max-width:980px;padding:9px 22px 9px 16px;border:1px solid var(--line);border-radius:30px;background:rgba(14,12,18,.84);box-shadow:0 8px 20px rgba(0,0,0,.4);font:700 16px/1.3 var(--f-ui);color:var(--bone);white-space:nowrap}
+.map-goal svg{width:18px;height:18px;fill:var(--brass-hi);flex:none}
+.map-goal small{font:700 12px/1 var(--f-ui);letter-spacing:.14em;color:var(--brass)}
+.map-goal:empty{display:none}
+.map-info .mi-no{font:800 13px/1 var(--f-num);color:var(--brass);padding:4px 7px;border:1px solid var(--brass-lo);border-radius:3px}
+.map-info .mi-kind{margin-top:8px;font-size:13.5px;color:var(--brass-hi)}

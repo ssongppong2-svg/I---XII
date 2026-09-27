@@ -1,8 +1,8 @@
 // 톱니 지도 화면 — 칸을 끝내면 장치가 돌고, 맞물린 톱니 중 하나를 고른다
 import { register, go } from '../ui/router.js';
-import { RUN, chapterDef, maxHp } from '../game/run.js';
+import { RUN, chapterDef, maxHp, restAmbushChance } from '../game/run.js';
 import { writeRecur, autosave } from '../game/save.js';
-import { choices, enterNode } from '../game/flow.js';
+import { choices, enterNode, storyDef, storyOf } from '../game/flow.js';
 import { buildMapSVG, makeTurner, linkPoints } from '../map/view.js';
 import { NODE_TYPES } from '../data/nodes.js';
 import { FOES, BOSSES } from '../data/foes.js';
@@ -15,6 +15,7 @@ import { confirmBox, toast, bindTips, hideTip } from '../ui/overlay.js';
 import { openDeck, openRelics, openSettings, openHelp, pauseMenu, relicTip, toggleSound } from '../ui/menus.js';
 import { roman, sleep, esc, flash } from '../core/util.js';
 import { typeInto } from '../ui/typewriter.js';
+import { alertGaugeHTML, bagHTML, bindBag } from '../ui/hud.js';
 
 let root = null, svg = null, turner = null, avail = [], focusIdx = -1, busy = false, tickTimer = 0, alive = false;
 
@@ -48,20 +49,48 @@ function resHTML() {
   return `<span class="hearts" title="HP ${RUN.hp} / ${mh}">${hearts}</span><span class="sep"></span>
     <span class="res parts" title="부품 — 상점에서 쓴다">${icon('parts')}${RUN.parts}<small>부품</small></span>
     <span class="res shard" title="톱니 조각 — 강화소 · 기계 이식소에서 쓴다">${icon('shard')}${RUN.shards}<small>톱니 조각</small></span><span class="sep"></span>
-    <span class="alert-g" title="경계도 — 높을수록 휴식 기습 · 적 증원, 100이면 발각">${icon('eye')}<span class="bar${RUN.alert >= 70 ? ' hot' : ''}" style="--v:${RUN.alert / 100}"><i></i></span><b>${RUN.alert}</b></span>`;
+    ${bagHTML()}<span class="sep"></span>
+    ${alertGaugeHTML()}`;
 }
 function relicStripHTML() {
   return RUN.relics.map(id => `<span class="relic r-${RELICS[id].rarity}" data-tip="relic:${id}">${icon(RELICS[id].icon)}</span>`).join('')
     + RUN.implants.map(id => `<span class="relic r-implant implant" data-tip="implant:${id}">${icon(IMPLANTS[id].icon)}</span>`).join('');
 }
+// 범례 — 이 지도에 실제로 있는 칸 종류만
 function legendHTML() {
-  const keys = ['battle', 'elite', 'rest', 'shop', 'blackmarket', 'forge', 'implant', 'abyss', 'trial', 'ambush', 'alley', 'tent', 'event', 'shrine', 'boss'];
-  return keys.map(k => `<span style="--tone:${NODE_TYPES[k].tone}">${icon(NODE_TYPES[k].icon)}${NODE_TYPES[k].label}</span>`).join('') + (chapterDef().hunted ? '' : `<span class="watch-l">${icon('eye')}감시 톱니</span>`);
+  const keys = ['story', 'battle', 'elite', 'rest', 'shop', 'blackmarket', 'forge', 'implant', 'abyss', 'trial', 'ambush', 'alley', 'tent', 'event', 'shrine', 'boss'];
+  const has = new Set(Object.values(RUN.map.nodes).map(n => n.type));
+  const watched = !chapterDef().hunted && Object.values(RUN.map.nodes).some(n => n.watched);
+  return keys.filter(k => has.has(k)).map(k => `<span style="--tone:${NODE_TYPES[k].tone}">${icon(NODE_TYPES[k].icon)}${NODE_TYPES[k].label}</span>`).join('') + (watched ? `<span class="watch-l">${icon('eye')}감시 톱니</span>` : '');
+}
+// 톱니 이름표 — 이야기 칸은 대본 제목, 보스는 보스 이름, 시작은 이 장의 출발지
+function labelOf(n) {
+  const ch = chapterDef();
+  if (n.type === 'story') { const d = storyDef(n); return d ? d.title : NODE_TYPES.story.label; }
+  if (n.type === 'boss') return BOSSES[ch.encounters.boss.boss].name;
+  if (n.type === 'start' && ch.start) return ch.start.label;
+  return (NODE_TYPES[n.type] || NODE_TYPES.battle).label;
+}
+function noOf(n) {
+  if (n.type === 'story') { const d = storyDef(n); return d ? d.no : ''; }
+  if (n.type === 'boss') { const b = storyOf(RUN.chapter)[chapterDef().encounters.boss.story]; return (b && b.no) || ''; }
+  return '';
+}
+const KIND_TEXT = {
+  battle: '대화 → 전투. 전투를 시작하기 직전에 재귀 지점이 저절로 새겨진다(저장 횟수를 쓰지 않는다).',
+  talk: '대화 · 선택. 고른 것에 따라 얻는 것과 뒷이야기가 달라진다.',
+  shop: '대화 · 상점. 질문 두 가지는 값을 받지 않는다.',
+  rest: '휴식 · 확률 사건. 회복한 뒤 습격을 판정한다(이 칸에서 한 번).',
+};
+function goalHTML() {
+  return RUN.goal ? `${icon('compass')}<small>목표</small><span>${esc(RUN.goal)}</span>` : '';
 }
 
 function refreshHud() {
   if (!root) return;
   root.querySelector('#mapRes').innerHTML = resHTML();
+  root.querySelector('#mapGoal').innerHTML = goalHTML();
+  bindBag(root.querySelector('#mapRes'), () => { refreshHud(); autosave(); });
   root.querySelector('#mSaveN').textContent = `${RUN.saves.left}/${RUN.saves.max}`;
   root.querySelector('#mSave').classList.toggle('spent', RUN.saves.left <= 0);
   root.querySelector('#mDeckN').textContent = RUN.deck.length;
@@ -108,13 +137,27 @@ function infoHTML(id) {
   const n = RUN.map.nodes[id];
   const T = NODE_TYPES[n.type];
   const ch = chapterDef();
+  const state = avail.includes(id) ? '<em class="go">갈 수 있음</em>' : RUN.visited.includes(id) ? '<em>지나옴</em>' : '';
+  // 이야기 칸 · 보스 — 대본 번호 · 제목 · 무엇을 하는 칸인지
+  if (n.type === 'story' || n.type === 'boss') {
+    const d = n.type === 'story' ? storyDef(n) : null;
+    const no = noOf(n);
+    const head = `<div class="mi-head" style="--tone:${T.tone}">${no ? `<span class="mi-no">${no}</span>` : icon(T.icon)}<b>${esc(labelOf(n))}</b>${state}</div>`;
+    if (d) {
+      const foes = d.enc ? `<p class="mi-foes">적: ${d.enc.foes.map(t => FOES[t].name).join(' · ')}</p>` : '';
+      const kind = d.kind === 'rest' ? `${KIND_TEXT.rest} 지금 습격 확률 ${Math.round(restAmbushChance() * 100)}%.` : KIND_TEXT[d.kind] || '';
+      return { head, body: `<p>${esc(d.teaser || '')}</p>${d.kind === 'rest' ? '' : foes}<p class="mi-kind">${kind}</p>` };
+    }
+    const bd = BOSSES[ch.encounters.boss.boss];
+    return { head, body: `<p>${esc(bd.sub || T.desc)}</p><p class="mi-foes">${bd.name} · ${ch.encounters.boss.adds.map(t => FOES[t].name).join(' · ')}</p><p class="mi-kind">들어가는 순간 재귀 지점이 저절로 새겨진다. 쓰러지면 보스 앞 대화부터(건너뛸 수 있다).</p>` };
+  }
+  if (n.type === 'start' && ch.start) return { head: `<div class="mi-head" style="--tone:${T.tone}">${icon(T.icon)}<b>${esc(ch.start.label)}</b>${state}</div>`, body: `<p>${esc(ch.start.desc)}</p>` };
   let extra = '';
   if (n.type === 'boss') extra = `<p class="mi-foes">${BOSSES[ch.encounters.boss.boss].name} · ${ch.encounters.boss.adds.map(t => FOES[t].name).join(' · ')}</p>`;
-  else if (n.type === 'elite') { const e = ch.encounters.elite[(n.eliteIdx || 0) % ch.encounters.elite.length]; extra = `<p class="mi-foes">${e.foes.map(t => FOES[t].name).join(' · ')}</p>`; }
+  else if (n.type === 'elite' && ch.encounters.elite.length) { const e = ch.encounters.elite[(n.eliteIdx || 0) % ch.encounters.elite.length]; extra = `<p class="mi-foes">${e.foes.map(t => FOES[t].name).join(' · ')}</p>`; }
   else if (n.enc && n.enc.foes) extra = `<p class="mi-foes">적: ${n.enc.foes.map(t => FOES[t].name).join(' · ')}${RUN.alert >= 50 ? ' + 증원 1' : ''}</p>`;
   if (n.type === 'event' && n.event) extra = `<p class="mi-foes">「${EVENTS[n.event].title}」</p>`;
   const watch = n.watched && !ch.hunted ? `<p class="mi-watch">${icon('eye').replace('<svg', '<svg style="width:14px;height:14px;fill:#FF9C8C;display:inline-block;vertical-align:-2px"')} 감시 톱니 — 들어가면 경계도 +20</p>` : '';
-  const state = avail.includes(id) ? '<em class="go">갈 수 있음</em>' : RUN.visited.includes(id) ? '<em>지나옴</em>' : '';
   return { head: `<div class="mi-head" style="--tone:${T.tone}">${icon(T.icon)}<b>${T.label}</b>${state}</div>`, body: `<p>${T.desc}</p>${extra}${watch}` };
 }
 // 칸 설명 — 이름은 바로, 설명은 타자로 (같은 칸에 다시 올리면 그대로 둔다)
@@ -148,10 +191,11 @@ async function mount(holder, params = {}) {
   const ch = chapterDef();
   const map = RUN.map;
   holder.innerHTML = `${mapClock(RUN.chapter)}${ch.hunted ? '' : '<div class="map-search"></div>'}
-    ${buildMapSVG(map, { hour: ch.hour })}
+    ${buildMapSVG(map, { hour: ch.hour, label: labelOf, no: noOf })}
     <div class="map-hero idle">${art('hero-sd') ? `<img src="${art('hero-sd')}" alt="" draggable="false">` : '<i class="pin"></i>'}</div>
     ${topBarHTML()}
     <div class="relic-strip" id="relicStrip"></div>
+    <div class="map-goal" id="mapGoal"></div>
     <div class="map-legend">${legendHTML()}</div>
     <div class="map-hint" id="mapHint">톱니가 돌아가는 중…</div>
     <div class="map-info empty" id="mapInfo"></div>`;

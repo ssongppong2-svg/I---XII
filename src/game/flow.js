@@ -1,6 +1,6 @@
 // 게임 흐름 — 챕터 시작 · 칸 들어가기 · 칸 끝내기 · 전투 구성 · 보상 · 죽음
 import { RUN, chapterDef, dm, mods, addAlert, maxHp } from './run.js';
-import { BOSSES } from '../data/foes.js';
+import { BOSSES, FOES } from '../data/foes.js';
 import { autosave, writeRecur } from './save.js';
 import { CHAPTERS } from '../data/chapters.js';
 import { genMap, twoAhead } from '../map/gen.js';
@@ -14,6 +14,8 @@ import { seenEvents } from './profile.js';
 
 const STORIES = { 1: CH1_STORY };
 export const storyOf = n => STORIES[n] || {};
+// 이야기 칸의 대본 (지도 칸 → data/story의 s02 · s03 …). 이야기 칸이 아니면 null
+export const storyDef = n => (n && n.story ? storyOf(RUN.chapter)[n.story] || null : null);
 
 // 챕터 시작 — 지도를 만들고, 재귀 지점을 자동으로 새긴다
 export function startChapter(n) {
@@ -51,7 +53,8 @@ export function enterNode(id) {
   const alertBefore = RUN.alert;
   if (ch.hunted) addAlert(8);
   else if (node.watched) addAlert(20);
-  autosave();
+  // 보스 앞 — 재귀 지점을 저절로 새긴다(횟수를 쓰지 않는다). 쓰러지면 보스 앞 대화부터 다시
+  if (node.type === 'boss') writeRecur({ at: id }); else autosave();
   const gained = RUN.alert - alertBefore;
   if (isFight(node.type) && node.type !== 'trial') go('battle', { nodeId: id, alertGained: gained });
   else go('node', { nodeId: id, alertGained: gained });
@@ -87,14 +90,20 @@ export function encounterFor(node, extra = {}) {
   const R = makeRng(hashSeed(RUN.seed, node.id, 'enc'));
   let enc;
   switch (node.type) {
-    case 'tutorial':
-      enc = { kind: 'normal', foes: node.enc.foes.slice(), hpMul: node.enc.hpMul, ambush: node.enc.ambush, tut: node.enc.tut, sub: '첫 전투 · 튜토리얼' };
-      break;
     case 'elite': {
+      if (!E.elite.length) { enc = { kind: 'normal', foes: R.pick(E.normal).slice(), ambush: ch.ambush.normal, sub: '전투' }; break; }   // 정예가 없는 장 (1장)
       const e = E.elite[(node.eliteIdx || 0) % E.elite.length];
       enc = { kind: 'normal', foes: e.foes.slice(), ambush: ch.ambush.elite, elite: true, story: e.story, sub: '정예' };
-      // 사건 「사냥개의 새끼」에서 새끼를 데려왔으면 우두머리 무리가 머뭇거린다 — 무리 전체 체력 −20%
-      if (e.id === 'alpha' && (RUN.flags.ev || {}).pup) enc.hpMul = 0.8;
+      break;
+    }
+    // 이야기 칸의 전투 — 대본이 정한 적 그대로(증원 없음). 앞 대사는 칸 화면에서(선택 · 재귀 지점), 승리 대사는 전투 뒤
+    case 'story': {
+      const d = storyDef(node) || {};
+      const e = d.enc || { foes: E.easy[0] };
+      enc = { kind: 'normal', foes: e.foes.slice(), hpMul: e.hpMul, ambush: e.ambush !== undefined ? e.ambush : ch.ambush.normal, tut: e.tut, signal: !!e.signal,
+        sub: e.sub || d.title, story: node.story, storyBattle: true, noReinforce: true };
+      // 사건에서 세운 깃발에 따라 적이 약해진다 — { 깃발: { 적 종류: 체력 배율 } } (예: 07 — 새끼 돌진 기계를 데려왔으면 돌진 기계가 머뭇거린다)
+      for (const [flag, mul] of Object.entries(e.flagMul || {})) if ((RUN.flags.ev || {})[flag]) enc.hpMulOf = Object.assign({}, enc.hpMulOf, mul);
       break;
     }
     case 'boss':
@@ -116,12 +125,13 @@ export function encounterFor(node, extra = {}) {
     enc.foes.push(R.pick(E.reinforce));
     enc.reinforced = true;
   }
-  enc.foeTitle = enc.foes.some(t => ['watcher', 'hound', 'warden', 'beetle', 'gatekeeper', 'alpha'].includes(t)) ? '감시 기계' : '인류 정부군';
+  enc.foeTitle = enc.foes.some(t => FOES[t] && FOES[t].machine) ? '회종시 기계' : '인류 정부군';
   if (enc.story) {
     const S = storyOf(ch.num);
     const st = S[enc.story] || {};
-    enc.intro = st.intro; enc.win = st.win;
-    enc.interludes = { half: st.half, stun1: st.stun1, freeze1: S.freeze1, blast1: S.blast1 };
+    if (!enc.storyBattle) enc.intro = st.intro;
+    enc.win = st.win;
+    enc.interludes = { phase2: st.phase2, phase3: st.phase3, half: st.half, stun1: st.stun1, freeze1: S.freeze1, blast1: S.blast1 };
   }
   enc.seed = hashSeed(RUN.seed, node.id, 'battle', RUN.recur || 0, RUN.visited.length);
   return enc;
@@ -166,7 +176,7 @@ export function rewardsFor(node, enc, result) {
   if (kind !== 'normal') parts *= M.elitePartsMul;
   if (enc.partsMul) parts *= enc.partsMul;
   if (enc.bonusParts) parts += enc.bonusParts;
-  if (node.type === 'tutorial') parts *= 0.6;
+  if (enc.tut === 1) parts *= 0.6;   // 학습 전투 (02)
   out.parts = Math.round(parts);
   if (kind === 'elite') { out.shards = 1 + M.shardBonus; out.relics = relicChoice(R); }
   if (kind === 'boss') { out.shards = 3 + M.shardBonus; out.relicPick = relicChoice(R, [['boss', 100]], 3); }
@@ -189,8 +199,8 @@ export function nextChapter() {
 
 export const relicName = id => (RELICS[id] ? RELICS[id].name : id);
 
-// 정예 · 보스 대사 창의 모니터 (보스 이름 · 그림)
+// 이야기 · 보스 대사 창 — 보스 모니터(이름 · 그림) · 이 장의 등장인물
 export function sceneOpts(bossId) {
   const bd = BOSSES[bossId] || BOSSES.watchtower;
-  return { bossName: bd.name, bossArt: bd.artFull, bossBar: `감시망 방송 · ${bd.name}` };
+  return { bossName: bd.name, bossArt: bd.artFull, bossBar: `출입 통제 방송 · ${bd.name}`, cast: storyOf(RUN.chapter).cast || {} };
 }

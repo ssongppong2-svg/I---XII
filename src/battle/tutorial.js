@@ -1,4 +1,5 @@
-// 튜토리얼 — 1장 첫 전투 두 번에 녹인 안내. 해 보면 넘어가고(until), '다음'으로 넘길 수도 있다
+// 튜토리얼 — 1장 이야기 전투 두 번(02 학습 전투 · 05 닫힌 시장)에 녹인 안내. 해 보면 넘어가고(until), '다음'으로 넘길 수도 있다
+// 대본 B01: 격자 이동 → 공격 예고 → 카드 → 재귀 설명 순서
 import { H } from './core.js';
 import { viewRoot } from './view.js';
 import { SFX } from '../ui/sfx.js';
@@ -12,8 +13,10 @@ const STEPS = {
       text: '적은 <b>2코스트마다</b> 한 번 움직여요. 머리 위 숫자 <b>1</b>은 “내 다음 행동이 끝나면 움직인다”는 뜻. 분홍 표식이 뜬 칸에 공격이 떨어져요 — 그 칸 밖에서 행동을 끝내면 맞지 않아요.' },
     { title: '카드', until: 'card', hi: '#hand',
       text: '카드를 클릭하거나 <kbd>1</kbd>~<kbd>6</kbd>을 눌러 보세요. 공격 카드는 <b>적이 닿는 방향</b>으로 쏴요. 여러 방향이 가능하면 판의 칸을 눌러 조준하고, 한 번 더 누르면 써요.' },
+    { title: '재귀', until: 'next', sfx: 'tick',
+      text: '쓰러져도 끝이 아니에요 — <b>재귀</b>. 마지막으로 새긴 <b>재귀 지점</b>으로 돌아가요. 이야기 칸의 전투는 시작하기 직전에, 보스는 들어가는 순간에 저절로 새겨져요(횟수를 쓰지 않아요). 지도의 「저장」으로 직접 새길 수도 있어요.' },
     { title: '처치', until: 'next',
-      text: '적을 모두 쓰러뜨리면 승리예요. 이기면 부품과 카드를 얻어요. 적을 누르면(마우스는 올리면) 체력과 다음 행동이 왼쪽에 나와요.' },
+      text: '적을 모두 쓰러뜨리면 승리예요. 이기면 부품과 카드를 얻어요. 적을 누르면(마우스는 올리면) 체력과 다음 행동이 왼쪽에 나와요. 이 안내는 <kbd>H</kbd> 규칙에서 다시 볼 수 있어요.' },
   ],
   2: [
     { title: '기습 폭격', until: 'ambushFired', hi: '#pips',
@@ -68,6 +71,7 @@ function show() {
     <div class="tut-btns"><button type="button" data-a="next">${waiting ? '넘기기' : T.i === T.steps.length - 1 ? '알겠어요' : '다음'}</button><button type="button" class="skip" data-a="skip">안내 끄기</button></div>`;
   T.box.style.animation = 'none'; void T.box.offsetWidth; T.box.style.animation = '';
   typeInto(T.box.querySelector('.tut-t'), s.text, { mul: 0.5, sound: 'soft' });
+  if (s.sfx && SFX[s.sfx]) SFX[s.sfx]();   // 재귀 — 짧은 바늘 소리
   if (s.hi) { const el = root.querySelector(s.hi); if (el) el.classList.add('tut-hi'); }
 }
 function advance() {

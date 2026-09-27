@@ -3,9 +3,11 @@ import { STARTER, CARDS, canUpgrade } from '../data/cards.js';
 import { RELICS, IMPLANTS } from '../data/relics.js';
 import { diffMods } from '../data/difficulty.js';
 import { CHAPTERS } from '../data/chapters.js';
+import { ITEMS } from '../data/items.js';
 import { clamp } from '../core/util.js';
 
 export const BASE_HP = 5;
+export const SAVE_V = 2;   // 저장 판 — 2: 1장이 최종 대본(이야기 칸 · 가방 · 경계 단계)으로 바뀐 판. 예전 판은 이어 할 수 없다
 export let RUN = null;
 export function setRun(r) { RUN = r; }
 
@@ -13,7 +15,7 @@ export function newRun({ name, diff }) {
   const d = diffMods(diff);
   const base = BASE_HP + d.maxHp;
   RUN = {
-    v: 1,
+    v: SAVE_V,
     seed: (Math.random() * 2 ** 32) >>> 0,
     diff: d.level, name,
     created: Date.now(), playMs: 0,
@@ -23,6 +25,8 @@ export function newRun({ name, diff }) {
     deck: STARTER.map((id, i) => ({ uid: i + 1, id, up: 0 })), uidSeq: STARTER.length,
     relics: [], implants: [],
     alert: 0,
+    items: { potion: 0, kit: 0 },   // 가방 — 회복약 · 정비 부품
+    goal: '',                        // 지도 위 목표 한 줄 (이야기가 갱신)
     saves: { left: d.saves, max: d.saves },
     map: null, pos: null, visited: [],
     pending: null,          // 들어간 칸 (전투 중에 끄면 이어 할 때 그 칸을 처음부터)
@@ -73,6 +77,29 @@ export function addAlert(n) {
   const v = n > 0 ? n * dm().alertMul * mods().alertMul : n;
   RUN.alert = clamp(Math.round(RUN.alert + v), 0, 100);
   return RUN.alert - before;
+}
+// 경계 단계 — 게이지 0~100을 0 · 1 · 2 세 단계로 (대본의 '경계도 +1' = 한 단계, 최대 2)
+export const ALERT_STAGE_AT = [0, 34, 67];
+export const alertStage = (v = RUN.alert) => (v >= ALERT_STAGE_AT[2] ? 2 : v >= ALERT_STAGE_AT[1] ? 1 : 0);
+export function alertStageUp() {
+  const s = alertStage();
+  if (s >= 2) return 0;
+  const before = RUN.alert;
+  RUN.alert = Math.max(RUN.alert, ALERT_STAGE_AT[s + 1]);
+  return RUN.alert - before;
+}
+// 휴식 습격 확률 — 단계마다 15 · 25 · 35% (+ 난이도 X부터 +10%p). 회복을 먼저 한 뒤 판정한다
+export const restAmbushChance = () => Math.min(0.9, [0.15, 0.25, 0.35][alertStage()] + (dm().restAmbush || 0));
+
+// ── 가방
+export const bag = () => (RUN.items = RUN.items || { potion: 0, kit: 0 });
+export function addItem(id, n = 1) { const b = bag(); b[id] = Math.max(0, (b[id] || 0) + n); return b[id]; }
+// 지도 · 칸 화면에서 회복약 — 코스트 없음. 회복한 만큼 돌려준다 (가득 차 있으면 쓰지 않는다)
+export function usePotion() {
+  const b = bag();
+  if (!b.potion || RUN.hp >= maxHp()) return 0;
+  b.potion--;
+  return heal(ITEMS.potion.heal);
 }
 
 // ── 덱

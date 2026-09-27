@@ -2,15 +2,17 @@
 import { register, go } from '../ui/router.js';
 import {
   RUN, chapterDef, dm, mods, maxHp, fixHp, gainParts, gainShards, heal, hurt, addAlert, addCard, removeCard, upgradeCard, addRelic, addImplant,
+  alertStage, alertStageUp, restAmbushChance, bag, addItem,
 } from '../game/run.js';
 import { markEventSeen } from '../game/profile.js';
 import { playScene, sceneNote, fmt } from '../scenes/scene.js';
-import { autosave } from '../game/save.js';
-import { finishNode, encounterFor, cardChoices, relicChoice, TRIALS } from '../game/flow.js';
+import { autosave, writeRecur } from '../game/save.js';
+import { finishNode, encounterFor, cardChoices, relicChoice, TRIALS, storyDef, storyOf, sceneOpts } from '../game/flow.js';
 import { NODE_TYPES } from '../data/nodes.js';
 import { CARDS, cardDef, canUpgrade } from '../data/cards.js';
 import { RELICS, IMPLANTS, RELIC_POOL } from '../data/relics.js';
 import { EVENTS } from '../data/events.js';
+import { ITEMS } from '../data/items.js';
 import { LORE } from '../data/lore.js';
 import { FOES, BOSSES } from '../data/foes.js';
 import { makeRng, hashSeed } from '../core/rng.js';
@@ -19,8 +21,10 @@ import { art, load, loadAll, bgImgHTML } from '../ui/assets.js';
 import { bigCardHTML, openDeck, relicTip, openSettings, openHelp, pauseMenu, toggleSound } from '../ui/menus.js';
 import { openSheet, closeSheet, confirmBox, toast, bindTips, hideTip } from '../ui/overlay.js';
 import { SFX } from '../ui/sfx.js';
-import { esc, eulreul, isiyeo } from '../core/util.js';
+import { esc, eulreul } from '../core/util.js';
 import { typeInto, typeSequence, finishTyping } from '../ui/typewriter.js';
+import { alertGaugeHTML, bagHTML, bindBag } from '../ui/hud.js';
+import { storyArtKeys } from '../ui/foeart.js';
 
 let root = null, node = null, R = null, alive = false, seq = null;
 const TYPE = { mul: 0.55, sound: 'soft' };   // 칸 화면 글은 대사보다 조금 빠르게, 작은 타자 소리
@@ -29,24 +33,29 @@ const q = s => root.querySelector(s);
 
 /* ── 공통 틀 ── */
 // 칸 배경 그림 — bg-<칸 종류>. 휴식은 두 장(bg-rest-1 · 2)을 칸마다 번갈아, 골목은 네 가지 모두 bg-alley
-const NARROW = ['rest', 'alley', 'event', 'tent', 'abyss', 'trial'];   // 배경이 있을 때 글 판을 좁게(장면이 보이게)
+const NARROW = ['rest', 'alley', 'event', 'tent', 'abyss', 'trial', 'story'];   // 배경이 있을 때 글 판을 좁게(장면이 보이게)
 function bgKeyOf(n) {
   if (n.type === 'event' && n.event && art(`bg-ev-${n.event}`)) return `bg-ev-${n.event}`;   // 사건마다 따로 넣은 배경이 있으면
+  // 이야기 칸 — 전용 배경(bg-st-<칸>)이 있으면 그것, 없으면 대본이 말한 기존 배경
+  if (n.type === 'story') { const slot = `bg-st-${n.story}`; return art(slot) ? slot : (storyOf(RUN.chapter).bgs || {})[n.story] || 'bg-event'; }
   if (n.type === 'rest') {
     const k = `bg-rest-${1 + hashSeed(RUN.seed, n.id, 'bg') % 2}`;
     return art(k) ? k : 'bg-rest-1';
   }
   return `bg-${n.type}`;
 }
-function frame({ title, text = '', say = '', artHTML = '', leave: leaveText = '떠난다' }) {
+// onLeave = 떠날 때 할 일(없으면 바로 지도로) · narrow = 글 판을 좁게(없으면 칸 종류대로)
+function frame({ title, text = '', say = '', artHTML = '', leave: leaveText = '떠난다', onLeave = null, narrow = null }) {
   const T = NODE_TYPES[node.type];
   const bgKey = bgKeyOf(node);
   const bg = bgImgHTML(bgKey);
-  root.innerHTML = `<div class="nd t-${node.type}${bg ? ' has-bg' : ''}${NARROW.includes(node.type) ? ' narrow' : ''}" style="--tone:${T.tone}">
+  const sd = node.type === 'story' ? storyDef(node) : null;
+  const wide = narrow === null ? NARROW.includes(node.type) : narrow;
+  root.innerHTML = `<div class="nd t-${node.type}${bg ? ' has-bg' : ''}${wide ? ' narrow' : ''}" style="--tone:${T.tone}">
     <div class="nd-bg" aria-hidden="true">${bg}</div>
     <div class="nd-art">${artHTML}</div>
     <div class="nd-panel">
-      <div class="nd-kicker">${icon(T.icon)}${T.label}${node.watched && !chapterDef().hunted ? ` <em>${icon('eye')}감시 톱니</em>` : ''}</div>
+      <div class="nd-kicker">${icon(sd ? sd.icon : T.icon)}${sd ? `${T.label} <b class="nd-no">${sd.no}</b>` : T.label}${node.watched && !chapterDef().hunted ? ` <em>${icon('eye')}감시 톱니</em>` : ''}</div>
       <h2 class="nd-title">${title}</h2>
       ${say ? '<div class="nd-say" id="ndSay"></div>' : ''}
       <p class="nd-text" id="ndText"></p>
@@ -55,7 +64,7 @@ function frame({ title, text = '', say = '', artHTML = '', leave: leaveText = '�
     </div>
     <div class="nd-hud" id="ndHud"></div>
   </div>`;
-  q('#ndLeave').addEventListener('click', () => { SFX.click(); leave(); });
+  q('#ndLeave').addEventListener('click', () => { SFX.click(); (onLeave || leave)(); });
   // 아직 확인 안 한 배경(처음 들어가는 칸 종류)은 찾아보고, 있으면 살며시 깐다
   if (!bg) {
     const here = node;
@@ -81,9 +90,10 @@ function hud() {
   const mh = maxHp();
   let hearts = '';
   for (let i = 0; i < mh; i++) hearts += `<svg class="heart${i < RUN.hp ? '' : ' empty'}"><use href="#i-heart"/></svg>`;
-  q('#ndHud').innerHTML = `<span class="hearts">${hearts}</span><span class="res parts">${icon('parts')}${RUN.parts}<small>부품</small></span><span class="res shard">${icon('shard')}${RUN.shards}<small>톱니 조각</small></span><span class="alert-g">${icon('eye')}<span class="bar${RUN.alert >= 70 ? ' hot' : ''}" style="--v:${RUN.alert / 100}"><i></i></span><b>${RUN.alert}</b></span>
+  q('#ndHud').innerHTML = `<span class="hearts">${hearts}</span><span class="res parts">${icon('parts')}${RUN.parts}<small>부품</small></span><span class="res shard">${icon('shard')}${RUN.shards}<small>톱니 조각</small></span>${bagHTML()}${alertGaugeHTML()}
     <button class="icon-btn" type="button" id="ndDeck">${icon('deck')}덱 ${RUN.deck.length}</button>`;
   q('#ndDeck').addEventListener('click', () => { SFX.click(); openDeck(RUN.deck); });
+  bindBag(q('#ndHud'), () => { hud(); autosave(); });
   if (shownAlert !== null && RUN.alert !== shownAlert) alertPop(RUN.alert - shownAlert, alertWhy);
   shownAlert = RUN.alert; alertWhy = '';
 }
@@ -175,45 +185,37 @@ const HANDLERS = {
   // ── 휴식 (기습 확률)
   rest() {
     const ch = chapterDef();
-    const h = Math.max(1, 2 + dm().restHeal + mods().restHeal);
-    const p = Math.min(0.9, 0.10 + RUN.alert * 0.004 + dm().restAmbush);
+    const h = restHeal();
+    const p = restAmbushChance();
     const al = ch.hunted ? 15 : 10;
-    frame({ title: '무너진 벽 아래', text: `몸을 숨길 만한 자리가 있다. 잠시 눈을 붙일 수 있을 것 같다.<br><span class="dim">기습 확률 ${Math.round(p * 100)}% — 경계도가 높을수록 올라간다.</span>`, artHTML: glyph('flame'), leave: '쉬지 않고 떠난다' });
+    frame({ title: '무너진 벽 아래', text: `몸을 숨길 만한 자리가 있다. 잠시 눈을 붙일 수 있을 것 같다.<br><span class="dim">경계 ${alertStage()}단계 — 쉬는 사이 습격받을 확률 ${Math.round(p * 100)}% (회복한 뒤에 판정).</span>`, artHTML: glyph('flame'), leave: '쉬지 않고 떠난다' });
+    if (node.rested) { restOutcome(); return; }   // 이 칸에서 이미 쉬었다 — 다시 회복 · 판정하지 않는다
     opts([
-      { label: `쉰다 — HP +${h}`, desc: `경계도 +${al} · 기습 확률 ${Math.round(p * 100)}%${RUN.hp >= maxHp() ? ' · 이미 HP가 가득 차 있다' : ''}`, on: async () => {
-        addAlert(al);
-        if (R.chance(p)) {
-          SFX.alarm();
-          body(`<p class="nd-alarm">${icon('burst')} 기습! 쉬는 사이 감시 기계가 들이닥쳤다.</p><div class="nd-opts"><button class="nd-opt main" type="button" id="ndFight"><b>맞서 싸운다</b><small>이기면 그 뒤에 쉰다 · 적이 먼저 움직인다</small></button></div>`);
-          leaveLabel('');
-          q('#ndLeave').hidden = true;
-          q('#ndFight').addEventListener('click', () => fight(encounterFor({ id: node.id + '#amb', type: 'battle' }, { ambushed: true, sub: '휴식 중 기습' }), { after: 'rest' }));
-          hud(); autosave();
-          return;
-        }
+      { label: `쉰다 — HP +${h}`, desc: `경계도 +${al} · 습격 확률 ${Math.round(p * 100)}%${RUN.hp >= maxHp() ? ' · 이미 HP가 가득 차 있다' : ''}`, on: () => {
         const got = heal(h);
+        addAlert(al);
+        node.rested = { got, ambushed: R.chance(p) };
         SFX.heal(); hud(); autosave();
-        body(`<p class="nd-result">${icon('flame')} 잠시 눈을 붙였다. ${got ? `HP +${got}.` : '몸은 이미 멀쩡했다.'}</p>`);
-        leaveLabel('떠난다');
+        restOutcome();
       } },
     ]);
   },
 
   // ── 상점 — "뭐 필요한 거 있어?"
   shop() {
-    const mul = dm().shopMul * mods().shopMul;
-    const price = base => Math.round(base * mul);
-    const cardP = { common: 45, rare: 80, legend: 150 };
-    const relicP = { common: 140, rare: 200 };
-    if (!node.stock) {
-      node.stock = {
-        cards: cardChoices(R, 'shop', 5).map(id => ({ id, price: price(cardP[CARDS[id].rarity] || 60), sold: false })),
-        relics: relicChoice(R, [['common', 60], ['rare', 40]], 2).map(id => ({ id, price: price(relicP[RELICS[id].rarity] || 160), sold: false })),
-        removed: false,
-      };
-    }
+    shopStock();
     frame({ title: '상점', say: '뭐 필요한 거 있어?', artHTML: charArt('shopkeeper', 'bag') });
     renderShop();
+  },
+
+  // ── 이야기 칸 — 대본의 뼈대 (data/story). kind마다 따로: battle · talk · shop · rest
+  async story(params = {}) {
+    const d = storyDef(node);
+    if (!d || !STORY[d.kind]) { finishNode(); return; }
+    const here = node, S = storyOf(RUN.chapter);
+    await loadAll([bgKeyOf(node), `bg-st-${node.story}`, 'blackmarket', 'believer', ...storyArtKeys([...(d.pre || []), ...(d.scene || []), ...(d.quiet || []), ...(d.ambush || []), ...(d.leave || []), ...(d.close || []), ...(d.ask || []).flatMap(a => a.scene)], S.cast || {})]);
+    if (!alive || node !== here) return;
+    STORY[d.kind](d, S, params);
   },
 
   // ── 암시장 — "뭐 필요한 거 있어?" · 값은 부품이 아니다
@@ -316,12 +318,12 @@ const HANDLERS = {
     const seen = (RUN.flags.lore[ch.num] || 0);
     if (node.loreIdx === undefined) { node.loreIdx = seen % Math.max(1, list.length); RUN.flags.lore[ch.num] = seen + 1; }
     const line = list[node.loreIdx] || '';
-    frame({ title: '신도들의 천막', say: `“${esc(line)}”`, text: `당신을 알아본 신도들이 무릎을 꿇는다. "${esc(RUN.name)}${isiyeo(RUN.name)}, 무엇을 드릴까요."`, artHTML: charArt('believer', 'tent') });
+    frame({ title: '신도들의 천막', say: `“${fmt(line)}”`, text: `천막 안의 신도들이 목소리를 낮춘다. "${esc(RUN.name)} 님, 필요한 것을 말씀해 주십시오."`, artHTML: charArt('believer', 'tent') });
     const next = nextEliteBoss();
     opts([
-      { label: '기도 — HP +2', desc: `지금 ${RUN.hp} / ${maxHp()}`, on: () => { const n = heal(2); SFX.heal(); hud(); autosave(); body(`<p class="nd-result">${icon('chalice')} 신도들의 기도가 몸을 감쌌다. HP +${n}.</p>`); } },
-      { label: '성물 — 사이비 카드 한 장', desc: '신도들이 간직해 온 기도문 세 장 중 하나', on: () => { setText('신도들이 낡은 기도문을 조심스레 펼쳐 보인다.'); cardPick(cardChoices(R, 'cult', 3), { skip: '떠난다' }); } },
-      { label: '속삭임 — 앞길의 정보', desc: '다음 정예 · 보스에 대해 듣고 경계도 −15', on: () => { addAlert(-15); hud(); autosave(); SFX.page(); body(`<div class="nd-result">${next}</div>`); } },
+      { label: '치료 — HP +2', desc: `지금 ${RUN.hp} / ${maxHp()}`, on: () => { const n = heal(2); SFX.heal(); hud(); autosave(); body(`<p class="nd-result">${icon('chalice')} 신도들이 숨겨 둔 약으로 상처를 감쌌다. HP +${n}.</p>`); } },
+      { label: '성물 — 사이비 카드 한 장', desc: '신도들이 간직해 온 옛 기도문 세 장 중 하나', on: () => { setText('신도들이 빼앗기지 않은 기도문을 조심스레 펼쳐 보인다.'); cardPick(cardChoices(R, 'cult', 3), { skip: '떠난다' }); } },
+      { label: '속삭임 — 앞길의 정보', desc: '앞에 기다리는 것에 대해 듣고 경계도 −15', on: () => { addAlert(-15); hud(); autosave(); SFX.page(); body(`<div class="nd-result">${next}</div>`); } },
     ]);
   },
 
@@ -352,6 +354,198 @@ const HANDLERS = {
     });
   },
 };
+
+// 상점 물건 — 칸마다 한 번 정한다 (상점 · 이야기 칸의 천막 상점)
+function shopStock() {
+  if (node.stock) return;
+  const mul = dm().shopMul * mods().shopMul;
+  const price = base => Math.round(base * mul);
+  const cardP = { common: 45, rare: 80, legend: 150 };
+  const relicP = { common: 140, rare: 200 };
+  node.stock = {
+    cards: cardChoices(R, 'shop', 5).map(id => ({ id, price: price(cardP[CARDS[id].rarity] || 60), sold: false })),
+    relics: relicChoice(R, [['common', 60], ['rare', 40]], 2).map(id => ({ id, price: price(relicP[RELICS[id].rarity] || 160), sold: false })),
+    items: [{ id: 'potion', price: price(ITEMS.potion.price), left: 2 }, { id: 'kit', price: price(ITEMS.kit.price), left: 1 }],
+    removed: false,
+  };
+}
+
+/* ═════════════ 이야기 칸 ═════════════ */
+// 대본 장면 — 사건과 같은 도우미(G)로 선택지 효과를 처리한다. 저장은 장면이 끝난 뒤
+async function storyScene(script, G = eventCtx()) {
+  const S = storyOf(RUN.chapter);
+  await playScene(script, Object.assign(sceneOpts(), { ctx: G, cast: S.cast || {}, bg: bgKeyOf(node) }));
+  return G;
+}
+// 장면을 보는 동안 칸 화면은 제목만 (장면이 끝나야 떠날 수 있다)
+function storyCover(d, artHTML = '') {
+  frame({ title: esc(d.title), artHTML: artHTML || glyph(d.icon) });
+  q('#ndLeave').hidden = true;
+}
+const STORY = {
+  // 앞 대사(선택 · 효과) → 재귀 지점(자동) → 전투 → 승리 대사 → 보상. 재귀 · 이어 하기로 돌아오면 곧장 전투
+  async battle(d) {
+    const here = node;
+    if (!node.preDone) {
+      storyCover(d);
+      await storyScene(d.pre);
+      if (!alive || node !== here) return;
+      node.preDone = true;
+      writeRecur({ at: node.id });   // 전투 직전 — 쓰러지면 여기로 (저장 횟수를 쓰지 않는다)
+      toast('재귀 지점 — 쓰러지면 이 전투를 처음부터', 'gold');
+    }
+    fight(encounterFor(node));
+  },
+  // 대사 · 선택 → 결과 (사건처럼 다시 들어와도 두 번 받지 않는다)
+  async talk(d) {
+    const here = node;
+    if (node.ev && node.ev.done) { eventResult(d); return; }
+    storyCover(d);
+    const G = await storyScene(d.scene);
+    if (!alive || node !== here) return;
+    node.ev = { done: true, after: G.afterText || '', res: G.res, pending: G.pending };
+    RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [`st:${node.story}`]: true });
+    autosave();
+    eventResult(d);
+  },
+  // 앞 대사 → 천막 상점 + 질문 두 가지(무료, 둘 다 들어야 나갈 수 있다) → 나갈 때 마무리 대사
+  async shop(d) {
+    const here = node;
+    if (!node.preDone) {
+      storyCover(d, charArt('blackmarket', 'mask'));
+      await storyScene(d.pre);
+      if (!alive || node !== here) return;
+      node.preDone = true;
+      autosave();
+    }
+    shopStock();
+    node.asked = node.asked || {};
+    frame({ title: esc(d.title), say: d.say || '', artHTML: charArt('blackmarket', 'mask'), narrow: false, onLeave: () => storyShopLeave(d) });
+    renderShop();
+    storyShopLeaveLabel(d);
+  },
+  // 앞 대사 → 휴식(회복 먼저, 습격 판정 한 번) · 정비만 → 조용한 휴식 / 습격 전투 / 떠날 때 대사
+  async rest(d) {
+    const here = node;
+    if (!node.preDone) {
+      storyCover(d, charArt('believer', 'flame'));
+      await storyScene(d.pre);
+      if (!alive || node !== here) return;
+      node.preDone = true;
+      autosave();
+    }
+    const r = node.rested;
+    if (!r) { storyRestChoose(d); return; }
+    if (r.ambushed && !node.won) { storyRestAmbush(d); return; }
+    storyRestDone(d);
+  },
+};
+
+// 천막 상점 — 질문 두 가지 (renderShop 위쪽에 붙는다)
+function storyAskHTML(d) {
+  const asked = node.asked || {};
+  // 다 들었으면 한 줄로 접는다 — 상점 물건이 가려지지 않게 (다시 듣기는 그대로)
+  if (storyAsked(d)) return `<div class="st-ask done">${icon('check')}<b>상인에게 들은 것</b>${d.ask.map(a => `<button class="st-chip" type="button" data-ask="${a.id}">${esc(a.short || a.label)}<small>다시 듣기</small></button>`).join('')}</div>`;
+  return `<div class="st-ask"><b>${icon('help')}상인에게 묻는다 <small>값은 받지 않는다 · 둘 다 들어야 나갈 수 있다</small></b>
+    <div class="st-ask-row">${d.ask.map(a => `<button class="nd-opt${asked[a.id] ? ' done' : ''}" type="button" data-ask="${a.id}"><b>${esc(a.label)}</b><small>${asked[a.id] ? '들었다 — 다시 들을 수 있다' : esc(a.short || '')}</small></button>`).join('')}</div></div>`;
+}
+function storyAsked(d) { return d.ask.every(a => (node.asked || {})[a.id]); }
+function storyShopLeaveLabel(d) {
+  const n = d.ask.filter(a => (node.asked || {})[a.id]).length;
+  leaveLabel(storyAsked(d) ? '천막을 나선다' : `먼저 물어본다 (${n}/${d.ask.length})`);
+  const b = q('#ndLeave');
+  if (b) b.classList.toggle('wait', !storyAsked(d));
+}
+async function storyAsk(d, id) {
+  const a = d.ask.find(x => x.id === id);
+  if (!a) return;
+  const here = node;
+  await storyScene([{ tint: 'warm' }, ...a.scene]);
+  if (!alive || node !== here) return;
+  node.asked = Object.assign({}, node.asked, { [id]: true });
+  autosave();
+  renderShop();
+  storyShopLeaveLabel(d);
+}
+async function storyShopLeave(d) {
+  if (!storyAsked(d)) { SFX.deny(); toast('상인에게 두 가지를 먼저 물어보세요 — 값은 받지 않아요'); return; }
+  const here = node;
+  if (d.close) await storyScene(d.close);
+  if (!alive || node !== here) return;
+  leave();
+}
+
+// 꺼지지 않는 화로 — 휴식할지, 정비만 하고 떠날지
+function storyRestChoose(d) {
+  const h = restHeal(), p = restAmbushChance();
+  frame({ title: esc(d.title), artHTML: charArt('believer', 'flame'),
+    text: `화로 옆에서 잠시 쉴 수 있다. <b>HP +${h}</b> (지금 ${RUN.hp} / ${maxHp()}).<br><span class="dim">경계 ${alertStage()}단계 — 쉬는 사이 습격받을 확률 ${Math.round(p * 100)}% (회복한 뒤 판정 · 이 칸에서 한 번만).</span>` });
+  q('#ndLeave').hidden = true;
+  opts([
+    { label: `휴식한다 — HP +${h}`, desc: `습격 확률 ${Math.round(p * 100)}%${RUN.hp >= maxHp() ? ' · 이미 HP가 가득 차 있다' : ''}`, on: async () => {
+      const got = heal(h);
+      node.rested = { mode: 'rest', got, ambushed: R.chance(p) };
+      SFX.heal(); hud(); autosave();
+      if (node.rested.ambushed) { storyRestAmbush(d); return; }
+      const here = node;
+      await storyScene(d.quiet);
+      if (!alive || node !== here) return;
+      node.quiet = true; autosave();
+      storyRestDone(d);
+    } },
+    { label: '정비만 하고 출발한다', desc: '회복도 습격 판정도 없다 — 덱 · 가방을 살핀 뒤 떠난다', on: () => {
+      node.rested = { mode: 'fix' };
+      SFX.click(); autosave();
+      storyRestDone(d);
+    } },
+  ]);
+}
+// 습격 — 회복은 이미 들어갔다. 대사 → 재귀 지점(휴식 뒤 상태) → 약한 감시 시계 한 기와 전투 → 보상 뒤 이 칸으로
+async function storyRestAmbush(d) {
+  const here = node;
+  if (!node.ambushPre) {
+    SFX.alarm();
+    storyCover(d, charArt('believer', 'flame'));
+    await storyScene(d.ambush);
+    if (!alive || node !== here) return;
+    node.ambushPre = true;
+    writeRecur({ at: node.id });
+  }
+  fight(encounterFor(node, { ambushed: true }), { after: 'rest', back: true });
+}
+// 결과 — 무엇을 했는지 · (조용한 휴식을 못 들었으면) 신도와 이야기 · 떠나기
+function storyRestDone(d) {
+  const r = node.rested;
+  const line = r.mode === 'fix' ? `${icon('wrench')} 쉬지 않고 정비만 했다. 덱과 가방을 살핀 뒤 떠날 수 있다.`
+    : `${icon('flame')} 화로 옆에서 잠시 눈을 붙였다. ${r.got ? `HP +${r.got}.` : '몸은 이미 멀쩡했다.'}${r.ambushed ? ' 쉬던 자리를 뒤지던 감시 시계를 물리쳤다.' : ''}`;
+  frame({ title: esc(d.title), artHTML: charArt('believer', 'flame'), leave: '신호교로 떠난다', onLeave: async () => {
+    const here = node;
+    if (r.mode === 'fix' && d.leave && !node.closed) { await storyScene(d.leave); if (!alive || node !== here) return; node.closed = true; autosave(); }
+    leave();
+  } });
+  const b = body(`<p class="nd-result">${line}</p>${node.quiet ? '' : `<div class="nd-opts"><button class="nd-opt" type="button" id="ndQuiet"><b>화로 옆 꾸러미를 살핀다</b><small>신도와 나누는 짧은 이야기 (쉬지 않고도 들을 수 있다)</small></button></div>`}`);
+  const qb = b.querySelector('#ndQuiet');
+  if (qb) qb.addEventListener('click', async () => {
+    SFX.click();
+    const here = node;
+    await storyScene(d.quiet);
+    if (!alive || node !== here) return;
+    node.quiet = true; autosave();
+    storyRestDone(d);
+  });
+}
+
+// 휴식 결과 — 회복은 이미 들어갔고, 습격이면 싸우고 떠난다 (다시 들어와도 같은 결과)
+const restHeal = () => Math.max(1, 2 + dm().restHeal + mods().restHeal);
+function restOutcome(enc = null) {
+  const r = node.rested;
+  const healed = `<p class="nd-result">${icon('flame')} 잠시 눈을 붙였다. ${r.got ? `HP +${r.got}.` : '몸은 이미 멀쩡했다.'}</p>`;
+  if (!r.ambushed) { body(healed); leaveLabel('떠난다'); return; }
+  SFX.alarm();
+  body(`${healed}<p class="nd-alarm">${icon('burst')} 습격! 쉬던 자리로 감시 기계가 들이닥쳤다.</p><div class="nd-opts"><button class="nd-opt main" type="button" id="ndFight"><b>맞서 싸운다</b><small>적이 먼저 움직인다</small></button></div>`);
+  q('#ndLeave').hidden = true;
+  q('#ndFight').addEventListener('click', () => fight(enc || encounterFor({ id: node.id + '#amb', type: 'battle' }, { ambushed: true, sub: '휴식 중 습격' }), { after: 'rest' }));
+}
 
 /* ═════════════ 사건 ═════════════ */
 // 장면 속 도우미 — 사건 대본(data/events.js)의 act · if · cond가 부른다.
@@ -390,6 +584,10 @@ function eventCtx() {
       return CARDS[c.id].name;
     },
     shortcut() { RUN.flags.shortcut = true; note('지름길 — 다음엔 두 칸 앞 톱니로', 'good', 'leap'); },
+    // 가방 · 경계 단계 · 목표 (대본 1장)
+    item(id, n = 1) { addItem(id, n); note(`${ITEMS[id].name} ${sgn(n)}`, n > 0 ? 'good' : 'bad', ITEMS[id].icon); n > 0 ? SFX.gain() : SFX.click(); },
+    alertUp() { if (alertStageUp()) { note(`경계 +1단계 — 지금 ${alertStage()}단계`, 'bad', 'eye'); SFX.warn(); } },   // 대본의 '경계도 +1'
+    goal(t) { RUN.goal = t; note(`목표 — ${t}`, '', 'compass'); SFX.page(); },
     // 장면이 끝난 뒤 이 화면에서 이어지는 일 (하나만)
     cardPick(tier = 'normal') { G.pending = { t: 'cards', ids: cardChoices(R, tier, 3) }; },
     removePick() { G.pending = { t: 'remove' }; },
@@ -400,6 +598,7 @@ function eventCtx() {
     hp: () => RUN.hp, maxHpNow: () => maxHp(), partsNow: () => RUN.parts, shardsNow: () => RUN.shards, alertNow: () => RUN.alert,
     canUpgrade: () => RUN.deck.some(canUpgrade),
     hasCurse: () => RUN.deck.some(c => CARDS[c.id] && CARDS[c.id].rarity === 'curse'),
+    kits: () => bag().kit, potions: () => bag().potion, stage: () => alertStage(),
     deaths: () => RUN.stats.deaths || 0,
     intel: () => nextEliteBoss({ plain: true }),   // 다음 정예 · 보스 공략 (천막 속삭임과 같은 내용, 글만)
     // 이야기 깃발 — 이 판 동안 남아 다른 사건 · 정예 · 보스 대사가 달라진다 (재귀하면 그 시점으로 함께 돌아간다)
@@ -413,9 +612,9 @@ function eventCtx() {
 }
 // 재귀 기시감 — 되감기 전에 본 사건을 다시 만나면
 const DEJA = [
-  '…이 장면. 본 적이 있어.',
-  '째깍 — 같은 장면이 머릿속에서 한 번 더 겹쳐.',
-  '또 여기야. 되감기기 전에도… 여기 섰었어.',
+  '…이 장면. 본 적이 있다.',
+  '째깍. 같은 장면이 한 번 더 겹친다.',
+  '또 여기군. 되감기기 전에도 여기 섰었다.',
 ];
 function dejaLines(E, before) {
   const lines = E.deja ? E.deja.slice() : [{ who: 'hero', face: 'puzzled', text: DEJA[hashSeed(RUN.seed, node.id, RUN.recur) % DEJA.length] }];
@@ -424,7 +623,7 @@ function dejaLines(E, before) {
 }
 async function playEvent(id, E) {
   const here = node;
-  await loadAll(Object.values(E.cast || {}).map(c => c.art).filter(Boolean));
+  await loadAll(storyArtKeys(E.scene, E.cast || {}));   // 말하는 인물 · 적(돌진 기계 등) 그림
   if (!alive || node !== here) return;
   const G = eventCtx();
   const key = 'ev:' + id;
@@ -490,7 +689,7 @@ function nextEliteBoss({ plain = false } = {}) {
   const map = RUN.map;
   const reach = new Set(), stack = [...map.nodes[RUN.pos].next];
   while (stack.length) { const id = stack.pop(); if (reach.has(id)) continue; reach.add(id); stack.push(...map.nodes[id].next); }
-  const elites = [...reach].map(id => map.nodes[id]).filter(n => n.type === 'elite');
+  const elites = ch.encounters.elite.length ? [...reach].map(id => map.nodes[id]).filter(n => n.type === 'elite') : [];
   const lines = [];
   const TIPS = {
     gatekeeper: '수문장은 정면의 방패판이 단단합니다. 옆이나 뒤로 도세요. 앞 두 줄을 한꺼번에 내려찍으니 거리를 두시고요.',
@@ -504,7 +703,7 @@ function nextEliteBoss({ plain = false } = {}) {
     lines.push([`정예 · ${FOES[e.foes[0]].name}`, TIPS[e.id] || FOES[e.foes[0]].desc]);
   }
   const bd = BOSSES[ch.encounters.boss.boss];
-  lines.push([`보스 · ${bd.name}`, '루프마다 턴 공격 하나를 예고하고, 마지막 행동 뒤에 쏩니다. 「역류 주입」 같은 교란으로 과부하시키면 4코스트 동안 멈춥니다.']);
+  lines.push([`출입문 · ${bd.name}`, '루프마다 공격 하나를 예고하고, 마지막 행동 뒤에 쏩니다. 체력이 3분의 2 · 3분의 1 아래로 내려가면 절차가 바뀝니다. 마지막 「전 구역 폐쇄」 때는 옆 두 세로줄만 안전합니다. 덧붙인 명령판을 과부하시키면 4코스트 동안 멈춥니다.']);
   if (plain) return lines.map(([h, t]) => `「${h}」 — ${t}`).join(' ');
   return lines.map(([h, t]) => `<p><b>${h}</b> — ${t}</p>`).join('');
 }
@@ -513,10 +712,12 @@ function nextEliteBoss({ plain = false } = {}) {
 function renderShop() {
   const s = node.stock;
   const canBuy = p => RUN.parts >= p;
-  const b = body(`<div class="shop">
+  const sd = node.type === 'story' ? storyDef(node) : null;
+  const b = body(`${sd && sd.ask ? storyAskHTML(sd) : ''}<div class="shop">
     <div class="shop-cards">${s.cards.map((c, i) => `<div class="shop-item${c.sold ? ' sold' : ''}">${bigCardHTML(c.id, { pick: !c.sold, extra: `data-ci="${i}"` })}<span class="price${canBuy(c.price) ? '' : ' no'}">${icon('parts')}${c.price}</span></div>`).join('')}</div>
     <div class="shop-side">
       ${s.relics.map((r, i) => `<button class="shop-relic${r.sold ? ' sold' : ''}" type="button" data-ri="${i}"${r.sold ? ' disabled' : ''}>${relicHTML(r.id)}<span><b>${RELICS[r.id].name}</b><small>${RELICS[r.id].desc}</small></span><span class="price${canBuy(r.price) ? '' : ' no'}">${icon('parts')}${r.price}</span></button>`).join('')}
+      ${(s.items || []).map((it, i) => `<button class="shop-relic item${it.left ? '' : ' sold'}" type="button" data-ii="${i}"${it.left ? '' : ' disabled'}><span class="relic">${icon(ITEMS[it.id].icon)}</span><span><b>${ITEMS[it.id].name}<em class="left">${it.left ? `남은 ${it.left}` : '다 팔림'}</em></b><small>${ITEMS[it.id].desc}</small></span><span class="price${canBuy(it.price) ? '' : ' no'}">${icon('parts')}${it.price}</span></button>`).join('')}
       <button class="shop-relic remove${s.removed ? ' sold' : ''}" type="button" id="shopRemove"${s.removed ? ' disabled' : ''}><span class="relic">${icon('close')}</span><span><b>카드 없애기</b><small>덱에서 카드 한 장을 없앤다 (상점마다 한 번)</small></span><span class="price${canBuy(RUN.removeCost) ? '' : ' no'}">${icon('parts')}${RUN.removeCost}</span></button>
     </div></div>`, { keepScroll: true });
   b.querySelector('.shop-cards').addEventListener('click', e => {
@@ -528,6 +729,14 @@ function renderShop() {
     gainParts(-c.price); addCard(c.id); c.sold = true; SFX.coin(); hud(); autosave(); renderShop();
   });
   b.querySelector('.shop-side').addEventListener('click', e => {
+    const ib = e.target.closest('.shop-relic[data-ii]');
+    if (ib) {
+      const it = s.items[+ib.dataset.ii];
+      if (!it.left) return;
+      if (!canBuy(it.price)) { toast('부품이 모자라요'); SFX.deny(); return; }
+      gainParts(-it.price); addItem(it.id); it.left--; SFX.coin(); hud(); autosave(); renderShop();
+      return;
+    }
     const r = e.target.closest('.shop-relic[data-ri]');
     if (r) {
       const it = s.relics[+r.dataset.ri];
@@ -545,6 +754,7 @@ function renderShop() {
     }
   });
   bindTips(b, t => relicTip(t.dataset.tip));
+  if (sd && sd.ask) b.querySelector('.st-ask').addEventListener('click', e => { const x = e.target.closest('[data-ask]'); if (x) { SFX.click(); storyAsk(sd, x.dataset.ask); } });
 }
 
 // 암시장 그리기
@@ -626,7 +836,7 @@ function mount(holder, params = {}) {
   // 감시 톱니로 들어오며 오른 경계도는 첫 HUD에서 +로 보여 준다
   shownAlert = RUN.alert - (params.alertGained > 0 ? params.alertGained : 0);
   alertWhy = params.alertGained > 0 ? (chapterDef().hunted ? '추격' : '감시 톱니') : '';
-  h();
+  h(params);
 }
 function onKey(e) {
   if (e.key === 'Escape') {

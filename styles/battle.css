@@ -242,6 +242,33 @@
 .fbomb{position:absolute;left:calc(var(--c) * (var(--cs) + var(--gap)) + var(--cs) / 2);top:calc(var(--r) * (var(--cs) + var(--gap)) + var(--cs) / 2);width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FF9AB8,#B0213F 60%,#3A0716);border:2px solid #FFD6E2;box-shadow:0 0 12px rgba(255,92,138,.9)}
 .fbomb::after{content:"";position:absolute;right:-4px;top:-6px;width:8px;height:9px;border-radius:2px;background:#E8D6A8}
 .fbomb.n1{animation:fzPulse 1s ease-in-out infinite,bombBob 1s ease-in-out infinite}
+/* 곡사포 — 포탄 표식(십자) · 둘레일 때는 가운데가 비는 고리 */
+.fbomb.shell{background:radial-gradient(circle at 35% 30%,#FFE2A8,#C77A1E 60%,#3A2206);border-color:#FFE7B8;box-shadow:0 0 12px rgba(255,184,74,.9)}
+.fbomb.shell::after{display:none}
+.fbomb.ring{width:62px;height:62px;margin:-31px 0 0 -31px;background:none;border:3px dashed #FFB84A;box-shadow:0 0 12px rgba(255,184,74,.6),inset 0 0 12px rgba(255,184,74,.4)}
+.fbomb.ring.n1{animation:ringSpin 3s linear infinite}
+@keyframes ringSpin{to{rotate:360deg}}
+/* 돌진 — 길을 따라 굵은 화살 줄 */
+.fcharge{position:absolute;pointer-events:none;border-radius:3px;background:linear-gradient(90deg,rgba(255,176,64,.1),rgba(255,176,64,.75));box-shadow:0 0 10px rgba(255,176,64,.55)}
+.fcharge.h{left:calc(var(--x) * (var(--cs) + var(--gap)) + var(--cs) / 2);top:calc(var(--y) * (var(--cs) + var(--gap)) + var(--cs) * .56);width:calc((var(--n) - 1) * (var(--cs) + var(--gap)));height:8px}
+.fcharge.v{left:calc(var(--x) * (var(--cs) + var(--gap)) + var(--cs) / 2 - 4px);top:calc(var(--y) * (var(--cs) + var(--gap)) + var(--cs) / 2);height:calc((var(--n) - 1) * (var(--cs) + var(--gap)));width:8px;background:linear-gradient(180deg,rgba(255,176,64,.1),rgba(255,176,64,.75))}
+.fcharge.left{background:linear-gradient(270deg,rgba(255,176,64,.1),rgba(255,176,64,.75))}
+.fcharge.up{background:linear-gradient(0deg,rgba(255,176,64,.1),rgba(255,176,64,.75))}
+.fcharge::after{content:"";position:absolute;width:0;height:0;border:10px solid transparent}
+.fcharge.right::after{right:-14px;top:50%;margin-top:-10px;border-left:14px solid #FFB040;border-right:0}
+.fcharge.left::after{left:-14px;top:50%;margin-top:-10px;border-right:14px solid #FFB040;border-left:0}
+.fcharge.down::after{bottom:-14px;left:50%;margin-left:-10px;border-top:14px solid #FFB040;border-bottom:0}
+.fcharge.up::after{top:-14px;left:50%;margin-left:-10px;border-bottom:14px solid #FFB040;border-top:0}
+.fcharge.n1{animation:beamPulse .9s ease-in-out infinite}
+.fcharge.n2{opacity:.45;box-shadow:none}
+/* 감시 시계 송신 배지 */
+.foe-sig{position:absolute;left:-6px;top:-4px;z-index:2;display:flex;align-items:center;gap:3px;height:22px;padding:0 7px 0 5px;border-radius:11px;background:#2A1A3A;border:1px solid #9C7BD6;color:#E3D4FF;font:800 12px/1 var(--f-ui);box-shadow:0 2px 6px rgba(0,0,0,.6);white-space:nowrap}
+.foe-sig svg{width:11px;height:11px;fill:currentColor}
+.foe-sig.near{background:#4A1227;border-color:var(--foe);color:#FFD6E2;animation:fzPulse 1s ease-in-out infinite}
+.foe-sig.sent{background:#3A1010;border-color:#FF6A55;color:#FFB3A6}
+.foe-sig[hidden]{display:none}
+.ro-name .sig{margin-left:6px;font-size:11px;padding:2px 5px;border-radius:3px;background:#2A1A3A;color:#E3D4FF}
+.ro-name .sig.sent{background:#3A1010;color:#FFB3A6}
 .fbomb.n2{opacity:.5;box-shadow:none}
 @keyframes bombBob{50%{translate:0 -3px}}
 

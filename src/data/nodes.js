@@ -1,9 +1,9 @@
-// 톱니 지도의 칸 종류 16가지 (+ 시작 제단 · 튜토리얼 전투)
+// 톱니 지도의 칸 종류 16가지 (+ 시작 · 이야기 칸 — 튜토리얼은 이야기 칸의 전투에 들어 있다)
 // r = 톱니 크기(맞물림 반지름) · tone = 테두리 색
 export const NODE_TYPES = {
-  start:      { label: '제단',       icon: 'altar',    tone: '#F2D38F', r: 44, desc: '깨어난 곳. 여기서 첫 톱니가 돈다.' },
+  start:      { label: '시작',       icon: 'altar',    tone: '#F2D38F', r: 40, desc: '이 장이 시작된 곳. 여기서 첫 톱니가 돈다.' },
+  story:      { label: '이야기',     icon: 'book',     tone: '#F2D38F', r: 40, desc: '대본의 한 장면 — 반드시 지나는 뼈대 칸. 대화 · 전투 · 선택이 이어진다.' },
   battle:     { label: '전투',       icon: 'swords',   tone: '#E0865A', r: 36, desc: '일반 전투. 부품과 카드 한 장을 얻는다.' },
-  tutorial:   { label: '첫 전투',    icon: 'swords',   tone: '#E0865A', r: 36, desc: '몸이 싸우는 법을 기억해 낸다 — 튜토리얼 전투.' },
   elite:      { label: '정예',       icon: 'skull',    tone: '#FF5C6E', r: 44, desc: '강한 적과의 전투. 이야기가 있다. 부품 · 톱니 조각 · 유물 · 카드.' },
   midboss:    { label: '중간 보스',  icon: 'eyegear',  tone: '#FF7A45', r: 56, desc: '이 챕터의 중간 보스. 이야기가 있다.' },
   boss:       { label: '보스',       icon: 'clockeye', tone: '#FF3B4E', r: 78, desc: '이 챕터의 끝. 이야기가 있다.' },
@@ -22,4 +22,4 @@ export const NODE_TYPES = {
 };
 
 // 전투가 벌어지는 칸
-export const isFight = t => ['battle', 'tutorial', 'elite', 'midboss', 'boss', 'ambush', 'trial'].includes(t);
+export const isFight = t => ['battle', 'elite', 'midboss', 'boss', 'ambush', 'trial'].includes(t);

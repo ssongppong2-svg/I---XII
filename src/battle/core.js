@@ -3,6 +3,7 @@
 // 화면(view) · 연출(fx)은 H에 끼워 넣는다 — 규칙은 화면을 모른다
 import { FOES, BOSSES, ELITE_TRAITS } from '../data/foes.js';
 import { SHAPES, cardDef } from '../data/cards.js';
+import { ITEMS } from '../data/items.js';
 import { makeRng, hashSeed } from '../core/rng.js';
 import { sleep, iga } from '../core/util.js';
 
@@ -33,7 +34,8 @@ const noop = () => {};
 const nop = async () => {};
 export const H = {
   render: noop, renderBoard: noop, log: noop, toast: noop, bark: noop, say: noop, pose: noop,
-  scene: nop,               // 전투 중 이야기 (정예 · 보스만)
+  scene: nop,               // 전투 중 이야기 (이야기 전투 · 보스)
+  onInterlude: noop,        // 전투 중 이야기를 틀기 직전 (본 것으로 적어 둔다 — 재도전 때 다시 멈추지 않게)
   tut: noop,                // 튜토리얼 알림 (이벤트 이름)
   fx: new Proxy({}, { get: () => nop }),
   sfx: new Proxy({}, { get: () => noop }),
@@ -56,8 +58,8 @@ export const T = f => FOES[f.type];
 export const dueIn = f => (B.totalP + 1) % 2 === f.ph ? 1 : 2;
 
 /* ═════════════ 전투 준비 ═════════════ */
-// enc: { kind:'normal'|'boss', foes:[type], boss, hpMul, ambush(칸 수), ambushed, narrow, trial, tut, story, elite }
-// ctx: { hp, maxHp, deck:[inst], mods, diff, seed, name }
+// enc: { kind:'normal'|'boss', foes:[type], boss, hpMul, hpMulOf:{ 종류: 배율 }, ambush(칸 수), ambushed, narrow, trial, tut, story, elite, signal }
+// ctx: { hp, maxHp, deck:[inst], mods, diff, seed, name, items: { potion }, seen: [이미 본 전투 중 이야기] } — 회복약은 전투 중 1코스트, 이기면 남은 수를 돌려준다
 export function setupBattle(enc, ctx) {
   B.tok++;
   const mode = enc.kind === 'boss' ? 'boss' : 'normal';
@@ -87,8 +89,11 @@ export function setupBattle(enc, ctx) {
     busy: false, over: false, started: false,
     wardUsed: false, firstStrikeUsed: false, firstKillDone: false,
     stats: { dealt: 0, taken: 0, dodged: 0, cards: 0, kills: 0, freezes: 0, stuns: 0, loops: 0 },
-    seen: new Set(), pendingScenes: [],
+    seen: new Set(ctx.seen || []), pendingScenes: [],   // 전투 중 이야기는 한 판에 한 번 (재도전해도 다시 멈추지 않게)
     logs: [], logSeq: 0,
+    signal: !!enc.signal, signals: 0,   // 감시 시계 송신 — 끝난 송신 수(전투가 끝나면 경계가 그만큼 한 단계씩 오른다)
+    items: { potion: (ctx.items && ctx.items.potion) || 0 },
+    phase: 0,                            // 보스 단계(0부터)
   });
   B.area = [];
   for (let r = B.top; r < B.rows; r++) for (let c = 0; c < COLS; c++) if (inArea(r, c)) B.area.push(K(r, c));
@@ -110,7 +115,7 @@ function spawnFoes(types, enc) {
   const taken = [];
   const near = (r, c) => taken.some(t => Math.abs(t.r - r) + Math.abs(t.c - c) <= 1);
   // 처음부터 불공평하지 않게: 사격형은 나와 줄이 어긋나게, 폭탄형은 던지는 거리(2~3) 밖에서
-  const fair = (ai, r, c) => ai === 'line' ? r !== me.r && c !== me.c : ai === 'bomber' ? manh({ r, c }, me) >= 4 : ai === 'chaser' ? manh({ r, c }, me) >= 4 : true;
+  const fair = (ai, r, c) => ai === 'line' || ai === 'charge' ? r !== me.r && c !== me.c : ai === 'bomber' || ai === 'chaser' ? manh({ r, c }, me) >= 4 : ai === 'mortar' ? manh({ r, c }, me) >= 3 : true;
   types.forEach((type, i) => {
     const D = FOES[type];
     if (!D) return;
@@ -125,8 +130,9 @@ function spawnFoes(types, enc) {
     if (!cands) return;
     const [r, c] = R.pick(cands);
     taken.push({ r, c });
-    const hp = Math.max(1, Math.round(D.hp * (B.diff.foeHp || 1) * (enc.hpMul || 1)));
-    const f = { uid: ++B.foeUid, type, r, c, hp, max: hp, ph: (i + 1) % 2, face: 'down', flip: false, intent: null, skip: false, traits: [] };
+    const hp = Math.max(1, Math.round(D.hp * (B.diff.foeHp || 1) * (enc.hpMul || 1) * ((enc.hpMulOf || {})[type] || 1)));
+    const f = { uid: ++B.foeUid, type, r, c, hp, max: hp, ph: (i + 1) % 2, face: 'down', flip: false, intent: null, skip: false, traits: [], volley: 0 };
+    if (B.signal && type === 'watcher') f.sig = SIGNAL_TURNS;   // 송신까지 남은 행동 수
     // 정예 특성 (난이도 IV부터)
     if (D.elite && B.diff.eliteTrait) f.traits.push(R.pick(Object.keys(ELITE_TRAITS)));
     B.foes.push(f);
@@ -259,6 +265,17 @@ function lineFrom(f, dir) {
 const front3 = (f, face) => cellSet([[-1, -1], [-1, 0], [-1, 1]].map(ROT[face]).map(([dr, dc]) => [f.r + dr, f.c + dc]));
 const front6 = (f, face) => cellSet([[-1, -1], [-1, 0], [-1, 1], [-2, -1], [-2, 0], [-2, 1]].map(ROT[face]).map(([dr, dc]) => [f.r + dr, f.c + dc]));
 const plusAt = p => cellSet([[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]].map(([dr, dc]) => [p.r + dr, p.c + dc]));
+const ringAt = p => cellSet([[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]].map(([dr, dc]) => [p.r + dr, p.c + dc]));
+export const SIGNAL_TURNS = 4;   // 감시 시계가 송신을 끝내기까지 자기 행동 수 — 그 전에 부수면 막는다
+// 돌진 길 — 그 방향으로 판 끝(또는 다른 적 앞)까지. 예고할 때 정해지고 바뀌지 않는다
+function chargePath(f, dir) {
+  const [dr, dc] = DIRS[dir], out = [];
+  for (let r = f.r + dr, c = f.c + dc; inArea(r, c); r += dr, c += dc) {
+    if (B.foes.some(g => g !== f && g.hp > 0 && g.r === r && g.c === c)) break;
+    out.push([r, c]);
+  }
+  return out;
+}
 // 이동 계획용 빈칸: 내 칸 · 다른 적 · 다른 적이 가기로 한 칸은 피한다
 function freeForPlan(r, c, f) {
   if (!inArea(r, c) || (B.p.r === r && B.p.c === c)) return false;
@@ -299,15 +316,34 @@ export function planFoe(f) {
       it = moveIntent(f, q => -manh(q, p) - (cheb(q, p) === 1 ? 0 : 0.5), D.step || 1);
       if (it.kind === 'move') f.face = it.dir;
     }
+  } else if (D.ai === 'charge') {
+    // 돌진 — 같은 줄이면 그 줄을 따라 돌진 예고, 아니면 줄을 맞추되 거리를 두는 자리로 한 칸
+    const path = f.r === p.r || f.c === p.c ? chargePath(f, f.r === p.r ? (p.c < f.c ? 'left' : 'right') : (p.r < f.r ? 'up' : 'down')) : [];
+    if (path.length) {
+      const dir = f.r === p.r ? (p.c < f.c ? 'left' : 'right') : (p.r < f.r ? 'up' : 'down');
+      it = { kind: 'atk', dir, cells: cellSet(path), path };
+      f.face = dir;
+    } else {
+      it = moveIntent(f, q => (q.r === p.r || q.c === p.c ? 10 - Math.abs(manh(q, p) - 3) : -0.2 * manh(q, p)));
+      if (it.kind === 'move') f.face = it.dir;
+    }
+  } else if (D.ai === 'mortar') {
+    // 곡사포 — 움직이지 않는다. 내 자리에 십자 5칸 · 둘레 8칸(가운데 안전)을 번갈아. 바로 옆에 붙으면 못 쏜다
+    if (cheb(f, p) <= 1) it = { kind: 'wait', close: true };
+    else {
+      const ring = f.volley % 2 === 1;
+      it = { kind: 'atk', dir: null, cells: ring ? ringAt(p) : plusAt(p), center: { r: p.r, c: p.c }, ring };
+    }
   } else {   // bomber
     const d = manh(f, p);
     if (d >= 2 && d <= 3) it = { kind: 'atk', dir: null, cells: plusAt(p), center: { r: p.r, c: p.c } };
     else it = moveIntent(f, q => -Math.abs(manh(q, p) - 2.5));
   }
   f.intent = it;
-  if (D.ai === 'line' || D.ai === 'bomber') f.face = faceToward(f, p);
+  if (D.ai === 'line' || D.ai === 'bomber' || D.ai === 'mortar') f.face = faceToward(f, p);
   const hx = p.c - f.c;
-  if (hx) f.flip = hx > 0 ? D.native === 'L' : D.native === 'R';
+  if (D.noFlip) f.flip = false;
+  else if (hx) f.flip = hx > 0 ? D.native === 'L' : D.native === 'R';
 }
 
 /* ═════════════ 흐름 ═════════════ */
@@ -336,10 +372,25 @@ function drawOne() {
 }
 function drawUpTo(n) { while (B.hand.length < Math.min(n, B.handMax)) if (!drawOne()) break; }
 function pickPattern() {
-  const pats = B.boss.def.patterns;
+  const def = B.boss.def;
+  const ids = def.phases ? def.phases[B.phase].pats : null;
+  const pats = ids ? def.patterns.filter(p => ids.includes(p.id)) : def.patterns;
   const ok = pats.filter(p => p.id !== B.prevPat);
   return B.R.pick(ok.length ? ok : pats);
 }
+// 보스 단계 — 체력이 문턱(at)을 넘으면 다음 단계: 턴 공격이 바뀌고, 그 단계 이야기(phase2 · phase3)를 한 번 튼다
+function bossPhaseCheck() {
+  if (!B.boss) return;
+  const ph = B.boss.def.phases;
+  if (!ph) { if (B.boss.hp <= B.boss.max * 0.5) queueInterlude('half'); return; }
+  while (B.phase + 1 < ph.length && B.boss.hp <= B.boss.max * ph[B.phase + 1].at) {
+    B.phase++;
+    log(`${B.boss.def.name} — ${B.phase + 1}단계 「${ph[B.phase].name}」`, 'warn');
+    queueInterlude('phase' + (B.phase + 1));
+    H.sfx.warn();
+  }
+}
+export const bossPhaseName = () => B.boss && B.boss.def.phases ? `${B.phase + 1}단계 · ${B.boss.def.phases[B.phase].name}` : '';
 export const ambushOn = () => B.ambushCells > 0;
 
 // 유물 · 이식의 때맞춘 효과
@@ -401,6 +452,11 @@ export function validate(a) {
     if (!inArea(r, c)) return '막힌 칸이에요';
     const f = foeAt(r, c);
     if (f) return `${T(f).name}${iga(T(f).name)} 막고 있어요`;
+    return null;
+  }
+  if (a.type === 'potion') {
+    if (!(B.items.potion > 0)) return '회복약이 없어요';
+    if (B.hp >= B.maxHp) return 'HP가 가득 차 있어요';
     return null;
   }
   if (a.type === 'draw') {
@@ -477,8 +533,16 @@ async function foesAct() {
   if (!due.length) return;
   for (const f of due) {
     if (f.hp <= 0) continue;
+    const skipped = !!(f.intent && f.intent.skipped);
     await foeExecute(f);
     if (B.over) return;
+    // 감시 시계 송신 — 제 행동을 마칠 때마다 한 칸(멈춘 동안은 그대로). 끝나면 경계 한 단계 (전투가 끝난 뒤 반영)
+    if (f.sig > 0 && f.hp > 0 && !skipped && --f.sig === 0) {
+      B.signals++;
+      log(`${T(f).name} — 위치 송신 완료. 경계가 한 단계 오른다`, 'bad');
+      H.say(f, 'signal'); H.sfx.alarm(); H.toast('감시 시계가 위치를 송신했다 — 경계 +1단계');
+      H.tut('signal');
+    }
   }
   for (const f of due) if (f.hp > 0) { f.skip = false; planFoe(f); }
   H.render();
@@ -502,8 +566,23 @@ async function foeExecute(f) {
     return;
   }
   if (B.R.chance(0.45)) H.say(f, 'atk');
-  await H.fx.foeAttack(f, it);
   let dmg = D.dmg + (f.traits.includes('frenzy') && f.hp <= f.max / 2 ? 1 : 0);
+  if (it.path) {
+    // 돌진 — 예고한 길을 따라가다 나를 만나면 부딪치고 그 앞에 멈춘다. 다른 적이 길을 막으면 그 앞에서 멈춘다
+    let land = null, hit = false;
+    for (const [r, c] of it.path) {
+      if (B.p.r === r && B.p.c === c) { hit = true; break; }
+      if (foeAt(r, c)) break;
+      land = { r, c };
+    }
+    await H.fx.foeAttack(f, Object.assign({}, it, { land, hit }));
+    if (land) { f.r = land.r; f.c = land.c; H.render(); }
+    if (hit) await damagePlayer(dmg, { src: `${D.name} ${D.atk}` });
+    else { B.stats.dodged++; log(`${D.name} ${D.atk} — 헛돌진`, 'ok'); }
+    return;
+  }
+  if (D.ai === 'mortar') f.volley++;
+  await H.fx.foeAttack(f, it);
   if (it.cells.has(K(B.p.r, B.p.c))) await damagePlayer(dmg, { src: `${D.name} ${D.atk}` });
   else { B.stats.dodged++; log(`${D.name} ${D.atk} — 회피`, 'ok'); }
 }
@@ -539,6 +618,7 @@ async function bombBlast(f) {
     B.stats.dealt += D.blast;
     H.fx.bossHit(bcols, D.blast, false);
     log(`자폭에 보스가 휘말림 — ${D.blast} 피해`, 'ok');
+    bossPhaseCheck();
   }
   const caught = liveFoes().filter(g => set.has(K(g.r, g.c)));
   for (const g of caught) {
@@ -660,7 +740,7 @@ function addBossOl(n) {
 
 async function fizzle(a) {
   B.lastAct = 'fizzle'; B.chain = 0;
-  log(a.type === 'move' ? '마비 — 제자리에서 움직이지 못했다' : a.type === 'draw' ? '마비 — 뽑기 실패, 코스트만 소모' : '마비 — 카드가 작동하지 않았다', 'volt');
+  log(a.type === 'move' ? '마비 — 제자리에서 움직이지 못했다' : a.type === 'draw' ? '마비 — 뽑기 실패, 코스트만 소모' : a.type === 'potion' ? '마비 — 회복약을 꺼내지 못했다' : '마비 — 카드가 작동하지 않았다', 'volt');
   H.sfx.fizzle(); H.fx.fizzle();
   H.render();
   await wait(240);
@@ -668,6 +748,16 @@ async function fizzle(a) {
 
 async function resolve(a) {
   if (a.type === 'move') { await doMove(a.dir, 1); B.lastAct = 'move'; B.chain = 0; H.tut('moved'); return; }
+  if (a.type === 'potion') {
+    B.items.potion--;
+    const b = B.hp;
+    B.hp = Math.min(B.maxHp, B.hp + ITEMS.potion.heal);
+    B.lastAct = 'potion'; B.chain = 0;
+    log(`회복약 — HP +${B.hp - b}`, 'ok');
+    H.fx.heal(); H.render();
+    await wait(220);
+    return;
+  }
   if (a.type === 'draw') {
     drawOne(); B.lastAct = 'draw'; B.chain = 0;
     log('카드 1장 추가 뽑기'); H.sfx.draw(); H.render();
@@ -765,7 +855,7 @@ async function playCard(a) {
     if (await checkWin()) return;
     if (tg.boss) {
       if (!B.lowBarked && B.boss.hp <= B.boss.max * 0.3) { B.lowBarked = true; H.bark('low'); }
-      if (B.boss.hp <= B.boss.max * 0.5) queueInterlude('half');
+      bossPhaseCheck();
       if (def.bossOl) addBossOl(def.bossOl);
     }
     const ol = (def.ol || 0) + (def.rapid ? def.rapid * chain : 0);
@@ -837,7 +927,11 @@ export function queueInterlude(key) {
   B.pendingScenes.push(key);
 }
 async function flushInterludes() {
-  while (B.pendingScenes.length && !B.over) await H.scene(B.enc.interludes[B.pendingScenes.shift()]);
+  while (B.pendingScenes.length && !B.over) {
+    const key = B.pendingScenes.shift();
+    if (H.onInterlude) H.onInterlude(key);
+    await H.scene(B.enc.interludes[key]);
+  }
 }
 
 async function victory() {
@@ -856,5 +950,7 @@ async function defeat() {
 // 개발 · 시험용 — 적 하나 처치 / 즉시 승리
 export async function debugKill() { const f = liveFoes()[0]; if (f) await run(async () => { await foeDown(f); if (!B.over) await checkWin(); }); }
 export async function debugLose() { await run(async () => { B.hp = 0; await defeat(); }); }
+// 시험용 — 보스 체력을 비율로 깎고 단계를 판정한다 (단계 대사까지)
+export async function debugHurtBoss(frac) { await run(async () => { if (!B.boss) return; B.boss.hp = Math.max(1, Math.floor(B.boss.max * frac)); bossPhaseCheck(); H.render(); await flushInterludes(); }); }
 export async function debugWin() { await run(async () => { if (B.boss) B.boss.hp = 0; for (const f of liveFoes()) { f.hp = 0; f.gone = true; } await victory(); }); }
 export const helpers = HELP;

@@ -35,7 +35,7 @@ function tone(f, t, o = {}) {
 function hiss(t, o = {}) {
   if (!ctx || !SET.sound) return;
   const t0 = ctx.currentTime + (o.at || 0);
-  const src = ctx.createBufferSource(); src.buffer = noise;
+  const src = ctx.createBufferSource(); src.buffer = noise; src.loop = t > 1.1;   // 긴 소리(바람 · 문)는 잡음을 이어 붙인다
   const bf = ctx.createBiquadFilter(); bf.type = o.type || 'lowpass'; bf.frequency.value = o.f || 1200; bf.Q.value = o.q || 0.7;
   const g = ctx.createGain();
   g.gain.setValueAtTime(o.v || 0.2, t0);
@@ -85,6 +85,16 @@ export const SFX = {
   lose()   { [330, 262, 196, 131].forEach((f, i) => tone(f, 0.6, { type: 'triangle', v: 0.09, at: i * 0.18 })); },
   // 지도 · 메뉴
   tick()   { tone(1900, 0.03, { type: 'square', v: 0.035 }); hiss(0.03, { v: 0.05, f: 6000, type: 'highpass' }); },
+  bell()   { tone(196, 2.2, { type: 'sine', v: 0.09, f2: 194 }); tone(392, 1.6, { type: 'sine', v: 0.035 }); tone(587, 1.1, { type: 'triangle', v: 0.018, at: 0.02 }); },   // 먼 종소리
+  wheel()  { for (let i = 0; i < 5; i++) tone(1400 + (i % 2) * 300, 0.03, { type: 'square', v: 0.018, at: i * 0.07 }); },         // 작은 바퀴
+  // 열두 개의 시계가 어긋나게 겹친다 (01 첫 장면)
+  clocks() { for (let c = 0; c < 12; c++) { const f = 1500 + c * 70, off = c * 0.037; for (let i = 0; i < 4; i++) tone(f, 0.022, { type: 'square', v: 0.012, at: off + i * (0.3 + c * 0.013) }); } },
+  // 하나뿐이던 박자에 겹치는 낯선 박자 두 번 (II의 잔향)
+  beat2()  { tone(110, 0.5, { type: 'sine', v: 0.12, f2: 96 }); tone(220, 0.3, { type: 'triangle', v: 0.03 }); tone(123, 0.55, { type: 'sine', v: 0.11, f2: 104, at: 0.42 }); tone(247, 0.3, { type: 'triangle', v: 0.028, at: 0.42 }); },
+  door()   { tone(55, 1.6, { type: 'sawtooth', v: 0.05, f2: 42 }); hiss(1.4, { v: 0.09, f: 380 }); for (let i = 0; i < 6; i++) tone(700 - i * 60, 0.05, { type: 'square', v: 0.016, at: 0.2 + i * 0.18 }); },   // 큰 문이 열린다
+  clank()  { tone(620, 0.32, { type: 'triangle', v: 0.08, f2: 540 }); tone(1480, 0.2, { type: 'triangle', v: 0.035 }); hiss(0.12, { v: 0.1, f: 3200, type: 'bandpass', q: 1.1 }); tone(90, 0.3, { v: 0.1, f2: 60, at: 0.05 }); },   // 쇳조각이 떨어진다
+  wind()   { hiss(2.4, { v: 0.05, f: 520, type: 'lowpass' }); hiss(1.8, { v: 0.025, f: 1200, type: 'bandpass', q: 0.4, at: 0.5 }); },   // 바람 · 멀어지는 도시
+  steps()  { for (let i = 0; i < 6; i++) { tone(140 + (i % 2) * 20, 0.06, { type: 'triangle', v: 0.05, at: i * 0.21 }); hiss(0.04, { v: 0.03, f: 1400, at: i * 0.21 }); } },   // 여러 사람의 발소리
   tock()   { tone(1300, 0.04, { type: 'square', v: 0.03 }); hiss(0.03, { v: 0.04, f: 4000, type: 'highpass' }); },
   gears()  { for (let i = 0; i < 8; i++) { tone(i % 2 ? 1500 : 1900, 0.025, { type: 'square', v: 0.022, at: i * 0.11 }); hiss(0.03, { v: 0.03, f: 5000, type: 'highpass', at: i * 0.11 }); } tone(90, 0.9, { type: 'sawtooth', v: 0.03, f2: 70 }); },
   click()  { tone(1100, 0.04, { type: 'triangle', v: 0.05 }); },
