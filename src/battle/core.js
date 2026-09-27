@@ -37,6 +37,8 @@ export const H = {
   scene: nop,               // 전투 중 이야기 (이야기 전투 · 보스)
   onInterlude: noop,        // 전투 중 이야기를 틀기 직전 (본 것으로 적어 둔다 — 재도전 때 다시 멈추지 않게)
   tut: noop,                // 튜토리얼 알림 (이벤트 이름)
+  onLoop: noop,             // 루프가 시작될 때 (루프 번호)
+  storySay: noop,           // 대본의 전투 중 한마디 (enc.say — 한 판에 한 번)
   fx: new Proxy({}, { get: () => nop }),
   sfx: new Proxy({}, { get: () => noop }),
 };
@@ -445,6 +447,7 @@ async function startLoop() {
   log(`루프 ${B.loop}${parts.length ? ' — ' + parts.join(' · ') : ''}`, 'dim');
   H.sfx.arm(); H.render(); H.fx.arming();
   H.tut('loop');
+  H.onLoop(B.loop);
   await wait(220);
 }
 

@@ -155,6 +155,10 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await waitScreen('scr-battle', 15000);
   await page.waitForTimeout(300);
   check(!(await sceneOpen()) && (await run()).stats.deaths === 1, '03: 쓰러지면 앞 대사 없이 곧장 그 전투로');
+  // 재도전에서 두 번째 루프까지 — 한마디(03-010)는 처음 한 번만 (안내가 꺼진 판에서는 두 번째 루프에 나온다)
+  for (const k of ['KeyA', 'KeyD', 'KeyA', 'KeyD']) { await battleReady(); await page.keyboard.press(k); await page.waitForTimeout(600); }
+  await page.waitForFunction(() => I12.B.loop >= 2, null, { timeout: 10000 });
+  check(await page.evaluate(() => !I12.B.logs.some(l => /이 감각/.test(l.t))), '03: 재도전 — 한마디(03-010)는 다시 하지 않는다');
   await battleReady();
   await page.evaluate(() => I12.core.debugWin());
   await sceneWait();

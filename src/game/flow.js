@@ -101,7 +101,7 @@ export function encounterFor(node, extra = {}) {
       const d = storyDef(node) || {};
       const e = d.enc || { foes: E.easy[0] };
       enc = { kind: 'normal', foes: e.foes.slice(), hpMul: e.hpMul, ambush: e.ambush !== undefined ? e.ambush : ch.ambush.normal, tut: e.tut, signal: !!e.signal,
-        sub: e.sub || d.title, story: node.story, storyBattle: true, noReinforce: true };
+        sub: e.sub || d.title, story: node.story, storyBattle: true, noReinforce: true, say: e.say || '' };   // say — 대본의 전투 중 한마디
       // 사건에서 세운 깃발에 따라 적이 약해진다 — { 깃발: { 적 종류: 체력 배율 } } (예: 새끼 돌진 기계를 데려왔으면 돌진 기계가 머뭇거린다)
       for (const [flag, mul] of Object.entries(e.flagMul || {})) if ((RUN.flags.ev || {})[flag]) enc.hpMulOf = Object.assign({}, enc.hpMulOf, mul);
       // 고른 경로에 따라 배치가 달라진다 (09 — 가림길: 구석에서 시작 · 송신이 늦다 / 직행: 판 가운데)

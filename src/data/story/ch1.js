@@ -97,7 +97,8 @@ export const CH1_STORY = {
   s03: {
     no: '03', title: '출고되지 않은 물건', kind: 'battle', icon: 'swords', place: '회종시 · 회수소 출구', tone: '#E0865A',
     teaser: '대화 · 학습 전투 — 감시 시계 1기',
-    enc: { foes: ['watcher'], hpMul: 0.6, ambush: 0, tut: 1, sub: '학습 전투' },
+    enc: { foes: ['watcher'], hpMul: 0.6, ambush: 0, tut: 1, sub: '학습 전투',
+      say: '이 감각…… 아까 눈을 떴을 때도.' },   // 03-010 — 재귀 설명창이 뜰 때 주인공의 말풍선 (안내를 꺼 두면 두 번째 루프가 시작될 때)
     pre: [
       { ...bg('s03'), tint: 'dark', amb: 'hum', place: '회종시 · 회수소 출구' },
       say('watcher', '반출 물품 확인. 운반 허가증을 제시하십시오.'),
@@ -111,7 +112,7 @@ export const CH1_STORY = {
       mh('네. 나중에 따져요. 지금 렌즈가 당신을 따라가잖아요.'),
       { exit: 'marte' },   // [마르트 퇴장. 전투 B01.]
     ],
-    // 03-010 「이 감각…… 아까 눈을 떴을 때도.」 — 전투 중 재귀 설명창이 뜰 때 주인공의 말풍선 (battle/tutorial.js)
+    // 03-010은 전투 중 말풍선 — 위 enc.say
     win: [
       { ...bg('s03'), tint: 'dark', amb: 'hum' },
       // [전투 승리. 감시 시계 퇴장.]

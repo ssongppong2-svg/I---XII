@@ -6,7 +6,7 @@ import { encounterFor, rewardsFor, sceneOpts as sceneOptsFor, storyOf, TRIALS } 
 import { B, H, setupBattle, startBattle, log, SIGNAL_TURNS } from '../battle/core.js';
 import { mountView, setupBoard, render, wireHooks, viewRoot } from '../battle/view.js';
 import { bindInput, battleKey } from '../battle/input.js';
-import { startTutorial, stopTutorial } from '../battle/tutorial.js';
+import { startTutorial, stopTutorial, tutorialActive } from '../battle/tutorial.js';
 import { playScene } from '../scenes/scene.js';
 import { loadAll } from '../ui/assets.js';
 import { foeArtKeys, storyArtKeys } from '../ui/foeart.js';
@@ -42,6 +42,12 @@ async function mount(holder, params = {}) {
   const ilKey = k => `il:${enc.story || ''}:${k}`;
   const seenIl = Object.keys(enc.interludes || {}).filter(k => (RUN.flags.seen || {})[ilKey(k)]);
   H.onInterlude = k => { RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [ilKey(k)]: true }); };
+  // 대본의 전투 중 한마디(03-010) — 튜토리얼의 재귀 설명창과 함께. 안내가 꺼져 있거나 그 전에 끄면 두 번째 루프가 시작될 때
+  // 단계 대사처럼 처음 한 번만 — 쓰러져 재도전해도 다시 말하지 않는다
+  const sayKey = ilKey('say');
+  let said = !enc.say || !!(RUN.flags.seen || {})[sayKey];
+  H.storySay = () => { if (said || !alive) return; said = true; RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [sayKey]: true }); H.heroSay(enc.say); };
+  H.onLoop = n => { if (n >= 2 && !tutorialActive()) H.storySay(); };
   setupBattle(enc, { hp: RUN.hp, maxHp: maxHp(), deck: RUN.deck, mods: mods(), diff: dm(), seed: enc.seed, name: RUN.name || '???', items: bag(), seen: seenIl });
   B.relicIds = RUN.relics.slice(); B.implantIds = RUN.implants.slice();
   B.onEnd = win => onEnd(win);
