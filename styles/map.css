@@ -1,0 +1,121 @@
+/* ═════════════ 톱니 지도 ═════════════ */
+.scr-map{background:
+  radial-gradient(40% 55% at 6% 52%,rgba(214,150,70,.16),transparent 70%),
+  radial-gradient(38% 60% at 97% 40%,rgba(150,190,230,.13),transparent 70%),
+  radial-gradient(90% 80% at 50% 50%,#15111B 0%,#0B0910 62%,#050407 100%)}
+.scr-map::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 4px)}
+/* 뒤편의 커다란 시계판 */
+.map-clock{position:absolute;left:50%;top:54%;width:1180px;height:1180px;translate:-50% -50%;opacity:.07;pointer-events:none}
+.map-clock circle{fill:none;stroke:#E8D2A0}
+.map-clock text{fill:#E8D2A0;font:800 64px var(--f-num);text-anchor:middle;dominant-baseline:central}
+.map-clock .hand{stroke:#E8D2A0;stroke-linecap:round}
+/* 탐조등 (3시 전 — 감시 구역) */
+.map-search{position:absolute;right:-6%;top:-12%;width:900px;height:1400px;transform-origin:78% 6%;pointer-events:none;opacity:.5;mix-blend-mode:screen;
+  background:linear-gradient(200deg,rgba(200,230,255,.16),rgba(200,230,255,0) 70%);clip-path:polygon(76% 0,80% 0,100% 100%,20% 100%);animation:mapSweep 14s ease-in-out infinite alternate}
+@keyframes mapSweep{from{rotate:10deg}to{rotate:36deg}}
+
+.mech{position:absolute;inset:0;width:1920px;height:1080px}
+.mech .axle{stroke:rgba(214,174,98,.13);stroke-width:2;stroke-dasharray:2 8;stroke-linecap:round}
+.mech .axle.lit{stroke:rgba(242,211,143,.42);stroke-dasharray:none;stroke-width:2.4}
+.mech .axle.trail{stroke:rgba(242,211,143,.2);stroke-dasharray:none}
+.idl .rot path{fill:url(#gSteel);stroke:rgba(0,0,0,.6);stroke-width:.8}
+.idl .pin{fill:#1A140C;stroke:#8C744A;stroke-width:.8}
+.idl{transition:opacity .4s}
+.idl.dim{opacity:.34}
+.idl.trail{opacity:.72}
+.idl.lit .rot path{fill:url(#gBrass)}
+.idl.lit{filter:drop-shadow(0 0 5px rgba(242,211,143,.55))}
+.idl.hot .rot path{fill:#FFE7AE}
+
+.gn{transition:opacity .4s}
+.gn .body{fill:url(#gBrass);stroke:rgba(0,0,0,.65);stroke-width:1.2}
+.gn.t-elite .body,.gn.t-midboss .body{fill:url(#gIron)}
+.gn.t-boss .body{fill:url(#gBlood)}
+.gn.t-start .body{fill:url(#gBrass)}
+.gn .rim{fill:#130F0B;stroke:var(--tone);stroke-width:2.4}
+.gn .ico{fill:var(--tone)}
+.gn .lbl{fill:#D8CDB8;font:700 15px var(--f-ui);text-anchor:middle;paint-order:stroke;stroke:#08070A;stroke-width:5px;stroke-linejoin:round;letter-spacing:.02em;pointer-events:none}
+.gn .halo{fill:none;stroke:var(--tone);stroke-width:3;opacity:0;transition:opacity .3s}
+.gn .dial{fill:#1A0E10;stroke:#FF6A7E;stroke-width:2}
+.gn .dtick{stroke:#E8C9B0;stroke-width:2;stroke-linecap:round}
+.gn .dnum{fill:#F6D7C8;font:800 22px var(--f-num);text-anchor:middle;dominant-baseline:central}
+.gn.t-boss .ico{fill:#FF6A7E}
+.gn .watch circle{fill:#2A0E0E;stroke:#FF6A55;stroke-width:2}
+.gn .watch use{fill:#FF9C8C}
+.gn.avail{cursor:pointer}
+.gn.avail .halo{opacity:1;animation:haloPulse 1.3s ease-in-out infinite}
+@keyframes haloPulse{50%{stroke-width:6;opacity:.45}}
+.gn.avail:hover .body,.gn.avail.focus .body{filter:brightness(1.28)}
+.gn.avail:hover .halo,.gn.avail.focus .halo{stroke:#FFF1C9;animation:none;opacity:1;stroke-width:4}
+.gn.cur .halo{opacity:1;stroke:#F2D38F;stroke-width:4;animation:none;filter:url(#fGlow)}
+.gn.cur .body{filter:brightness(1.12)}
+.gn.done .body{fill:url(#gDark)}
+.gn.done .ico{fill:#7A6E5E}
+.gn.done .rim{stroke:#5A5046}
+.gn.done .lbl{fill:#7A7064}
+.gn.done.cur .ico{fill:#F2D38F}
+.gn.gone{opacity:.3}
+.gn.far{opacity:.82}
+.gn.gone .lbl{opacity:0}
+.gn.pulse .body{animation:gnPulse .5s ease-out}
+@keyframes gnPulse{0%{filter:brightness(2.2)}100%{filter:none}}
+
+/* 표식 — 지금 톱니 위에 선 주인공 */
+.map-hero{position:absolute;z-index:6;width:92px;height:118px;margin:-118px 0 0 -46px;pointer-events:none;transition:none}
+.map-hero img{width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 0 1.5px rgba(255,236,200,.95)) drop-shadow(0 6px 6px rgba(0,0,0,.8))}
+.map-hero .pin{position:absolute;left:50%;bottom:0;width:30px;height:30px;margin-left:-15px;border-radius:50% 50% 50% 0;rotate:-45deg;background:radial-gradient(circle at 40% 40%,#FFF1C9,#D6AE62 60%,#7C6234);box-shadow:0 0 16px rgba(242,211,143,.8)}
+.map-hero.idle{animation:heroBob 2.4s ease-in-out infinite}
+@keyframes heroBob{50%{translate:0 -5px}}
+
+/* ── 위 막대 ── */
+.map-top{position:absolute;left:0;right:0;top:0;z-index:10;height:104px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:0 40px;
+  background:linear-gradient(180deg,rgba(8,7,11,.94),rgba(8,7,11,.6) 70%,transparent)}
+.ch-badge{display:flex;align-items:center;gap:16px;min-width:0}
+.ch-num{flex:none;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font:800 30px/1 var(--f-num);color:var(--brass-hi);
+  background:radial-gradient(circle at 35% 30%,#3A2E18,#120E08 70%);border:2px solid var(--brass);box-shadow:0 0 22px rgba(214,174,98,.3),inset 0 0 12px rgba(0,0,0,.8)}
+.ch-txt{min-width:0}
+.ch-txt b{display:block;font:900 26px/1.2 var(--f-serif);white-space:nowrap}
+.ch-txt span{display:block;margin-top:2px;font-size:14px;color:var(--ash);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-res{display:flex;align-items:center;gap:28px;padding:12px 26px;border:1px solid var(--line);border-radius:40px;background:rgba(14,12,18,.82);box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.map-res .sep{width:1px;height:28px;background:var(--line-2)}
+.map-btns{justify-self:end;display:flex;gap:8px}
+.map-btns .icon-btn{height:44px;padding:0 14px;font-size:14px}
+.btn-save{border-color:var(--brass-lo)!important;color:var(--brass-hi)!important}
+.btn-save svg{fill:var(--brass-hi)!important}
+.btn-save b{font:800 15px/1 var(--f-num)}
+.btn-save.spent{opacity:.45}
+.btn-save.glow{animation:saveGlow 1.2s ease-out}
+@keyframes saveGlow{0%{box-shadow:0 0 0 0 rgba(242,211,143,.9),0 0 40px rgba(242,211,143,.8)}100%{box-shadow:none}}
+/* 유물 줄 */
+.relic-strip{position:absolute;left:40px;top:112px;z-index:10;display:flex;gap:8px;flex-wrap:wrap;max-width:760px}
+.relic-strip .relic{width:40px;height:40px}
+.relic-strip .relic svg{width:22px;height:22px}
+.relic-strip .relic.implant{border-radius:8px}
+
+/* ── 아래: 범례 · 안내 · 톱니 정보 ── */
+.map-legend{position:absolute;left:40px;bottom:30px;z-index:10;display:grid;grid-template-columns:repeat(4,auto);gap:8px 18px;padding:14px 18px;border:1px solid var(--line);border-radius:8px;background:rgba(14,12,18,.8)}
+.map-legend span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ash);white-space:nowrap}
+.map-legend svg{width:18px;height:18px;fill:var(--tone)}
+.map-legend .watch-l svg{fill:#FF9C8C}
+.map-hint{position:absolute;left:50%;bottom:34px;translate:-50% 0;z-index:10;padding:10px 22px;border-radius:30px;background:rgba(14,12,18,.8);border:1px solid var(--line);font:700 16px/1.3 var(--f-ui);color:var(--brass-hi);white-space:nowrap}
+.map-hint.warn{color:#FF9C8C;border-color:#7A2A22}
+.map-info{position:absolute;right:40px;bottom:30px;z-index:10;width:400px;min-height:120px;padding:16px 20px;border:1px solid var(--line);border-radius:8px;background:rgba(14,12,18,.88);transition:opacity .15s}
+.map-info.empty{opacity:.0}
+.map-info .mi-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.map-info .mi-head svg{width:26px;height:26px;fill:var(--tone)}
+.map-info .mi-head b{font:900 22px/1.2 var(--f-serif)}
+.map-info .mi-head em{margin-left:auto;font:700 12px/1 var(--f-ui);font-style:normal;padding:4px 7px;border-radius:3px;border:1px solid currentColor;color:var(--mute)}
+.map-info .mi-head em.go{color:var(--ok)}
+.map-info p{margin:0;font-size:14.5px;line-height:1.6;color:var(--ash)}
+.map-info .mi-watch{margin-top:8px;font-size:13.5px;color:#FF9C8C}
+.map-info .mi-foes{margin-top:8px;font-size:13.5px;color:var(--mute)}
+
+/* 발각 · 챕터 시작 알림 */
+.map-banner{position:absolute;inset:0;z-index:30;display:grid;place-items:center;pointer-events:none}
+.map-banner>div{padding:34px 70px;border-radius:10px;text-align:center;background:linear-gradient(180deg,rgba(20,16,26,.96),rgba(10,8,14,.96));border:1px solid var(--brass-lo);box-shadow:0 0 80px rgba(214,174,98,.2);animation:bannerIn 2.4s ease forwards}
+.map-banner b{display:block;font:800 88px/1 var(--f-num);color:var(--brass)}
+.map-banner span{display:block;margin-top:14px;font:900 30px/1.3 var(--f-serif);letter-spacing:.2em}
+.map-banner small{display:block;margin-top:10px;font-size:16px;color:var(--ash);letter-spacing:.1em}
+.map-banner.alarm>div{border-color:#FF4B37;box-shadow:0 0 90px rgba(255,75,55,.35)}
+.map-banner.alarm b{color:#FF6A55;font-size:64px}
+@keyframes bannerIn{0%{opacity:0;transform:scale(1.08)}12%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}

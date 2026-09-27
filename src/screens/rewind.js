@@ -1,0 +1,60 @@
+// 재귀 — 쓰러지면 마지막 저장으로. 챕터 끝 · 준비 중 화면도 여기
+import { register, go } from '../ui/router.js';
+import { RUN, chapterDef, maxHp } from '../game/run.js';
+import { rewind, autosave } from '../game/save.js';
+import { nextChapter, startChapter } from '../game/flow.js';
+import { playScene } from '../scenes/scene.js';
+import { REWIND } from '../data/story/prologue.js';
+import { CHAPTERS, LAST_CHAPTER } from '../data/chapters.js';
+import { SFX } from '../ui/sfx.js';
+import { toast } from '../ui/overlay.js';
+import { roman, esc } from '../core/util.js';
+import { icon } from '../ui/icons.js';
+
+register('rewind', {
+  async mount(holder) {
+    holder.innerHTML = '<div class="rewind-bg"><div class="rw-hands"><i></i><i></i></div></div>';
+    SFX.rewind();
+    await playScene(REWIND, {});
+    const ok = rewind();
+    if (!ok) { RUN.fallen = false; RUN.hp = maxHp(); startChapter(RUN.chapter); return; }   // 재귀 지점이 없으면 이 장의 처음으로
+    toast(`재귀 — 마지막 저장으로 돌아왔어요 · 남은 저장 ${RUN.saves.left}번`, 'gold');
+    go('map', { rewound: true });
+  },
+});
+
+const fmtTime = ms => { const m = Math.floor((ms || 0) / 60000); return m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
+
+register('chapterend', {
+  mount(holder, params = {}) {
+    const st = RUN.stats;
+    if (params.clear) {
+      const ch = chapterDef();
+      holder.innerHTML = `<div class="ce">
+        <p class="ce-kick">${esc(RUN.name)}의 여정</p>
+        <div class="ce-num">${ch.hour}</div>
+        <h2 class="ce-title">${ch.title} · 끝</h2>
+        <p class="ce-sub">${ch.sub} — 권능 하나를 향해, 첫 번째 톱니가 맞물렸다.</p>
+        <dl class="ce-stats">
+          <div><dt>플레이 시간</dt><dd>${fmtTime(RUN.playMs)}</dd></div><div><dt>전투</dt><dd>${st.battles}</dd></div>
+          <div><dt>처치</dt><dd>${st.kills}</dd></div><div><dt>재귀(쓰러짐)</dt><dd>${st.deaths}</dd></div>
+          <div><dt>덱</dt><dd>${RUN.deck.length}장</dd></div><div><dt>유물</dt><dd>${RUN.relics.length}</dd></div>
+        </dl>
+        <button class="btn-main" type="button" id="ceGo">${icon('play')}다음 장으로</button></div>`;
+      SFX.win();
+      holder.querySelector('#ceGo').addEventListener('click', () => { SFX.click(); nextChapter(); });
+      return;
+    }
+    // 준비 중 — 다음 챕터가 아직 없다
+    const n = RUN ? RUN.chapter : 2;
+    holder.innerHTML = `<div class="ce">
+      <p class="ce-kick">${RUN ? esc(RUN.name) + '의 여정 · 저장됨' : ''}</p>
+      <div class="ce-num">${roman(n)}</div>
+      <h2 class="ce-title">${n}시 — 준비 중</h2>
+      <p class="ce-sub">${n <= LAST_CHAPTER ? `${n}장은 아직 만들고 있어요. 지금까지의 여정은 저장돼 있어서, ${n}장이 추가되면 「이어 하기」로 바로 이어져요.` : '끝.'}</p>
+      <button class="btn-main" type="button" id="ceTitle">타이틀로</button></div>`;
+    if (RUN) autosave();
+    holder.querySelector('#ceTitle').addEventListener('click', () => { SFX.click(); go('title'); });
+  },
+});
+export const hasChapter = n => !!CHAPTERS[n];
