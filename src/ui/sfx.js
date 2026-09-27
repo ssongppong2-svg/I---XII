@@ -67,11 +67,16 @@ export const SFX = {
   stun()   { tone(600, 0.6, { type: 'sawtooth', v: 0.06, f2: 60 }); },
   fizzle() { tone(160, 0.12, { type: 'sawtooth', v: 0.05, f2: 120 }); hiss(0.08, { v: 0.05, f: 3000, type: 'highpass' }); },
   deny()   { tone(180, 0.08, { type: 'square', v: 0.045 }); tone(140, 0.1, { type: 'square', v: 0.045, at: 0.08 }); },
-  blip(who) {
-    if (who === 'boss') tone(180, 0.04, { type: 'square', v: 0.016 });
-    else if (who === 'hero') tone(720 + Math.random() * 90, 0.035, { type: 'triangle', v: 0.02 });
-    else if (who === 'voice') tone(520 + Math.random() * 40, 0.05, { type: 'sine', v: 0.014 });
-    else if (who && who !== 'nar') tone(250 + Math.random() * 50, 0.04, { type: 'square', v: 0.012 });
+  // 타자기 한 글자 — 딸깍. 말하는 사람마다 밑소리가 조금 다르다 (soft = 화면 글 · 튜토리얼용 작은 소리)
+  type(who) {
+    const soft = who === 'soft';
+    hiss(0.018, { v: soft ? 0.03 : 0.05, f: 3200 + Math.random() * 900, type: 'bandpass', q: 1.6 });
+    if (soft) return;
+    if (who === 'boss') tone(150 + Math.random() * 20, 0.035, { type: 'square', v: 0.014 });
+    else if (who === 'hero') tone(640 + Math.random() * 80, 0.03, { type: 'triangle', v: 0.016 });
+    else if (who === 'voice') tone(500 + Math.random() * 40, 0.045, { type: 'sine', v: 0.011 });
+    else if (who && who !== 'nar') tone(250 + Math.random() * 40, 0.035, { type: 'square', v: 0.01 });
+    else tone(120, 0.02, { type: 'triangle', v: 0.012 });
   },
   page()   { hiss(0.12, { v: 0.035, f: 2600, type: 'bandpass', q: 0.7 }); },
   chime()  { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.9, { v: 0.07, at: i * 0.12 })); },

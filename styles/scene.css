@@ -70,19 +70,22 @@
 .sc-in-row input{flex:1;min-width:0;padding:14px 18px;border-radius:6px;border:1px solid var(--brass-lo);background:#0B0906;color:var(--bone);font:900 28px/1.2 var(--f-serif);text-align:center;letter-spacing:.08em;outline:none;user-select:text;-webkit-user-select:text}
 .sc-in-row input:focus{border-color:var(--brass-hi);box-shadow:0 0 0 3px rgba(242,211,143,.2)}
 .sc-in-err{min-height:22px;margin:0;font-size:14px;color:#FF9C8E}
-/* 대사창 */
-.dbox{position:absolute;left:50%;bottom:40px;translate:-50% 0;z-index:4;width:1320px;min-height:224px;padding:46px 56px 38px;border-radius:8px;border:1px solid #6A5733;
-  background:linear-gradient(180deg,rgba(27,23,34,.96),rgba(14,12,18,.98));box-shadow:0 24px 60px rgba(0,0,0,.7),inset 0 0 0 4px rgba(12,10,16,.9),inset 0 0 0 5px rgba(214,174,98,.2)}
-.dbox::before,.dbox::after{content:"";position:absolute;width:20px;height:20px;border:2px solid var(--brass);opacity:.65;pointer-events:none}
-.dbox::before{left:10px;bottom:10px;border-right:0;border-top:0}
-.dbox::after{right:10px;top:10px;border-left:0;border-bottom:0}
-.dname{position:absolute;left:40px;top:-24px;padding:9px 26px;border-radius:4px;background:linear-gradient(180deg,#EDC983,#B88D42);color:#1B150B;font:900 21px/1.2 var(--f-serif);letter-spacing:.05em;box-shadow:0 6px 16px rgba(0,0,0,.55)}
-.dname.boss{background:linear-gradient(180deg,#6A7582,#39414C);color:#EAF4FF}
-.dname.merchant{background:linear-gradient(180deg,#9A6A3E,#5E3D20);color:#FBE9D2}
-.dname.voice{background:linear-gradient(180deg,#9A1E34,#5A101D);color:#FFE3E8}
-.dname.foe{background:linear-gradient(180deg,#4E3A40,#2A1D22);color:#FFE3EC;box-shadow:0 6px 16px rgba(0,0,0,.55),inset 0 0 0 1px rgba(255,92,138,.5)}
-.dname.black{background:linear-gradient(180deg,#5E2A30,#2C1116);color:#F6DCC0;box-shadow:0 6px 16px rgba(0,0,0,.55),inset 0 0 0 1px rgba(240,176,78,.55)}
-.dtext{margin:0;min-height:3.5em;font:500 25px/1.75 var(--f-serif);color:var(--bone);white-space:pre-wrap}
+/* 대사창 — 화면 아래를 끝에서 끝까지 */
+.dbox{position:absolute;left:0;right:0;bottom:0;z-index:4;min-height:262px;padding:58px 13% 44px;border-top:1px solid rgba(214,174,98,.45);
+  background:linear-gradient(180deg,rgba(20,16,22,.9),rgba(10,8,12,.97) 38%,rgba(6,5,8,.99));box-shadow:0 -24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(242,211,143,.12)}
+.dbox::before,.dbox::after{content:"";position:absolute;top:12px;width:120px;height:1px;opacity:.7;pointer-events:none}
+.dbox::before{left:28px;background:linear-gradient(90deg,var(--brass),transparent)}
+.dbox::after{right:28px;background:linear-gradient(270deg,var(--brass),transparent)}
+/* 말하는 사람 이름 — 나무판 */
+.dname{position:absolute;left:calc(13% - 34px);top:-34px;min-width:200px;padding:15px 46px 17px;text-align:center;
+  background:var(--plank-thin,linear-gradient(180deg,#7A5634,#4B3220)) center/100% 100% no-repeat;
+  color:#F6E7CC;font:900 22px/1.2 var(--f-serif);letter-spacing:.06em;text-shadow:0 2px 0 rgba(0,0,0,.7),0 0 10px rgba(0,0,0,.6);filter:drop-shadow(0 8px 10px rgba(0,0,0,.55))}
+.dname.boss{color:#DCEBFF}
+.dname.merchant{color:#FBE9D2}
+.dname.voice{color:#FFC9D4}
+.dname.foe{color:#FFD6E0}
+.dname.black{color:#F6D7B0}
+.dtext{margin:0;max-width:1480px;min-height:3.5em;font:500 25px/1.75 var(--f-serif);color:var(--bone);white-space:pre-wrap}
 .dtext .nm{color:var(--brass-hi);font-weight:900}
 .dtext.nar{color:#C9C0D3}
 .dtext.boss{color:#DCE6F2;letter-spacing:.02em}
@@ -101,7 +104,7 @@
 .scene.sc-flash::after{background:radial-gradient(circle at 50% 28%,rgba(236,246,255,.95),rgba(200,226,255,.35) 60%,transparent)}
 .scene.sc-red::after{background:radial-gradient(circle at 50% 50%,rgba(255,40,64,.55),rgba(120,0,24,.42) 72%)}
 @keyframes scFlash{from{opacity:1}to{opacity:0}}
-.dnext{position:absolute;right:30px;bottom:20px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:12px solid var(--brass-hi);opacity:0;animation:nextBob .9s ease-in-out infinite}
+.dnext{position:absolute;right:calc(13% - 44px);bottom:34px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:12px solid var(--brass-hi);opacity:0;animation:nextBob .9s ease-in-out infinite}
 .dbox.done .dnext{opacity:1}
 .dbox.choosing .dnext{opacity:0}
 @keyframes nextBob{50%{transform:translateY(5px)}}

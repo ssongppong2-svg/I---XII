@@ -18,8 +18,10 @@ export const FACES = {
 export const FACE_FALLBACK = { puzzled: ['surprised'], wounded: ['pain', 'overload'], pain: ['overload'] };
 export const FACE_CENTER = [0.489, 0.135];   // 전신 그림(2:3)에서 얼굴 가운데 (가로 · 세로 비율)
 
-// 그 밖의 슬롯 (적 · 인물 · 보스 · 카드) — 적 그림 이름은 foes.js의 art 값
-const STATIC = ['hero-sd', 'card-bg', 'shopkeeper', 'shopkeeper-hmph', 'blackmarket', 'believer', 'boss', 'boss-full'];
+// 그 밖의 슬롯 (적 · 인물 · 보스 · 카드 · 나무판 · 배경) — 적 그림 이름은 foes.js의 art 값
+// 배경은 칸마다 bg-<칸 종류>(휴식은 bg-rest-1 · bg-rest-2 …). 여기 없는 칸 배경은 그 칸에 들어갈 때 찾아본다
+export const BG_SLOTS = ['bg-title', 'bg-battle', 'bg-rest-1', 'bg-rest-2', 'bg-shop', 'bg-alley', 'bg-event'];
+const STATIC = ['hero-sd', 'card-bg', 'ui-plank', 'ui-plank-thin', 'shopkeeper', 'shopkeeper-hmph', 'blackmarket', 'believer', 'boss', 'boss-full', ...BG_SLOTS];
 
 function probe(base) {
   const exts = ['webp', 'png', 'jpg'];
@@ -46,6 +48,10 @@ export function load(key) {
 }
 export const loadAll = keys => Promise.all(keys.map(load));
 export const art = key => found.get(key) || null;           // 확인된 것만 (없거나 아직이면 null)
+// CSS url()에 넣을 주소 — 스타일시트 기준이 아니라 문서 기준으로 풀리게 절대 주소로
+export const artHref = key => { const u = art(key); return u ? new URL(u, document.baseURI).href : null; };
+// 화면 뒤에 까는 배경 그림 (없으면 빈 문자열)
+export const bgImgHTML = (key, cls = '') => { const u = art(key); return u ? `<img class="scr-bg${cls ? ' ' + cls : ''}" src="${u}" alt="" draggable="false">` : ''; };
 export const known = key => found.has(key);
 
 export function preloadCore() {

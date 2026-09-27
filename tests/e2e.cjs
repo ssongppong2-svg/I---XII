@@ -50,8 +50,9 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   const battleReady = () => page.waitForFunction(() => I12.B.started && !I12.B.over && !I12.B.busy && document.querySelector('#scene').hidden, null, { timeout: 15000 });
   const toTitleAndContinue = async () => {
     await page.reload();
-    await page.waitForFunction(() => window.I12 && document.querySelector('.scr-title'));
-    await page.click('[data-a="continue"]');
+    await page.waitForFunction(() => window.I12 && document.querySelector('.scr-title .ti-item'));
+    await page.click('.ti-item[data-a="start"]');
+    await page.click('.ti-item[data-a="continue"]');
   };
   const winToReward = async () => {
     await battleReady();
@@ -69,8 +70,14 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   console.log('1. 타이틀 → 난이도 → 프롤로그 → 이름 → 지도');
   await page.reload();
   await page.waitForFunction(() => window.I12 && document.querySelector('.scr-title'));
+  await page.waitForSelector('.scr-title .ti-item');
+  check(await page.evaluate(() => !!document.querySelector('.scr-title img.scr-bg')), '타이틀 배경 그림');
+  check(await page.evaluate(() => [...document.querySelectorAll('.ti-item')].map(b => b.textContent.trim()).join(',')) === 'Start,Settings,Credits,Exit', '타이틀 메뉴 Start · Settings · Credits · Exit');
+  await page.click('.ti-item[data-a="credits"]');
+  check(await page.evaluate(() => !document.querySelector('#tiCredits').hidden && document.querySelectorAll('.tc-board dt').length === 4), 'Credits — 역할 4줄');
+  await page.keyboard.press('Escape');
   await shot('01-title');
-  await page.click('.ti-btn[data-a="new"]');
+  await page.click('.ti-item[data-a="start"]');   // 저장이 없으면 바로 난이도로
   await waitScreen('scr-difficulty');
   await page.click('.df-num[data-d="4"]');
   await shot('02-difficulty');
@@ -92,10 +99,15 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check(nodes.boss && nodes.boss.length === 1 && nodes.tutorial && nodes.tutorial.length === 2, '지도: 보스 1 · 튜토리얼 전투 2');
 
   console.log('2. 튜토리얼 전투 → 보상 → 지도');
+  check(await page.evaluate(() => document.querySelectorAll('.mech .lk').length > 20 && document.querySelectorAll('.mech .idl').length === 0), '지도: 톱니를 축으로 잇는다 (사이 톱니 없음)');
   await page.click(`.gn.avail[data-id="${nodes.tutorial[0]}"]`);
   await waitScreen('scr-battle');
   await page.waitForSelector('.tut', { timeout: 10000 });
   check(true, '튜토리얼 안내가 뜬다');
+  check(await page.evaluate(() => !!document.querySelector('.battle-bg img.scr-bg')), '전투 배경 그림');
+  const cardBg = await page.evaluate(() => getComputedStyle(document.querySelector('.hand .card')).backgroundImage);
+  const bgOk = await page.evaluate(async u => { const m = /url\("([^"]*card-bg[^"]*)"\)/.exec(u); if (!m) return false; const r = await fetch(m[1]); return r.ok; }, cardBg);
+  check(bgOk, `카드에 양피지 그림이 실제로 깔린다`);
   await shot('05-tutorial');
   await winToReward();
   const cards0 = (await run()).deck.length;
@@ -111,6 +123,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
     await page.evaluate(([id, t]) => { I12.RUN.alert = 0; I12.RUN.parts = 300; I12.RUN.shards = 3; if (t === 'alley') I12.RUN.map.nodes[id].alley = 'hide'; I12.flow.enterNode(id); }, [id, t]);
     await waitScreen('scr-node');
     await page.waitForTimeout(300);
+    if (['rest', 'shop', 'alley'].includes(t)) check(await page.evaluate(() => !!document.querySelector('.nd.has-bg .scr-bg')), `${t}: 배경 그림`);
     if (['rest', 'abyss', 'tent', 'alley'].includes(t)) { await page.click('.nd-opt'); await page.waitForTimeout(300); }
     if (t === 'shop') await page.click('.shop-cards .card');
     if (t === 'forge') { const s0 = (await run()).deck.filter(c => c.up).length; await page.click('.deck-grid .card'); await page.click('.deck-grid .card'); const R1 = await run(); check(R1.deck.filter(c => c.up).length === s0 + 2 && R1.shards === 2, '강화소: 두 번 눌러 두 장 · 조각은 1개만 씀'); }

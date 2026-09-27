@@ -3,7 +3,7 @@ import { register, go } from '../ui/router.js';
 import { RUN, chapterDef, maxHp } from '../game/run.js';
 import { writeRecur, autosave } from '../game/save.js';
 import { choices, enterNode } from '../game/flow.js';
-import { buildMapSVG, makeTurner, chainPoints } from '../map/view.js';
+import { buildMapSVG, makeTurner, linkPoints } from '../map/view.js';
 import { NODE_TYPES } from '../data/nodes.js';
 import { FOES, BOSSES } from '../data/foes.js';
 import { EVENTS } from '../data/events.js';
@@ -14,6 +14,7 @@ import { SFX } from '../ui/sfx.js';
 import { confirmBox, toast, bindTips, hideTip } from '../ui/overlay.js';
 import { openDeck, openRelics, openSettings, openHelp, pauseMenu, relicTip, toggleSound } from '../ui/menus.js';
 import { roman, sleep, esc, flash } from '../core/util.js';
+import { typeInto } from '../ui/typewriter.js';
 
 let root = null, svg = null, turner = null, avail = [], focusIdx = -1, busy = false, tickTimer = 0, alive = false;
 
@@ -84,17 +85,13 @@ function paint(showAvail) {
     g.classList.toggle('far', !visited.has(id) && reach.has(id) && !(showAvail && avail.includes(id)));
     g.classList.toggle('gone', !visited.has(id) && !reach.has(id) && id !== RUN.pos);
   }
+  // 축: 고를 수 있는 길(빛이 흐름) · 지나온 길 · 앞으로 갈 수 있는 길 · 못 가는 길(흐리게)
   const lit = new Set(showAvail ? avail.map(a => `${RUN.pos}>${a}`) : []);
-  svg.querySelectorAll('.idl').forEach(el => {
+  svg.querySelectorAll('.lk').forEach(el => {
     const k = `${el.dataset.from}>${el.dataset.to}`;
     el.classList.toggle('lit', lit.has(k));
     el.classList.toggle('trail', trail.has(k));
     el.classList.toggle('dim', !lit.has(k) && !trail.has(k) && !(reach.has(el.dataset.to) && (reach.has(el.dataset.from) || el.dataset.from === RUN.pos)));
-  });
-  svg.querySelectorAll('.axle').forEach(el => {
-    const k = el.dataset.e;
-    el.classList.toggle('lit', lit.has(k));
-    el.classList.toggle('trail', trail.has(k));
   });
 }
 
@@ -118,18 +115,24 @@ function infoHTML(id) {
   if (n.type === 'event' && n.event) extra = `<p class="mi-foes">「${EVENTS[n.event].title}」</p>`;
   const watch = n.watched && !ch.hunted ? `<p class="mi-watch">${icon('eye').replace('<svg', '<svg style="width:14px;height:14px;fill:#FF9C8C;display:inline-block;vertical-align:-2px"')} 감시 톱니 — 들어가면 경계도 +20</p>` : '';
   const state = avail.includes(id) ? '<em class="go">갈 수 있음</em>' : RUN.visited.includes(id) ? '<em>지나옴</em>' : '';
-  return `<div class="mi-head" style="--tone:${T.tone}">${icon(T.icon)}<b>${T.label}</b>${state}</div><p>${T.desc}</p>${extra}${watch}`;
+  return { head: `<div class="mi-head" style="--tone:${T.tone}">${icon(T.icon)}<b>${T.label}</b>${state}</div>`, body: `<p>${T.desc}</p>${extra}${watch}` };
 }
+// 칸 설명 — 이름은 바로, 설명은 타자로 (같은 칸에 다시 올리면 그대로 둔다)
 function showInfo(id) {
   const box = root.querySelector('#mapInfo');
-  if (!id) { box.classList.add('empty'); return; }
-  box.innerHTML = infoHTML(id);
+  if (!id) { box.classList.add('empty'); box.dataset.id = ''; return; }
   box.classList.remove('empty');
+  if (box.dataset.id === id) return;
+  box.dataset.id = id;
+  const { head, body } = infoHTML(id);
+  box.innerHTML = `${head}<div class="mi-body"></div>`;
+  typeInto(box.querySelector('.mi-body'), body, { mul: 0.3 });
 }
+// 고르려는 톱니로 가는 축을 밝게
 function hotChain(id) {
-  svg.querySelectorAll('.idl.hot').forEach(e => e.classList.remove('hot'));
+  svg.querySelectorAll('.lk.hot').forEach(e => e.classList.remove('hot'));
   if (!id) return;
-  svg.querySelectorAll(`.idl[data-from="${RUN.pos}"][data-to="${id}"]`).forEach(e => e.classList.add('hot'));
+  svg.querySelectorAll(`.lk[data-from="${RUN.pos}"][data-to="${id}"]`).forEach(e => e.classList.add('hot'));
 }
 function setFocus(i) {
   focusIdx = i;
@@ -249,8 +252,8 @@ async function choose(id) {
   const from = RUN.pos;
   paint(false);
   svg.querySelector(`.gn[data-id="${id}"]`).classList.add('avail', 'focus');
-  // 표식이 사이 톱니를 밟고 건너간다 (지름길이면 곧장)
-  const pts = RUN.map.nodes[from].next.includes(id) ? chainPoints(RUN.map, from, id) : [RUN.map.nodes[from], RUN.map.nodes[id]];
+  // 표식이 축을 따라 건너간다 (지름길이면 두 칸 앞까지 곧장)
+  const pts = linkPoints(RUN.map, from, id, RUN.map.nodes[from].next.includes(id) ? 3 : 5);
   const m = root.querySelector('.map-hero');
   m.classList.remove('idle');
   turner.turn(18 * pts.length, 140 * pts.length);

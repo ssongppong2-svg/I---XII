@@ -7,17 +7,18 @@ import { cardDef, SHAPES, KINDS, effectLine } from '../data/cards.js';
 import { FOE_BARKS, ELITE_TRAITS } from '../data/foes.js';
 import { RELICS, IMPLANTS } from '../data/relics.js';
 import { icon } from '../ui/icons.js';
-import { art, faceUrl, faceKeyOf, FACES, FACE_CENTER } from '../ui/assets.js';
+import { art, faceUrl, faceKeyOf, FACES, FACE_CENTER, bgImgHTML } from '../ui/assets.js';
 import { foeSdHTML } from '../ui/foeart.js';
 import { SFX } from '../ui/sfx.js';
 import { $, esc, clamp, RM, flash } from '../core/util.js';
 import { SET } from '../core/settings.js';
+import { typeInto } from '../ui/typewriter.js';
 
 let root = null;
 const q = s => root.querySelector(s);
 const CELLS = {}, BCELLS = [];
 const FOE_EL = new Map();
-let handSig = '', beamSig = '', markSig = '', rosterSig = '', logSig = '', relicSig = '';
+let handSig = '', beamSig = '', markSig = '', rosterSig = '', logSig = '', relicSig = '', logSeen = -1;
 export let lastPointer = window.matchMedia && window.matchMedia('(hover: hover)').matches ? 'mouse' : 'touch';
 document.addEventListener('pointerdown', e => { lastPointer = e.pointerType || 'mouse'; }, true);
 
@@ -27,7 +28,9 @@ const BOSS_SVG = `<svg class="boss-svg" viewBox="0 0 520 100" preserveAspectRati
 export function mountView(holder, { theme = '', chapterNum = 'I', title = '', sub = '' } = {}) {
   root = document.createElement('div');
   root.className = `battle ${theme}`;
-  root.innerHTML = `
+  const bg = bgImgHTML('bg-battle');
+  if (bg) root.classList.add('has-bg');
+  root.innerHTML = `${bg ? `<div class="battle-bg" aria-hidden="true">${bg}</div>` : ''}
   <header class="topbar">
     <div class="tb-left"><div class="tb-ch">${chapterNum}</div><div class="tb-mode"><b id="modeLabel">${esc(title)}</b><span id="loopLabel">${esc(sub)}</span></div></div>
     <div class="loop-wrap" title="이동 · 카드 · 뽑기는 모두 1코스트. 다 쓰면 다음 루프"><div class="loop-gear" id="loopGear">${icon('sigil')}<b id="loopNum">0</b></div><div class="loop-meta"><b id="loopCost">—</b><span id="loopSub">루프</span></div></div>
@@ -79,7 +82,7 @@ export function mountView(holder, { theme = '', chapterNum = 'I', title = '', su
   <section class="hand-row"><div class="hand" id="hand"></div><button class="draw-btn" id="drawBtn" type="button" tabindex="-1"></button></section>`;
   holder.appendChild(root);
   Object.keys(CELLS).forEach(k => delete CELLS[k]); BCELLS.length = 0; FOE_EL.clear();
-  handSig = beamSig = markSig = rosterSig = logSig = relicSig = '';
+  handSig = beamSig = markSig = rosterSig = logSig = relicSig = ''; logSeen = -1;
   buildBoard();
   // 그림 슬롯
   const sd = art('hero-sd');
@@ -120,7 +123,7 @@ export function setupBoard() {
     if (strip) { q('#bossArt').innerHTML = `<img class="strip" src="${strip}" alt="" draggable="false">`; q('#bossRow').classList.add('has-art'); }
   }
   q('#meName').textContent = B.name;
-  handSig = beamSig = markSig = rosterSig = logSig = relicSig = '';
+  handSig = beamSig = markSig = rosterSig = logSig = relicSig = ''; logSeen = -1;
 }
 
 /* ═════════════ 그리기 ═════════════ */
@@ -526,8 +529,13 @@ function renderFoot() {
   q('#detail').innerHTML = card ? detailHTML(i) : foe ? foeDetailHTML(fi) : DETAIL_EMPTY;
   const sig = `${B.logSeq}|${B.logs.length}`;
   if (sig !== logSig) {
-    logSig = sig;
-    q('#log').innerHTML = B.logs.slice(-14).map(l => `<p class="${l.cls ? 'l-' + l.cls : ''}">${esc(l.t)}</p>`).join('');
+    const fresh = B.logSeq !== logSeen;
+    logSig = sig; logSeen = B.logSeq;
+    const box = q('#log');
+    box.innerHTML = B.logs.slice(-14).map(l => `<p class="${l.cls ? 'l-' + l.cls : ''}">${esc(l.t)}</p>`).join('');
+    // 새로 적힌 줄은 타자로
+    const last = box.lastElementChild;
+    if (fresh && last) typeInto(last, last.innerHTML, { mul: 0.25, cursor: false });
   }
 }
 function targetsText(t) {
@@ -639,7 +647,8 @@ let toastT = 0;
 export function btoast(msg) {
   const el = q('#bToast');
   if (!el) return;
-  el.textContent = msg; el.hidden = false;
+  el.hidden = false;
+  typeInto(el, esc(msg), { mul: 0.3, cursor: false });
   el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
   clearTimeout(toastT);
   toastT = setTimeout(() => { el.hidden = true; }, 1600);

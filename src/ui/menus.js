@@ -9,6 +9,7 @@ import { RELICS, IMPLANTS } from '../data/relics.js';
 import { cardStatHTML, cardTagsHTML, miniRangeHTML } from '../battle/view.js';
 import { art, loadAll, FACES } from './assets.js';
 import { FOES, BOSSES } from '../data/foes.js';
+import { NODE_TYPES } from '../data/nodes.js';
 
 // ── 설정
 const OPT = [
@@ -86,7 +87,7 @@ export function openRelics(relics, implants) {
 // ── 규칙과 조작
 export function openHelp() {
   openSheet({ title: '규칙과 조작', wide: true, body: `
-  <section><h4>톱니 지도</h4><p>챕터 하나가 커다란 톱니 장치예요. 칸(톱니)을 끝내면 장치가 돌고, <b>지금 톱니와 맞물린 톱니</b>가 빛나요 — 그중 하나를 골라 나아가요. 톱니가 전부 보이니 보스까지 길을 미리 짤 수 있어요.</p>
+  <section><h4>톱니 지도</h4><p>챕터 하나가 커다란 톱니 장치예요. 칸(톱니)을 끝내면 장치가 돌고, <b>지금 톱니와 축으로 이어진 톱니</b>가 빛나요(축에 빛이 흘러요) — 그중 하나를 골라 나아가요. 톱니가 전부 보이니 보스까지 길을 미리 짤 수 있어요.</p>
     <p><b>경계도</b>: 눈 표시가 붙은 감시 톱니에 들어가면 +20, 쉬면 +10. 높을수록 휴식 중 기습이 잦아지고, 50을 넘으면 전투에 적이 한 명 더 나와요. 100이 되면 발각 — 곧바로 강한 전투가 벌어져요.</p>
     <p><b>재귀(저장)</b>: 지도 오른쪽 위 「저장」으로 지금을 재귀 지점으로 새겨요. 챕터마다 횟수가 정해져 있고(난이도마다 다름), 챕터를 시작할 때 자동으로 한 번 새겨져요. 전투에서 쓰러지면 마지막 재귀 지점으로 돌아가요 — 덱 · 유물 · HP · 지도 모두 그때로.</p></section>
   <section><h4>전투 — 한 루프의 흐름</h4><ol>
@@ -116,7 +117,10 @@ function imageSlots() {
     ['shopkeeper', '상점 주인'], ['shopkeeper-hmph', '상점 주인 · 흥.'], ['blackmarket', '암시장 상인'], ['believer', '미지의 신도'],
     ...Object.values(BOSSES).flatMap(b => [[b.art, `${b.name} · 보스 줄 띠`], [b.artFull, `${b.name} · 전신`]]),
     ...Object.values(FOES).flatMap(f => [[f.art + '-sd', `${f.name} · 격자 SD`], [f.art, `${f.name} · 스탠딩`]]),
-    ['card-bg', '카드 배경'],
+    ['card-bg', '카드 배경'], ['ui-plank', '나무판 (넓은 것)'], ['ui-plank-thin', '나무판 (가는 것)'],
+    ['bg-title', '배경 · 타이틀'], ['bg-battle', '배경 · 전투'], ['bg-rest-1', '배경 · 휴식 1'], ['bg-rest-2', '배경 · 휴식 2'],
+    ['bg-shop', '배경 · 상점'], ['bg-alley', '배경 · 골목'], ['bg-event', '배경 · 사건'],
+    ...['blackmarket', 'forge', 'implant', 'abyss', 'trial', 'tent', 'shrine'].map(t => [`bg-${t}`, `배경 · ${NODE_TYPES[t].label}`]),
   ];
 }
 

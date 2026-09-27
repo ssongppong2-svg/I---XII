@@ -13,33 +13,63 @@ import { LORE } from '../data/lore.js';
 import { FOES, BOSSES } from '../data/foes.js';
 import { makeRng, hashSeed } from '../core/rng.js';
 import { icon } from '../ui/icons.js';
-import { art } from '../ui/assets.js';
+import { art, load, bgImgHTML } from '../ui/assets.js';
 import { bigCardHTML, openDeck, relicTip, openSettings, openHelp, pauseMenu, toggleSound } from '../ui/menus.js';
 import { openSheet, closeSheet, confirmBox, toast, bindTips, hideTip } from '../ui/overlay.js';
 import { SFX } from '../ui/sfx.js';
 import { esc, eulreul, isiyeo } from '../core/util.js';
+import { typeInto, typeSequence, finishTyping } from '../ui/typewriter.js';
 
-let root = null, node = null, R = null, alive = false;
+let root = null, node = null, R = null, alive = false, seq = null;
+const TYPE = { mul: 0.55, sound: 'soft' };   // 칸 화면 글은 대사보다 조금 빠르게, 작은 타자 소리
 let shownAlert = null, alertWhy = '';   // HUD에 마지막으로 보여 준 경계도 — 바뀌면 게이지 옆에 +/− 를 띄운다
 const q = s => root.querySelector(s);
 
 /* ── 공통 틀 ── */
+// 칸 배경 그림 — bg-<칸 종류>. 휴식은 두 장(bg-rest-1 · 2)을 칸마다 번갈아, 골목은 네 가지 모두 bg-alley
+const NARROW = ['rest', 'alley', 'event', 'tent', 'abyss', 'trial'];   // 배경이 있을 때 글 판을 좁게(장면이 보이게)
+function bgKeyOf(n) {
+  if (n.type === 'rest') {
+    const k = `bg-rest-${1 + hashSeed(RUN.seed, n.id, 'bg') % 2}`;
+    return art(k) ? k : 'bg-rest-1';
+  }
+  return `bg-${n.type}`;
+}
 function frame({ title, text = '', say = '', artHTML = '', leave: leaveText = '떠난다' }) {
   const T = NODE_TYPES[node.type];
-  root.innerHTML = `<div class="nd t-${node.type}" style="--tone:${T.tone}">
+  const bgKey = bgKeyOf(node);
+  const bg = bgImgHTML(bgKey);
+  root.innerHTML = `<div class="nd t-${node.type}${bg ? ' has-bg' : ''}${NARROW.includes(node.type) ? ' narrow' : ''}" style="--tone:${T.tone}">
+    <div class="nd-bg" aria-hidden="true">${bg}</div>
     <div class="nd-art">${artHTML}</div>
     <div class="nd-panel">
       <div class="nd-kicker">${icon(T.icon)}${T.label}${node.watched && !chapterDef().hunted ? ` <em>${icon('eye')}감시 톱니</em>` : ''}</div>
       <h2 class="nd-title">${title}</h2>
-      ${say ? `<div class="nd-say">${say}</div>` : ''}
-      <p class="nd-text" id="ndText">${text}</p>
+      ${say ? '<div class="nd-say" id="ndSay"></div>' : ''}
+      <p class="nd-text" id="ndText"></p>
       <div class="nd-body" id="ndBody"></div>
       <div class="nd-foot"><button class="btn-sub" type="button" id="ndLeave">${leaveText}</button></div>
     </div>
     <div class="nd-hud" id="ndHud"></div>
   </div>`;
   q('#ndLeave').addEventListener('click', () => { SFX.click(); leave(); });
+  // 아직 확인 안 한 배경(처음 들어가는 칸 종류)은 찾아보고, 있으면 살며시 깐다
+  if (!bg) {
+    const here = node;
+    load(bgKey).then(u => {
+      if (!u || !alive || node !== here || !root) return;
+      q('.nd-bg').innerHTML = bgImgHTML(bgKey, 'fade');
+      q('.nd').classList.add('has-bg');
+    });
+  }
+  // 상인 말 → 설명 순서로 타자. 글을 누르면 바로 다 보인다
+  seq = typeSequence([[q('#ndSay'), say], [q('#ndText'), text]], TYPE);
+  q('.nd-panel').addEventListener('click', e => { if (!e.target.closest('button')) finishAll(); });
   hud();
+}
+function finishAll() {
+  if (seq) seq.finish();
+  root.querySelectorAll('.tw-typing').forEach(finishTyping);
 }
 // 아래로 더 있으면 끝을 흐리게 — 스크롤할 수 있다는 표시
 function moreBelow(b) { b.classList.toggle('more', b.scrollHeight - b.scrollTop - b.clientHeight > 4); }
@@ -63,7 +93,13 @@ function alertPop(n, why) {
   g.appendChild(p);
   g.classList.add(n > 0 ? 'bump' : 'ease');
 }
-function setText(html) { const t = q('#ndText'); if (t) t.innerHTML = html; }
+// 설명 글 바꾸기 — instant면 타자 없이 (강화소처럼 누를 때마다 숫자만 바뀌는 글)
+function setText(html, instant = false) {
+  const t = q('#ndText');
+  if (!t) return;
+  if (seq) { seq.stop(); seq = null; }
+  if (instant) t.innerHTML = html; else typeInto(t, html, TYPE);
+}
 // 몸통은 그릴 때마다 새 요소로 갈아 끼운다 — 다시 그려도 이전 클릭 처리기가 쌓이지 않게 (두 번 사지는 일 방지)
 function body(html, { keepScroll = false } = {}) {
   const old = q('#ndBody');
@@ -76,6 +112,9 @@ function body(html, { keepScroll = false } = {}) {
   b.scrollTop = top;
   b.addEventListener('scroll', () => moreBelow(b), { passive: true });
   requestAnimationFrame(() => { if (b.isConnected) moreBelow(b); });
+  // 결과 · 경보 글은 타자로
+  const msgs = [...b.querySelectorAll('.nd-result, .nd-alarm')];
+  if (msgs.length) typeSequence(msgs.map(m => [m, m.innerHTML]), TYPE);
   return b;
 }
 function leaveLabel(t) { const b = q('#ndLeave'); if (b) b.textContent = t; }
@@ -191,7 +230,7 @@ const HANDLERS = {
   // ── 강화소 — 1장 무료 + 톱니 조각 1개당 1장
   forge() {
     if (node.free === undefined) node.free = 1 + mods().forgeFree;
-    frame({ title: '강화소', text: '낡은 모루와 식지 않은 화로. 누군가 오래전 이곳에서 태엽을 벼렸다.', artHTML: glyph('anvil') });
+    frame({ title: '강화소', text: forgeText(), artHTML: glyph('anvil') });
     renderForge();
   },
 
@@ -439,10 +478,9 @@ function renderBlack() {
 }
 
 // 강화소 그리기
+const forgeText = () => `낡은 모루와 식지 않은 화로. <b>무료 강화 ${node.free}번</b> 남음 · 그 뒤로는 톱니 조각 1개당 한 장 (지금 ${RUN.shards}개).`;
 function renderForge() {
-  const free = node.free;
   const up = RUN.deck.filter(canUpgrade);
-  setText(`낡은 모루와 식지 않은 화로. <b>무료 강화 ${free}번</b> 남음 · 그 뒤로는 톱니 조각 1개당 한 장 (지금 ${RUN.shards}개).`);
   if (!up.length) { body('<p class="nd-result">강화할 수 있는 카드가 없어요.</p>'); return; }
   const b = body(`<p class="nd-sub">강화된 모습과 바뀌는 점을 보여 줘요. 누르면 강화해요.</p><div class="deck-grid pick">${up.map(c => bigCardHTML(Object.assign({}, c, { up: 1 }), { pick: true, mid: true, showUp: true, extra: `data-uid="${c.uid}"` })).join('')}</div>`, { keepScroll: true });
   b.addEventListener('click', e => {
@@ -451,7 +489,9 @@ function renderForge() {
     if (node.free <= 0 && RUN.shards <= 0) { toast('톱니 조각이 없어요'); SFX.deny(); return; }
     if (node.free > 0) node.free--; else gainShards(-1);
     upgradeCard(+el.dataset.uid);
-    SFX.gain(); hud(); autosave(); renderForge();
+    SFX.gain(); hud(); autosave();
+    setText(forgeText(), true);   // 남은 횟수만 바뀐다 — 다시 타자로 찍지 않는다
+    renderForge();
   });
 }
 
@@ -495,4 +535,4 @@ function onKey(e) {
   if (e.code === 'KeyD') { openDeck(RUN.deck); return true; }
   return false;
 }
-register('node', { mount, onKey, unmount() { alive = false; hideTip(); root = null; shownAlert = null; } });
+register('node', { mount, onKey, unmount() { alive = false; if (seq) seq.stop(); seq = null; hideTip(); root = null; shownAlert = null; } });

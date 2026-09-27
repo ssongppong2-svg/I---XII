@@ -2,7 +2,8 @@
 // 대사 = { who, face?, text } · 선택지 = { choice: [{ label, then }] } · 챕터 카드 = { card: { num, title } }
 // 이름 입력 = { input: 'name', prompt, sub } · 연출 = { tint, place, fx, exit } · 조건 = { when: () => bool }
 import { $, el, esc, iga, eulreul, eunneun, irago, ah, iyeo, isiyeo, iya } from '../core/util.js';
-import { SET, TEXT_SPEED, AUTO_SPEED } from '../core/settings.js';
+import { SET, AUTO_SPEED } from '../core/settings.js';
+import { typeInto } from '../ui/typewriter.js';
 import { SFX } from '../ui/sfx.js';
 import { art, faceUrl, load } from '../ui/assets.js';
 import { foeArtHTML } from '../ui/foeart.js';
@@ -29,7 +30,7 @@ const SPEAKERS = {
 };
 const NAME_SUGGEST = ['크로노스', '아르케', '엘리오스', '호라', '제로', '시계공', '카이로스', '루멘', '에온', '헤임'];
 
-const SC = { queue: [], full: '', shown: 0, who: 'nar', typing: false, choosing: null, inputting: false, carding: false, auto: false, log: [], onEnd: null, t: 0, autoT: 0, cardT: 0, placeT: 0, bossName: '대형 감시기계', onName: null };
+const SC = { queue: [], full: '', plain: '', tw: null, who: 'nar', typing: false, choosing: null, inputting: false, carding: false, auto: false, log: [], onEnd: null, autoT: 0, cardT: 0, placeT: 0, bossName: '대형 감시기계', onName: null };
 let dom = null;
 const q = s => dom.querySelector(s);
 
@@ -192,30 +193,16 @@ function setHeroFace(face) {
   if (u && img.getAttribute('src') !== u) { img.setAttribute('src', u); const h = q('#ptHero'); h.classList.remove('swap'); void h.offsetWidth; h.classList.add('swap'); }
 }
 
-// 글자를 하나씩 — 태그(<b>)는 한 번에
+// 타자기처럼 한 글자씩 — 이름 색 같은 꾸밈은 처음부터 그대로, 글자마다 딸깍
 function typeText(html) {
-  clearTimeout(SC.t);
   const tmp = document.createElement('div'); tmp.innerHTML = html;
-  const plain = tmp.textContent;
-  SC.full = html; SC.plain = plain; SC.shown = 0; SC.typing = true;
+  SC.full = html; SC.plain = tmp.textContent; SC.typing = true;
   q('#dbox').classList.remove('done');
-  const t = q('#dtext');
-  const speed = TEXT_SPEED[SET.textSpeed];
-  if (!speed) { finishType(); return; }
-  const tick = () => {
-    SC.shown++;
-    t.textContent = plain.slice(0, SC.shown);
-    const ch = plain[SC.shown - 1];
-    if (SC.shown % 2 && /\S/.test(ch)) SFX.blip(SC.who);
-    if (SC.shown >= plain.length) { finishType(); return; }
-    SC.t = setTimeout(tick, /[.,!?…—]/.test(ch) ? speed * 5 : speed);
-  };
-  tick();
+  SC.tw = typeInto(q('#dtext'), html, { sound: 'voice', who: SC.who, onDone: finishType });
 }
 function finishType() {
-  clearTimeout(SC.t);
+  if (SC.tw && SC.tw.typing) { SC.tw.finish(); return; }   // finish()가 다시 여기로 온다
   SC.typing = false;
-  q('#dtext').innerHTML = SC.full;
   q('#dbox').classList.add('done');
   if (SC.auto) SC.autoT = setTimeout(next, (1000 + SC.plain.length * 35) * AUTO_SPEED[SET.autoSpeed]);
 }
@@ -311,19 +298,24 @@ function toggleAuto() {
 function skip() {
   if (SC.inputting) return;
   const idx = SC.queue.findIndex(s => s.input);
-  clearTimeout(SC.t); clearTimeout(SC.autoT); clearTimeout(SC.cardT);
+  if (SC.tw) SC.tw.stop();
+  clearTimeout(SC.autoT); clearTimeout(SC.cardT);
   SC.carding = false; q('#scCard').hidden = true;
   SC.choosing = null; q('#scChoices').hidden = true; q('#dbox').classList.remove('choosing');
   if (idx >= 0) {
     SC.queue.splice(0, idx);
     SC.typing = false;
+    // 건너뛴 대사가 반쯤 찍힌 채 남지 않게
+    q('#dtext').innerHTML = '';
+    q('#dname').hidden = true;
     next();
     return;
   }
   end();
 }
 function end() {
-  clearTimeout(SC.t); clearTimeout(SC.autoT); clearTimeout(SC.cardT); clearTimeout(SC.placeT);
+  if (SC.tw) SC.tw.stop();
+  clearTimeout(SC.autoT); clearTimeout(SC.cardT); clearTimeout(SC.placeT);
   q('#scPlace').hidden = true;
   SC.choosing = null; SC.carding = false; SC.typing = false; SC.inputting = false;
   dom.hidden = true;

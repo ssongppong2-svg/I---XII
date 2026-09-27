@@ -1,62 +1,79 @@
-// 타이틀 — 이어 하기 · 새 게임 · 설정 · 규칙
+// 타이틀 — 폐허 도시 그림 위 오른쪽에 Start · Settings · Credits · Exit (나무판)
+// Start: 저장이 있으면 Continue · New Game 중에서, 없으면 바로 난이도로
 import { register, go } from '../ui/router.js';
-import { icon } from '../ui/icons.js';
-import { art } from '../ui/assets.js';
+import { bgImgHTML } from '../ui/assets.js';
 import { hasSave, peekSave, loadAuto, clearRun } from '../game/save.js';
 import { confirmBox } from '../ui/overlay.js';
 import { openSettings, openHelp, toggleSound } from '../ui/menus.js';
 import { SFX, initAudio } from '../ui/sfx.js';
 import { roman, esc } from '../core/util.js';
 import { CHAPTERS } from '../data/chapters.js';
+import { CREDITS } from '../data/credits.js';
 import { resumeRun } from '../game/flow.js';
 
-let root = null, focus = 0;
+let root = null, focus = 0, page = 'main';
 const fmtTime = ms => { const m = Math.floor((ms || 0) / 60000); return m >= 60 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${m}분`; };
 
-function clockSVG() {
-  let s = '<svg class="ti-clock" viewBox="0 0 1040 1040" aria-hidden="true"><circle cx="520" cy="520" r="500" stroke-width="3"/><circle cx="520" cy="520" r="440" stroke-width="1.5"/>';
-  for (let i = 1; i <= 12; i++) {
-    const a = i / 12 * Math.PI * 2 - Math.PI / 2;
-    s += `<text x="${520 + Math.cos(a) * 380}" y="${520 + Math.sin(a) * 380}">${roman(i)}</text>`;
-  }
-  for (let i = 0; i < 60; i++) {
-    const a = i / 60 * Math.PI * 2;
-    const r1 = 440, r2 = i % 5 === 0 ? 470 : 456;
-    s += `<line x1="${520 + Math.cos(a) * r1}" y1="${520 + Math.sin(a) * r1}" x2="${520 + Math.cos(a) * r2}" y2="${520 + Math.sin(a) * r2}" stroke="#E8D2A0" stroke-width="${i % 5 === 0 ? 4 : 1.5}"/>`;
-  }
-  s += '<line class="h" x1="520" y1="520" x2="520" y2="300" stroke-width="16"/><line class="m" x1="520" y1="560" x2="520" y2="160" stroke-width="6"/><circle cx="520" cy="520" r="18" fill="#E8D2A0"/></svg>';
-  return s;
+const MAIN = [['start', 'Start'], ['settings', 'Settings'], ['credits', 'Credits'], ['exit', 'Exit']];
+const START = [['continue', 'Continue'], ['new', 'New Game'], ['back', 'Back']];
+
+function saveLine() {
+  const s = hasSave() ? peekSave() : null;
+  if (!s) return '';
+  const ch = CHAPTERS[s.chapter] ? `${s.chapter}장 「${CHAPTERS[s.chapter].title}」` : `${s.chapter}장 (준비 중)`;
+  return `${esc(s.name || '???')} · ${ch} · 난이도 ${roman(s.diff)} · ${fmtTime(s.playMs)}`;
+}
+
+function menuHTML(items) {
+  return items.map(([a, label], i) => `<button class="ti-item" type="button" data-a="${a}" style="--i:${i}"><span>${label}</span></button>`
+    + (a === 'continue' ? `<p class="ti-save">${saveLine()}</p>` : '')).join('');
+}
+function showPage(p) {
+  page = p;
+  const box = root.querySelector('#tiMenu');
+  box.innerHTML = menuHTML(p === 'start' ? START : MAIN);
+  box.dataset.page = p;
+  setFocus(0, false);
+}
+function setFocus(i, sound = true) {
+  const items = [...root.querySelectorAll('.ti-item')];
+  if (!items.length) return;
+  focus = (i + items.length) % items.length;
+  items.forEach((b, k) => b.classList.toggle('on', k === focus));
+  if (sound) SFX.hover();
 }
 
 function mount(holder) {
   root = holder;
-  const save = hasSave() ? peekSave() : null;
-  const hero = art('hero');
-  const saveSub = save ? `${esc(save.name || '???')} · ${CHAPTERS[save.chapter] ? `${roman(save.chapter)}장 ${CHAPTERS[save.chapter].title}` : `${roman(save.chapter)}장 (준비 중)`} · 난이도 ${roman(save.diff)} · ${fmtTime(save.playMs)}` : '저장된 여정이 없어요';
-  holder.innerHTML = `${clockSVG()}
-    <div class="ti-art">${hero ? `<img src="${hero}" alt="" draggable="false">` : ''}</div>
-    <div class="ti-menu">
-      <div class="logo" aria-label="I — XII"><span>I</span><i></i><span>XII</span></div>
-      <p class="logo-sub">열두 개의 시(時)를 되찾는 이야기</p>
-      <div class="ti-btns">
-        ${save ? `<button class="ti-btn main" data-a="continue" type="button">${icon('play')}<span><b>이어 하기</b><small>${saveSub}</small></span></button>` : ''}
-        <button class="ti-btn${save ? '' : ' main'}" data-a="new" type="button">${icon('hourglass')}<span><b>새 게임</b><small>${save ? '지금 여정을 지우고 처음부터' : '난이도를 고르고 깨어난다'}</small></span></button>
-        <button class="ti-btn" data-a="settings" type="button">${icon('gear')}<span><b>설정</b><small>소리 · 글자 속도 · 화면 흔들림 · 튜토리얼</small></span></button>
-        <button class="ti-btn" data-a="help" type="button">${icon('help')}<span><b>규칙과 조작</b><small>톱니 지도 · 전투 · 재귀</small></span></button>
-      </div>
-    </div>
-    <p class="ti-foot"><b>I — XII</b> · 1장 「재귀」까지 · 스팀(PC) 1920×1080 · 소리 <b>M</b></p>`;
-  holder.querySelector('.ti-btns').addEventListener('click', e => { const b = e.target.closest('.ti-btn'); if (b) doAction(b.dataset.a); });
-  holder.querySelector('.ti-btns').addEventListener('pointerover', e => { if (e.target.closest('.ti-btn')) SFX.hover(); });
-  focus = 0;
+  holder.innerHTML = `${bgImgHTML('bg-title', 'ti-bg')}<div class="ti-shade"></div>
+    <div class="ti-logo" aria-label="I — XII"><div class="logo"><span>I</span><i></i><span>XII</span></div><p class="logo-sub">열두 개의 시(時)를 되찾는 이야기</p></div>
+    <nav class="ti-menu" id="tiMenu" aria-label="메뉴"></nav>
+    <p class="ti-foot"><kbd>↑</kbd><kbd>↓</kbd> 고르기 · <kbd>Enter</kbd> 들어가기 · <kbd>H</kbd> 규칙과 조작 · <kbd>M</kbd> 소리</p>
+    <div class="ti-credits" id="tiCredits" hidden></div>`;
+  const menu = holder.querySelector('#tiMenu');
+  menu.addEventListener('click', e => { const b = e.target.closest('.ti-item'); if (b) doAction(b.dataset.a); });
+  menu.addEventListener('pointerover', e => {
+    const b = e.target.closest('.ti-item');
+    if (!b) return;
+    const i = [...menu.querySelectorAll('.ti-item')].indexOf(b);
+    if (i !== focus) setFocus(i);
+  });
+  holder.querySelector('#tiCredits').addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target.id === 'tiCredits') closeCredits(); });
+  showPage('main');
 }
 
 async function doAction(a) {
   initAudio();
   SFX.click();
+  if (a === 'start') {
+    if (hasSave()) showPage('start');
+    else go('difficulty');
+    return;
+  }
+  if (a === 'back') { showPage('main'); return; }
   if (a === 'continue') {
     const r = loadAuto();
-    if (!r) { go('title'); return; }
+    if (!r) { showPage('main'); return; }
     resumeRun();
     return;
   }
@@ -69,23 +86,44 @@ async function doAction(a) {
     go('difficulty');
     return;
   }
-  if (a === 'settings') openSettings();
-  if (a === 'help') openHelp();
+  if (a === 'settings') { openSettings(); return; }
+  if (a === 'credits') { openCredits(); return; }
+  if (a === 'exit') {
+    const ok = await confirmBox({ title: '게임을 끝낼까요?', text: '여정은 자동으로 저장돼 있어요.', buttons: [{ label: '끝낸다', value: true, main: true }, { label: '돌아가기', value: false }] });
+    if (!ok) return;
+    window.close();
+    // 브라우저 탭은 스크립트로 닫을 수 없다 — 스팀 판에서는 창이 닫힌다
+    setTimeout(() => { if (root) confirmBox({ title: '창을 닫으면 끝나요', text: '브라우저에서는 게임이 탭을 직접 닫을 수 없어요. 탭을 닫아 주세요.', buttons: [{ label: '확인', value: true, main: true }] }); }, 250);
+  }
 }
 
+// 제작진 — 이름이 비어 있으면 빈 자리(밑줄)
+function openCredits() {
+  const box = root.querySelector('#tiCredits');
+  box.innerHTML = `<div class="tc-board">
+    <h3>I — XII</h3><p class="tc-sub">열두 개의 시(時)를 되찾는 이야기</p>
+    <dl>${CREDITS.map(c => `<div><dt>${esc(c.role)}</dt><dd>${c.names.length ? c.names.map(esc).join('<br>') : '<span class="tc-blank"></span>'}</dd></div>`).join('')}</dl>
+    <button class="btn-sub" type="button" data-close>Back</button></div>`;
+  box.hidden = false;
+}
+function closeCredits() { const box = root.querySelector('#tiCredits'); if (!box.hidden) { box.hidden = true; SFX.click(); } }
+
 function onKey(e) {
-  const btns = [...root.querySelectorAll('.ti-btn')];
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-    e.preventDefault();
-    focus = (focus + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length;
-    btns.forEach((b, i) => b.classList.toggle('focus', i === focus));
-    SFX.hover();
+  if (!root.querySelector('#tiCredits').hidden) {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.code === 'Space') { e.preventDefault(); closeCredits(); }
     return true;
   }
-  if (e.key === 'Enter' || e.code === 'Space') { e.preventDefault(); const b = btns[focus]; if (b) doAction(b.dataset.a); return true; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setFocus(focus + (e.key === 'ArrowDown' ? 1 : -1)); return true; }
+  if (e.key === 'Enter' || e.code === 'Space') {
+    e.preventDefault();
+    const b = root.querySelectorAll('.ti-item')[focus];
+    if (b) doAction(b.dataset.a);
+    return true;
+  }
+  if (e.key === 'Escape' && page === 'start') { SFX.click(); showPage('main'); return true; }
   if (e.code === 'KeyM') { toggleSound(); return true; }
   if (e.code === 'KeyH') { openHelp(); return true; }
   return false;
 }
 
-register('title', { mount, onKey });
+register('title', { mount, onKey, unmount() { root = null; } });

@@ -21,19 +21,6 @@ export function circleD(R, cx = 0, cy = 0) {
   return `M${f(cx + R)} ${f(cy)}A${f(R)} ${f(R)} 0 1 0 ${f(cx - R)} ${f(cy)}A${f(R)} ${f(R)} 0 1 0 ${f(cx + R)} ${f(cy)}Z`;
 }
 
-// 바퀴살 사이 구멍 (큰 톱니 장식) — k개의 둥근 사다리꼴 구멍
-export function spokeHolesD(rIn, rOut, k, gapDeg = 14) {
-  let d = '';
-  const gap = gapDeg * Math.PI / 180;
-  for (let i = 0; i < k; i++) {
-    const a0 = (i / k) * Math.PI * 2 + gap / 2 - Math.PI / 2;
-    const a1 = ((i + 1) / k) * Math.PI * 2 - gap / 2 - Math.PI / 2;
-    const P = (R, a) => `${f(R * Math.cos(a))} ${f(R * Math.sin(a))}`;
-    d += `M${P(rIn, a0)}L${P(rOut, a0)}A${f(rOut)} ${f(rOut)} 0 0 1 ${P(rOut, a1)}L${P(rIn, a1)}A${f(rIn)} ${f(rIn)} 0 0 0 ${P(rIn, a0)}Z`;
-  }
-  return d;
-}
-
 // 톱니 조각 (부서진 톱니 쐐기) — 아이콘용
 export function gearShardD(r = 9, n = 12) {
   const depth = 3.2, p = Math.PI * 2 / n, Ro = r + depth / 2, Rr = r - depth / 2;

@@ -15,6 +15,7 @@
   --f-num:'Cinzel','Trajan Pro','Times New Roman',serif;
   --f-serif:'Noto Serif KR','Nanum Myeongjo','AppleMyungjo','Batang',serif;
   --f-ui:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+  --f-title:'Cormorant Garamond','Noto Serif KR','Times New Roman',serif;
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden;background:#000}
@@ -23,6 +24,11 @@ button{font:inherit;color:inherit;margin:0}
 input{font:inherit;color:inherit}
 svg{display:block}
 [hidden]{display:none!important}
+/* 타자기 커서 */
+.tw-cur{display:inline-block;width:.46em;height:1.05em;margin-left:2px;vertical-align:-.14em;background:currentColor;opacity:.75;animation:twBlink .8s steps(2,start) infinite}
+@keyframes twBlink{to{visibility:hidden}}
+/* 화면 뒤에 까는 배경 그림 */
+img.scr-bg{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;pointer-events:none;user-select:none}
 :focus-visible{outline:2px solid var(--brass-hi);outline-offset:2px}
 img{-webkit-user-drag:none}
 
@@ -158,14 +164,17 @@ kbd{font-family:var(--f-ui)}
 .card::before{content:"";position:absolute;inset:4px;border:1px solid rgba(214,174,98,.16);border-radius:7px;pointer-events:none}
 .card::after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--rar);opacity:.85}
 .card.r-basic{--rar:var(--r-basic)} .card.r-common{--rar:var(--r-common)} .card.r-rare{--rar:var(--r-rare)} .card.r-legend{--rar:var(--r-legend)} .card.r-cult{--rar:var(--r-cult)} .card.r-curse{--rar:var(--r-curse)}
-.has-card-art .card{background:var(--card-art) center/cover no-repeat,#C9B38A;border-color:#4A3218;color:#2A1A0C;box-shadow:0 12px 22px -10px rgba(0,0,0,.9),inset 0 0 22px rgba(70,40,12,.35)}
+.has-card-art .card{background:linear-gradient(rgba(246,234,206,.2),rgba(246,234,206,.2)),var(--card-art) center/cover no-repeat,#C9B38A;border-color:#4A3218;color:#2A1A0C;box-shadow:0 12px 22px -10px rgba(0,0,0,.9),inset 0 0 22px rgba(70,40,12,.35)}
 .has-card-art .card::before{border-color:rgba(90,60,30,.3)}
 .has-card-art .card .c-name{color:#1E1208}
 .has-card-art .card .c-stat b{color:#1E1208}
 .has-card-art .card .c-stat small{color:#5B4430}
 .has-card-art .card .c-key{color:#5B4430;border-color:rgba(90,60,30,.45)}
 .has-card-art .card .c-mini i{background:rgba(60,35,15,.16)}
+.has-card-art .card .c-mini i.on{background:var(--k)}
 .has-card-art .card .c-mini i.me{background:#8A5A12}
+/* 얼룩진 양피지 위에서도 글이 읽히게 — 옅은 종이색 테두리 빛 */
+.has-card-art .card .c-name,.has-card-art .card .c-stat,.has-card-art .card .c-kind,.has-card-art .card .c-text{text-shadow:0 0 2px rgba(250,240,215,.9),0 0 7px rgba(250,240,215,.55)}
 .has-card-art .card .c-tags em{background:rgba(60,35,15,.12);color:#5B4430}
 .has-card-art .card.k-melee{--k:#9C4A10} .has-card-art .card.k-shot{--k:#0E6F66} .has-card-art .card.k-far{--k:#2C5C9E} .has-card-art .card.k-jam{--k:#6B3DB0}
 .has-card-art .card.k-guard{--k:#3A5670} .has-card-art .card.k-cool{--k:#2A7A4B} .has-card-art .card.k-move{--k:#6A5530} .has-card-art .card.k-cult{--k:#A0284A} .has-card-art .card.k-curse{--k:#4A4252}
@@ -205,7 +214,7 @@ kbd{font-family:var(--f-ui)}
 .card.mid .c-name{font-size:20px}
 .card.mid .c-text{font-size:13px;line-height:1.45}
 .has-card-art .card.big .c-text{color:#3E2C1A}
-.has-card-art .card.big .c-eff{color:#7A6248}
+.has-card-art .card.big .c-eff{color:#5E4630}
 .card.big .c-up{display:flex;align-items:center;gap:4px;padding:5px 7px;border-radius:4px;background:rgba(84,214,138,.12);border:1px solid rgba(84,214,138,.35);font:800 12px/1.25 var(--f-ui);color:var(--ok)}
 .card.big .c-up svg{flex:none;width:12px;height:12px;fill:currentColor}
 .has-card-art .card.big .c-up{background:rgba(47,107,71,.14);border-color:rgba(47,107,71,.45);color:#23603C}

@@ -2,6 +2,7 @@
 import { H } from './core.js';
 import { viewRoot } from './view.js';
 import { SFX } from '../ui/sfx.js';
+import { typeInto } from '../ui/typewriter.js';
 
 const STEPS = {
   1: [
@@ -63,9 +64,10 @@ function show() {
   }
   const waiting = s.until !== 'next';
   T.box.innerHTML = `<span class="tut-n">${T.i + 1}/${T.steps.length}</span>
-    <div class="tut-b"><b>${s.title}</b><p>${s.text}</p>${waiting ? '<span class="tut-wait">▶ 직접 해 보세요</span>' : ''}</div>
+    <div class="tut-b"><b>${s.title}</b><p class="tut-t"></p>${waiting ? '<span class="tut-wait">▶ 직접 해 보세요</span>' : ''}</div>
     <div class="tut-btns"><button type="button" data-a="next">${waiting ? '넘기기' : T.i === T.steps.length - 1 ? '알겠어요' : '다음'}</button><button type="button" class="skip" data-a="skip">안내 끄기</button></div>`;
   T.box.style.animation = 'none'; void T.box.offsetWidth; T.box.style.animation = '';
+  typeInto(T.box.querySelector('.tut-t'), s.text, { mul: 0.5, sound: 'soft' });
   if (s.hi) { const el = root.querySelector(s.hi); if (el) el.classList.add('tut-hi'); }
 }
 function advance() {

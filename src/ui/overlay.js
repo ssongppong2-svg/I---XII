@@ -2,12 +2,13 @@
 import { $, el, esc } from '../core/util.js';
 import { toStage } from './stage.js';
 import { SFX } from './sfx.js';
+import { typeInto } from './typewriter.js';
 
 let toastTimer = 0;
 export function toast(msg, tone = '') {
-  let t = $('#toast');
+  const t = $('#toast');
   if (!t) return;
-  t.textContent = msg;
+  typeInto(t, esc(msg), { mul: 0.3, cursor: false });
   t.className = 'toast' + (tone ? ' ' + tone : '');
   t.hidden = false;
   t.style.animation = 'none'; void t.offsetWidth; t.style.animation = '';

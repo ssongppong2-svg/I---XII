@@ -1,4 +1,13 @@
 /* ═════════════ 톱니 칸 화면 ═════════════ */
+/* 배경 그림이 있는 칸 — 장면을 보이고, 글 판은 어두운 판으로 띄운다 */
+.nd-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.nd-bg:empty{display:none}
+.nd-bg .scr-bg.fade{animation:fadeIn .5s ease-out}
+.nd.has-bg .nd-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,4,6,.08),rgba(5,4,6,.2) 40%,rgba(5,4,6,.55) 72%,rgba(5,4,6,.7)),linear-gradient(180deg,rgba(5,4,6,.62),transparent 20%,transparent 72%,rgba(5,4,6,.72))}
+.nd.has-bg .nd-glyph{display:none}
+.nd.has-bg .nd-panel{padding:30px 36px 26px;border-radius:12px;border:1px solid rgba(214,174,98,.26);background:linear-gradient(180deg,rgba(15,12,17,.88),rgba(9,7,11,.92));box-shadow:0 30px 70px rgba(0,0,0,.6)}
+.nd.has-bg.narrow .nd-panel{width:780px;bottom:auto;max-height:calc(100% - 200px)}
+.nd.has-bg.narrow .nd-title{font-size:42px}
 .nd{position:absolute;inset:0;
   background:radial-gradient(48% 70% at 24% 58%,color-mix(in srgb,var(--tone) 20%,transparent),transparent 70%),radial-gradient(90% 80% at 60% 40%,#15111B,#08070B 70%)}
 .nd-art{position:absolute;left:3%;bottom:0;width:680px;height:100%;display:flex;align-items:flex-end;justify-content:center;pointer-events:none}
@@ -57,6 +66,10 @@
 .price svg{width:16px;height:16px;fill:var(--parts)}
 .price.no{color:#FF8A7A;border-color:#7A2A22}
 .price.dark{font:700 14px/1.2 var(--f-ui);background:rgba(40,12,16,.9);border-color:#7A2A3A;color:#F6C9D2}
+/* 상점 — 간판과 값표는 나무판 */
+.t-shop .nd-title{align-self:flex-start;padding:20px 70px 24px;margin-left:-14px;background:var(--plank,linear-gradient(180deg,#7A5634,#4B3220)) center/100% 100% no-repeat;color:#F6E6C8;font-size:40px;text-shadow:0 3px 0 rgba(0,0,0,.7),0 0 14px rgba(0,0,0,.6);filter:drop-shadow(0 10px 14px rgba(0,0,0,.55))}
+.t-shop .price{padding:9px 24px 11px;border:0;border-radius:0;background:var(--plank-thin,rgba(40,30,14,.9)) center/100% 100% no-repeat;color:#F8E7C6;text-shadow:0 2px 0 rgba(0,0,0,.75);filter:drop-shadow(0 4px 6px rgba(0,0,0,.5))}
+.t-shop .price.no{color:#FFB0A0}
 .shop-side{display:flex;gap:12px}
 .shop-relic{flex:1;min-width:0;display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:8px;border:1px solid var(--line-2);background:var(--panel);text-align:left;cursor:pointer;transition:border-color .15s}
 .shop-relic:hover:not(:disabled){border-color:var(--brass)}

@@ -1,13 +1,10 @@
 // 톱니 지도 만들기 — 챕터 하나 = 톱니 장치 하나
-// 1) 층마다 톱니 수 → 2) 교차 없는 연결 → 3) 칸 종류 → 4) 위치 → 5) 사이 톱니(맞물림)
-// 칸을 끝낼 때 장치 전체가 함께 돌아야 하므로, 사이 톱니 수로 회전 방향이 막히지 않게 맞춘다
+// 1) 층마다 톱니 수 → 2) 교차 없는 연결(놋쇠 축) → 3) 칸 종류 → 4) 위치 · 크기 · 도는 방향
 import { makeRng, hashSeed } from '../core/rng.js';
 import { NODE_TYPES } from '../data/nodes.js';
 import { EVENT_POOL } from '../data/events.js';
 
-export const MAP_BOX = { x0: 150, x1: 1745, y0: 250, y1: 880, cy: 565 };
-export const PITCH = 8.6;              // 톱니 한 개의 폭 (모든 톱니가 같아야 맞물린다)
-export const teethOf = r => Math.max(8, Math.round(2 * Math.PI * r / PITCH));
+export const MAP_BOX = { x0: 150, x1: 1745, y0: 250, y1: 860, cy: 555 };
 
 // 두 층 사이의 교차 없는 연결: 계단처럼 한쪽씩 전진하며 모든 칸을 잇고, 몇 개를 덧붙인다
 function linkLayers(m, n, R) {
@@ -77,17 +74,9 @@ export function genMap(ch, seed) {
   }
   // 칸마다 내용 씨앗 · 전투 구성 · 사건
   for (const id of Object.keys(nodes)) fillContent(ch, nodes[id], R, seed);
-  // 4) 위치 · 크기
+  // 4) 위치 · 크기 · 도는 방향
   layout(nodes, layers, L, R);
-  // 5) 사이 톱니 — 층 순서대로. B로 처음 들어오는 사슬이 B의 톱니 각도를 정한다
-  const idlers = [];
-  const phased = new Set([layers[0][0]]);
-  for (const [A, B] of edges) {
-    const chain = chainBetween(nodes[A], nodes[B], !phased.has(B));
-    phased.add(B);
-    idlers.push(...chain);
-  }
-  return { chapter: ch.num, nodes, layers, edges, idlers, arc: 0, start: layers[0][0] };
+  return { chapter: ch.num, nodes, layers, edges, arc: 0, start: layers[0][0] };
 }
 
 function assignTypes(ch, nodes, layers, R) {
@@ -158,59 +147,13 @@ function layout(nodes, layers, L, R) {
       const single = w === 1;
       n.x = Math.round(B.x0 + i * dx + (single || i === L - 1 ? 0 : R.int(-12, 12)));
       n.y = Math.round(single ? B.cy : B.cy - span / 2 + (span / (w - 1)) * k + R.int(-16, 16));
-      n.spin = i % 2 === 0 ? 1 : -1;               // 층마다 번갈아 도는 방향 — 사이 톱니는 늘 짝수
-      n.teeth = teethOf(n.r);
+      n.spin = i % 2 === 0 ? 1 : -1;               // 층마다 번갈아 도는 방향
       n.phase = R.float(0, 360);
     });
   }
   // 보스 톱니는 오른쪽 끝에 붙인다
   const last = layers[L - 1];
   if (last.length === 1) { const b = nodes[last[0]]; b.x = B.x1 + 20; }
-}
-
-// 톱니의 이가 방향 dir(도)에서 얼마나 떨어져 있나 — dir + 반환값 쪽에 가장 가까운 이가 있다
-// (gearD는 첫 이가 위(−90°)를 보고, rotate(phase)는 시계 방향)
-function toothOffset(phase, teeth, dir) {
-  const p = 360 / teeth;
-  let d = (((phase - 90 - dir) % p) + p) % p;
-  if (d > p / 2) d -= p;
-  return d;
-}
-// 앞 톱니(prev)의 이가 맞닿는 점에 이 톱니의 '이 사이'가 오도록 각도를 정한다
-function meshPhase(prev, dirFwd, r, teeth) {
-  const d = toothOffset(prev.phase, prev.teeth, dirFwd);
-  const back = dirFwd + 180;
-  return back - d * (prev.r / r) + 180 / teeth + 90;
-}
-
-// A와 B 사이를 작은 톱니 k개(짝수)로 잇는다 — 모두 한 직선 위에서 서로 맞닿게
-function chainBetween(A, B, setB) {
-  const dx = B.x - A.x, dy = B.y - A.y;
-  const d = Math.hypot(dx, dy);
-  const ux = dx / d, uy = dy / d;
-  const gap = d - A.r - B.r;
-  if (gap <= 6) return [];
-  let k = Math.max(2, Math.round(gap / 30));
-  if (k % 2) k += (gap / k > 15 ? 1 : -1);          // 층마다 도는 방향이 바뀌므로 사이 톱니는 짝수
-  if (k < 2) k = 2;
-  const ri = gap / (2 * k);
-  const teeth = teethOf(ri);
-  const dir = Math.atan2(uy, ux) * 180 / Math.PI;
-  const out = [];
-  let prev = A;
-  for (let t = 0; t < k; t++) {
-    const s = A.r + ri + 2 * ri * t;
-    const g = {
-      id: `${A.id}>${B.id}#${t}`, from: A.id, to: B.id, i: t, k,
-      x: +(A.x + ux * s).toFixed(1), y: +(A.y + uy * s).toFixed(1), r: +ri.toFixed(2), teeth,
-      spin: A.spin * (t % 2 === 0 ? -1 : 1),
-    };
-    g.phase = meshPhase(prev, dir, ri, teeth);
-    out.push(g);
-    prev = g;
-  }
-  if (setB) B.phase = meshPhase(prev, dir, B.r, B.teeth);
-  return out;
 }
 
 // 칸 종류 개수 (확인용)
