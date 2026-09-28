@@ -143,6 +143,8 @@ const ambCancelled = () => !!(B.amb && !B.ambFired && B.ambushAt - B.spent >= 1 
 const atkCancelled = () => !!(B.intent && B.loopCost - B.spent >= 1 && B.boss && B.loopCost - B.spent <= B.boss.stun);
 
 function renderHud() {
+  const tn = H.trialNote(), trial = q('#trialTag');
+  if (tn && trial) { if (trial.innerHTML !== tn.html) trial.innerHTML = tn.html; trial.classList.toggle('fail', tn.fail); }
   q('#loopNum').textContent = B.loop;
   q('#loopCost').textContent = !B.started ? '교전 대기' : B.over ? '교전 종료' : `남은 코스트 ${B.costLeft} / ${B.loopCost}`;
   q('#loopSub').textContent = B.started && !B.over ? `루프 ${B.loop}${ambushOn() ? ` · 기습 ${B.ambushAt}번째 행동 뒤` : ''}` : '루프';

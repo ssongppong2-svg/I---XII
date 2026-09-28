@@ -39,6 +39,7 @@ export const H = {
   tut: noop,                // 튜토리얼 알림 (이벤트 이름)
   onLoop: noop,             // 루프가 시작될 때 (루프 번호)
   storySay: noop,           // 대본의 전투 중 한마디 (enc.say — 한 판에 한 번)
+  trialNote: noop,          // 시험 전투 — 지금 상태 { html, fail } (위쪽 시험 표시를 그릴 때마다 묻는다)
   fx: new Proxy({}, { get: () => nop }),
   sfx: new Proxy({}, { get: () => noop }),
 };

@@ -38,6 +38,7 @@ async function mount(holder, params = {}) {
   wireHooks();
   H.scene = script => playScene(script, sceneOpts(enc));
   H.tut = () => {};
+  H.trialNote = () => null;   // 시험 전투에서만 아래에서 채운다 (앞 판의 시험 표시가 남지 않게)
   // 전투 중 이야기(보스 단계 대사 · 과부하)는 한 판에 한 번 — 재도전해도 다시 멈추지 않는다
   const ilKey = k => `il:${enc.story || ''}:${k}`;
   const seenIl = Object.keys(enc.interludes || {}).filter(k => (RUN.flags.seen || {})[ilKey(k)]);
@@ -53,6 +54,7 @@ async function mount(holder, params = {}) {
   B.onEnd = win => onEnd(win);
   if (params.alertGained > 0) log(`${chapterDef().hunted ? '추격' : '감시 톱니'} — 경계도 +${params.alertGained} (지금 ${RUN.alert})`, 'bad');
   // 송신을 준비하는 전투 — 고른 경로의 이익을 판 옆 기록에 남긴다 (09)
+  if (enc.narrow) log('좁은 골목 — 양 끝 세로줄은 벽이라 들어갈 수 없다. 이기면 부품 ×1.5', 'warn');
   if (enc.signal) log(enc.sig > SIGNAL_TURNS ? `가림길 — 벽이 가려 준다. 감시 시계의 송신까지 ${enc.sig}행동 (직행이면 ${SIGNAL_TURNS})` : `감시 시계의 송신까지 ${enc.sig || SIGNAL_TURNS}행동 — 그 전에 부수면 경계가 오르지 않는다`, enc.sig > SIGNAL_TURNS ? 'ok' : 'warn');
   setupBoard();
   bindInput();
@@ -62,12 +64,16 @@ async function mount(holder, params = {}) {
   vr.querySelector('#bSnd').addEventListener('click', e => { e.currentTarget.blur(); toggleSound(); render(); });
   vr.querySelector('#bMenu').addEventListener('click', () => menu());
   bindTips(vr.querySelector('#bRelics'), t => relicTip(t.dataset.tip));
-  if (enc.trial) {
+  // 시험 — 위쪽 제목 옆에 조건과 지금 상태(루프 · 쓴 카드 · 맞았는지). 조건이 깨지면 붉게
+  if (enc.trial && TRIALS[enc.trial]) {
     const T = TRIALS[enc.trial];
     const tag = document.createElement('div');
     tag.className = 'trial-tag'; tag.id = 'trialTag';
-    tag.textContent = `시험 「${T.name}」 — ${T.desc}`;
-    vr.querySelector('.timeline').appendChild(tag);
+    vr.querySelector('.tb-left').appendChild(tag);
+    H.trialNote = () => {
+      const fail = !T.ok({ stats: B.stats });
+      return { fail, html: `<b>시험 「${T.name}」</b>${fail ? '실패 — 추가 보상 없음' : T.desc}<em>${T.now(B.stats)}</em>` };
+    };
   }
   render();
   // 보스 앞 대화(16) · 전투를 여는 한마디(17-001) — 처음 한 번만. 쓰러져 재귀하면 전투부터 (대본: 전투 패배는 그 전투의 재시도)

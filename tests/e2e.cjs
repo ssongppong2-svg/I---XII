@@ -591,6 +591,39 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await pickOnce('tent', () => page.click('.nd-opt'));
   await pickOnce('shrine', () => page.click('.rw-relic'));
 
+  console.log('23. 시험 · 좁은 골목 전투 — 위쪽 시험 표시(지금 상태 · 실패하면 붉게) · 막힌 줄 안내');
+  const fightAt = async (patch, alley) => {
+    await page.evaluate(([patch, alley]) => {
+      const n = Object.values(I12.RUN.map.nodes).find(x => x.layer === 4);
+      for (const k of ['hid', 'deal']) delete n[k];
+      Object.assign(n, patch);
+      if (alley) n.alley = alley;
+      I12.RUN.alert = 0; I12.RUN.pos = n.prev[0];
+      I12.flow.enterNode(n.id);
+    }, [patch, alley]);
+    await waitScreen('scr-node');
+    await page.waitForSelector('.nd-opts > .nd-opt');
+    await page.keyboard.press('Digit1');
+    await waitScreen('scr-battle');
+    await battleReady();
+  };
+  await fightAt({ type: 'trial', trial: 'swift', enc: { foes: ['watcher'] } });
+  const tr = await page.evaluate(() => { const t = document.querySelector('.tb-left #trialTag'); return t && { text: t.textContent, fail: t.classList.contains('fail') }; });
+  check(!!tr && /신속/.test(tr.text) && /루프 1 \/ 4/.test(tr.text) && !tr.fail, `시험: 위쪽 제목 옆에 조건과 지금 상태 (${tr && tr.text})`);
+  await page.evaluate(() => { I12.B.stats.loops = 5; I12.core.H.render(); });
+  check(await page.evaluate(() => document.querySelector('#trialTag').classList.contains('fail') && /실패/.test(document.querySelector('#trialTag').textContent)), '시험: 조건이 깨지면 붉게 「실패 — 추가 보상 없음」');
+  await page.evaluate(() => I12.core.debugWin());
+  await waitScreen('scr-reward');
+  check(await page.evaluate(() => /시험 「신속」 실패/.test(document.querySelector('.scr-reward').textContent)), '시험: 보상 화면에도 실패');
+  await page.click('#rwGo');
+  await waitMap();
+  await fightAt({ type: 'alley' }, 'narrow');
+  check(await page.evaluate(() => I12.B.blocked && I12.B.blocked.size > 0 && I12.B.logs.some(l => /좁은 골목 — 양 끝 세로줄은 벽/.test(l.t)) && !document.querySelector('#trialTag')), '좁은 골목: 막힌 양 끝 줄 · 판 옆 기록에 안내 (앞 판의 시험 표시는 없다)');
+  await page.evaluate(() => I12.core.debugWin());
+  await waitScreen('scr-reward');
+  await page.click('#rwGo');
+  await waitMap();
+
   check(errs.length === 0, `자바스크립트 오류 없음${errs.length ? ' — ' + errs.join(' | ') : ''}`);
   await browser.close();
   if (srv) srv.close();

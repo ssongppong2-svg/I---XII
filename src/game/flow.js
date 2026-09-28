@@ -145,10 +145,11 @@ export function encounterFor(node, extra = {}) {
 }
 
 // 시험 조건
+// now = 전투 중 지금 상태 (전투 화면 위쪽 시험 표시에 쓴다 — ok가 거짓이 되면 실패로 바뀐다)
 export const TRIALS = {
-  untouched: { name: '무결', desc: '한 번도 맞지 않고 이겨라', ok: r => r.stats.taken === 0 },
-  swift:     { name: '신속', desc: '4루프 안에 이겨라', ok: r => r.stats.loops <= 4 },
-  frugal:    { name: '절제', desc: '카드를 6장 이하만 쓰고 이겨라', ok: r => r.stats.cards <= 6 },
+  untouched: { name: '무결', desc: '한 번도 맞지 않고 이겨라', ok: r => r.stats.taken === 0, now: s => (s.taken ? '피해를 입었다' : '아직 맞지 않았다') },
+  swift:     { name: '신속', desc: '4루프 안에 이겨라', ok: r => r.stats.loops <= 4, now: s => `루프 ${Math.max(1, s.loops)} / 4` },
+  frugal:    { name: '절제', desc: '카드를 6장 이하만 쓰고 이겨라', ok: r => r.stats.cards <= 6, now: s => `쓴 카드 ${s.cards} / 6장` },
 };
 
 // 카드 보상 — 3장 (희귀도 가중)
