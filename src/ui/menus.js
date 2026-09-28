@@ -27,8 +27,11 @@ const canFull = () => !!(document.fullscreenEnabled && document.documentElement.
 export function toggleFullscreen() {
   if (!canFull()) return Promise.resolve();
   const p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
-  return Promise.resolve(p).catch(() => {});   // 거절돼도(권한 등) 조용히 — 스위치는 실제 상태로 되돌린다
+  return Promise.resolve(p).catch(() => {}).then(syncFull);   // 거절돼도(권한 등) 조용히 — 스위치는 실제 상태로 되돌린다
 }
+// 설정 창의 전체 화면 스위치를 실제 상태에 맞춘다 — Esc로 풀릴 때도 (듣는 것은 하나뿐, 창을 몇 번 열어도 쌓이지 않는다)
+const syncFull = () => { const x = document.querySelector('input[data-full]'); if (x) x.checked = !!document.fullscreenElement; };
+document.addEventListener('fullscreenchange', syncFull);
 export function openSettings() {
   const full = () => canFull() ? `<label class="cfg-row sw-row"><span>전체 화면<small>모니터를 꽉 채워서 — Esc로도 나올 수 있어요</small></span><input type="checkbox" data-full${document.fullscreenElement ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>` : '';
   const render = () => full() + OPT.map(o => {
@@ -37,12 +40,9 @@ export function openSettings() {
     return `<div class="cfg-row"><span>${o.label}</span><div class="seg">${o.opts.map(([v, l]) => `<button type="button" data-k="${o.k}" data-v="${v}" class="${SET[o.k] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
   }).join('') + '<p class="dim" style="margin-top:14px">설정은 이 브라우저에 저장돼요.</p>';
   const body = openSheet({ title: '설정', body: render() });
-  // Esc 등으로 전체 화면이 풀리면 스위치도 따라 바뀐다 (창이 닫히면 알아서 멈춘다)
-  const sync = () => { const x = body.querySelector('input[data-full]'); if (!body.isConnected) document.removeEventListener('fullscreenchange', sync); else if (x) x.checked = !!document.fullscreenElement; };
-  document.addEventListener('fullscreenchange', sync);
   body.addEventListener('change', e => {
     const t = e.target;
-    if (t.matches('input[data-full]')) { SFX.click(); toggleFullscreen().then(sync); return; }
+    if (t.matches('input[data-full]')) { SFX.click(); toggleFullscreen(); return; }
     if (t.matches('input[type=checkbox][data-k]')) { setSetting(t.dataset.k, t.checked); if (t.dataset.k === 'sound' && t.checked) { initAudio(); SFX.click(); } }
     if (t.matches('input[type=range][data-k]')) { setSetting(t.dataset.k, +t.value / 100); SFX.click(); }
   });
