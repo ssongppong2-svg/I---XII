@@ -154,7 +154,7 @@ export function playScene(script, opt = {}) {
     q('#ptVoiceArt').innerHTML = bel ? `<img src="${bel}" alt="" draggable="false">` : '';
     setHeroFace('idle');
     dom.dataset.tint = '';
-    dom.classList.remove('duo', 'trio', 'solo-b', 'in-input');
+    dom.classList.remove('duo', 'trio', 'solo-b', 'in-input', 'cg-full');
     q('#scPlace').hidden = true;
     q('#dname').hidden = true;
     q('#dtext').innerHTML = '';
@@ -209,7 +209,11 @@ function stage(step) {
     q('#scDial').hidden = !step.dial;
     q('#scDial').classList.toggle('flicker', !!step.flicker);
   }
-  if (step.cg !== undefined) q('#scCg').classList.toggle('small', !!step.small);
+  if (step.cg !== undefined) {
+    q('#scCg').classList.toggle('small', !!step.small);
+    // 화면을 채우는 한 장 그림 — 서 있는 인물은 잠시 물린다 (그림 가장자리가 흐려지며 뒤의 인물이 비쳐 겹쳐 보이지 않게). 작은 그림은 인물과 함께
+    dom.classList.toggle('cg-full', !q('#scCg').hidden && !step.small);
+  }
   if (step.hero !== undefined) q('#ptHero').classList.toggle('low', step.hero === 'low');
   if (step.bossDmg !== undefined) q('#ptBoss').dataset.dmg = step.bossDmg || '';
   if (step.amb !== undefined) SFX.amb(step.amb);

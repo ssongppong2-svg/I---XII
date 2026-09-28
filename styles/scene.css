@@ -278,6 +278,8 @@
 /* 흔들리는 문자판 (불안정하게 점등) */
 .sc-dial.flicker .dn.on{animation:dialFlicker 1.1s steps(1) infinite}
 @keyframes dialFlicker{0%,100%{opacity:1}12%{opacity:.35}20%{opacity:1}57%{opacity:.5}63%{opacity:1}}
+/* 화면을 채우는 한 장 그림이 떠 있는 동안 — 서 있는 인물은 잠시 물린다 (01 못총: 그림 가장자리 너머로 주인공이 비쳐 겹쳐 보이던 것). 이름표 · 대사는 그대로 */
+.scene.cg-full .pt{opacity:0!important}
 /* 작은 한 장 그림 (접힌 그림 등) */
 .sc-cg.small{width:520px;top:90px}
 /* 이름 입력 중 — 입력 판은 대사 층(.sc-stage) 안이라 그림보다 아래 층이다. 겹치지 않게 자리를 나눈다:

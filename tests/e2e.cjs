@@ -36,7 +36,8 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_CERT|fonts\.g/.test(m.text())) errs.push(m.text()); });
   page.on('pageerror', e => errs.push(e.message));
 
-  const shot = async name => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, name + '.png') }); };
+  // 화면 찍기 — 장면이 페이드로 뜨는 중(0.45초)에 찍히지 않게 조금 기다린 뒤 (찍을 때만)
+  const shot = async name => { if (SHOTS) { await page.waitForTimeout(600); await page.screenshot({ path: path.join(SHOTS, name + '.png') }); } };
   // 화면이 고른 배경음 · 대사 장면에서 낮추는지 (시험은 기본 설정 — 소리를 켠 채로 돈다. 머리 없는 브라우저라 들리지는 않는다)
   const aud = () => page.evaluate(async () => (await import('/src/ui/sfx.js')).audioState());
   const auds = {};
