@@ -1,6 +1,7 @@
 // 난이도 — 시계 바늘로 I~XII 중 하나를 고른다 → 프롤로그(01 회상 · 02 각성) → 1장 지도 (이름은 04에서)
 import { register, go } from '../ui/router.js';
 import { DIFFS, diffMods } from '../data/difficulty.js';
+import { CHAPTERS } from '../data/chapters.js';
 import { roman } from '../core/util.js';
 import { SFX } from '../ui/sfx.js';
 import { newRun, RUN, BASE_HP } from '../game/run.js';
@@ -44,6 +45,8 @@ function mount(holder) {
   pick(1, true);
 }
 
+// 새 여정은 늘 1장에서 시작한다 — 1장에 없는 것(정예)에 붙는 규칙은 그렇다고 알려 준다
+const noteOf = D => (D.needs === 'elite' && !CHAPTERS[1].encounters.elite.length ? '<small>1장에는 정예가 없어요</small>' : '');
 const NAMES = ['', '처음 깨어난 시각', '조금 늦은 시각', '재귀가 줄어드는 시각', '정예가 날카로워지는 시각', '쉬기 어려운 시각', '감시가 짙은 시각', '값이 오르는 시각', '몸이 약한 시각', '보스가 단단한 시각', '쉴 곳이 없는 시각', '폭격이 넓은 시각', '열두 시 — 가장 늦은 시각'];
 function pick(d, quiet) {
   sel = Math.max(1, Math.min(12, d));
@@ -54,9 +57,10 @@ function pick(d, quiet) {
   root.querySelector('#dfName').textContent = NAMES[sel];
   const m = diffMods(sel);
   root.querySelector('#dfStats').innerHTML = `<div><dt>적 체력</dt><dd>${Math.round(m.foeHp * 100)}%</dd></div><div><dt>재귀 저장 (챕터마다)</dt><dd>${m.saves}번</dd></div><div><dt>시작 HP</dt><dd>${BASE_HP + m.maxHp}</dd></div>`;
-  const rules = ['<li class="base"><b>I</b>기본 — 재귀 저장 6번 · HP 5</li>'];
-  for (let i = 2; i <= sel; i++) rules.push(`<li class="${i === sel ? 'new' : ''}"><b>${roman(i)}</b>${DIFFS[i].rule}</li>`);
-  root.querySelector('#dfRules').innerHTML = rules.slice(-8).join('');
+  const rules = [`<li class="base"><b>I</b>기본 — 재귀 저장 ${DIFFS[1].saves}번 · HP ${BASE_HP}</li>`];
+  // 12줄 모두 — 고른 시각까지는 밝게(새로 더해진 줄은 빛나게), 그 뒤 시각의 규칙은 흐리게 미리 (시각을 바꿔도 버튼이 제자리)
+  for (let i = 2; i <= 12; i++) rules.push(`<li class="${i === sel ? 'new' : i > sel ? 'off' : ''}"><b>${roman(i)}</b>${DIFFS[i].rule}${noteOf(DIFFS[i])}</li>`);
+  root.querySelector('#dfRules').innerHTML = rules.join('');
 }
 
 let starting = false;

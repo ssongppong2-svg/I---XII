@@ -102,7 +102,18 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await page.click('.modal .btn-main');
   await waitScreen('scr-difficulty');
   check(await page.evaluate(() => !localStorage.getItem('i12.run.auto.v1')), '새 게임을 고르면 예전 여정은 지워진다');
+  // 난이도 — XII에서도 규칙 12줄이 판 안에 모두 보이고, 고른 줄(맨 아래 XII)이 빛난다 · 시작 버튼은 시각을 바꿔도 제자리
+  const dfBox = () => page.evaluate(() => {
+    const panel = document.querySelector('.df-panel').getBoundingClientRect(), li = [...document.querySelectorAll('#dfRules li')];
+    const last = li[li.length - 1].getBoundingClientRect(), go = document.querySelector('#dfGo').getBoundingClientRect();
+    return { n: li.length, lit: li.filter(l => !l.classList.contains('off')).length, newTxt: (document.querySelector('#dfRules li.new') || {}).textContent || '', inside: last.bottom <= go.top && last.bottom <= panel.bottom, goTop: Math.round(go.top) };
+  });
+  await page.click('.df-num[data-d="12"]');
+  const df12 = await dfBox();
   await page.click('.df-num[data-d="4"]');
+  const df4 = await dfBox();
+  check(df12.n === 12 && df12.lit === 12 && df12.inside && /^XII보스 턴 공격/.test(df12.newTxt) && df4.lit === 4 && /1장에는 정예가 없어요/.test(df4.newTxt) && df4.goTop === df12.goTop,
+    `난이도: 규칙 12줄이 모두 보이고 고른 시각까지 밝게 (XII ${df12.lit}줄 · IV ${df4.lit}줄 · 버튼 제자리)`);
   await page.click('#dfGo');
   await sceneWait();
   // 01 — 검은 화면 · 주인공 이름칸은 ??? · 방문자는 목소리만 · 못총 그림

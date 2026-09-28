@@ -55,6 +55,7 @@
 .df-num:hover{color:var(--brass-hi);background:rgba(214,174,98,.08)}
 .df-num.on{color:#1A140A;background:radial-gradient(circle at 35% 30%,#FFE7AE,#D6AE62 60%,#8C6A2E);border-color:#FFF1C9;box-shadow:0 0 30px rgba(242,211,143,.6);transform:scale(1.08)}
 .df-num.hard{color:#E0A08A}
+.df-num.hard.on{color:#4A140C}   /* 고른 숫자는 금빛 단추 위 — 어려운 시각도 어둡게 (분홍 글자는 금빛 위에서 안 보임) */
 .df-panel{position:absolute;right:120px;top:190px;width:760px;min-height:600px;display:flex;flex-direction:column;gap:18px;padding:34px 40px;border:1px solid var(--line-2);border-radius:12px;background:rgba(18,16,23,.92);box-shadow:0 30px 70px rgba(0,0,0,.5)}
 .df-title{display:flex;align-items:baseline;gap:20px}
 .df-title b{font:800 84px/1 var(--f-num);color:var(--brass)}
@@ -63,10 +64,13 @@
 .df-stats div{padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2)}
 .df-stats dt{font-size:13px;color:var(--mute)}
 .df-stats dd{margin:6px 0 0;font:800 26px/1 var(--f-num);color:var(--bone)}
-.df-rules{flex:1;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:320px;overflow:hidden}
-.df-rules li{display:flex;gap:14px;align-items:baseline;padding:8px 12px;border-radius:6px;font-size:16px;color:var(--ash)}
+/* 규칙 12줄이 늘 모두 보이게 — 촘촘히. 고른 시각의 줄이 빛나고, 그 뒤 시각은 흐리게 */
+.df-rules{flex:1;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.df-rules li{display:flex;gap:14px;align-items:baseline;padding:5px 12px;border-radius:6px;font-size:15px;line-height:1.35;color:var(--ash)}
+.df-rules li small{margin-left:auto;padding-left:12px;font-size:13px;color:var(--mute);white-space:nowrap}
 .df-rules li b{flex:none;width:44px;font:800 17px/1 var(--f-num);color:var(--brass-lo)}
 .df-rules li.new{background:rgba(214,174,98,.1);color:var(--bone)}
 .df-rules li.new b{color:var(--brass-hi)}
 .df-rules li.base{color:var(--mute)}
+.df-rules li.off{opacity:.3}
 .df-btns{display:flex;gap:12px}

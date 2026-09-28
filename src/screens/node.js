@@ -186,7 +186,7 @@ const relicHTML = id => `<span class="relic r-${RELICS[id].rarity}" data-tip="re
 
 /* ═════════════ 칸마다 ═════════════ */
 const HANDLERS = {
-  // ── 휴식 (기습 확률)
+  // ── 휴식 (회복한 뒤 습격 판정)
   rest() {
     const ch = chapterDef();
     const h = restHeal();
@@ -846,8 +846,7 @@ function renderImplant() {
     const ok = await confirmBox({ title: `「${IMPLANTS[x.dataset.id].name}」${eulreul(IMPLANTS[x.dataset.id].name)} 이식할까요?`, text: `${IMPLANTS[x.dataset.id].desc} 톱니 조각 ${cost}개. 되돌릴 수 없어요.`, buttons: [{ label: '이식한다', value: true, main: true }, { label: '그만둔다', value: false }] });
     if (!ok || !alive) return;
     gainShards(-cost);
-    addImplant(x.dataset.id);
-    if (x.dataset.id === 'exo_frame') heal(1);
+    addImplant(x.dataset.id);   // 최대 HP가 늘면 늘어난 만큼 채워진다 — 강화 외골격의 「이식할 때 1 회복」
     node.done = x.dataset.id;
     SFX.save(); hud(); autosave(); renderImplant();
   });

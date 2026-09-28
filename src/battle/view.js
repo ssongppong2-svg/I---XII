@@ -602,7 +602,12 @@ function detailHTML(i) {
     range = `상하좌우 최대 ${leapOf(def)}칸`;
     state = '<span class="st good">방향을 고르세요</span>';
   }
-  const rest = effectLine(Object.assign({}, def, { shape: null, dmg: null, ol: def.shape ? null : def.ol, bossOl: def.shape ? null : def.bossOl }));
+  // 실드는 지금 몇 겹 → 몇 겹인지 (최대는 2겹, 방벽 부적이면 3겹)
+  if (def.shield) {
+    eff.push(`실드 <b class="g">${B.shield} → ${Math.min(B.shieldCap, B.shield + def.shield)}</b>겹 (최대 ${B.shieldCap})`);
+    if (B.shield >= B.shieldCap) state = `<span class="st bad">실드가 이미 ${B.shieldCap}겹 — 더 늘지 않음</span>`;
+  }
+  const rest = effectLine(Object.assign({}, def, { shape: null, dmg: null, shield: null, ol: def.shape ? null : def.ol, bossOl: def.shape ? null : def.bossOl }));
   if (rest) eff.push(rest);
   if (frozen) state = '<span class="st frz">마비 중 — 코스트만 소모</span>';
   const use = lastPointer !== 'mouse'

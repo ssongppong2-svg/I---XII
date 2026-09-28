@@ -7,6 +7,7 @@
 //   3) 장면 연출 · 배경 소리 · 색조 — 대본의 fx · amb · tint 이름을 장면 엔진 · 소리 · 스타일이 아는지
 //   4) 아이콘 — icon('이름') · glyph('이름') · 데이터의 icon: '이름' 이 모두 그려지는지
 //   5) 적 · 카드 참조 — 전투 구성의 foes 와 저주 카드 이름 등이 실제로 있는지
+//   6) 카드 설명 — 강화판 설명이 강화 전 숫자 · 소멸을 그대로 적고 있지 않은지
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
@@ -88,6 +89,23 @@ const load = f => import(pathToFileURL(path.join(ROOT, f)).href);
   const cardsUsed = new Set([...all(srcText, /\bcard\('([a-z0-9_]+)'\)/g), ...all(srcText, /addCard\('([a-z0-9_]+)'\)/g)]);
   const cardMissing = [...cardsUsed].filter(k => !CARDS[k]);
   check(!cardMissing.length, `이름으로 넣는 카드 ${cardsUsed.size}종 (${[...cardsUsed].join(' · ')})${cardMissing.length ? ' — 없음: ' + cardMissing.join(', ') : ''}`);
+
+  console.log('6. 카드 설명 — 강화판');
+  // 강화로 바뀌는 값을 설명 글이 숫자로 적고 있거나, 소멸이 없어지는데 「한 전투에 한 번(소멸)」이 남아 있으면 강화판 설명이 틀린다 → up.desc 로
+  const { cardDef, upgradeNote } = await load('src/data/cards.js');
+  const stale = [];
+  for (const [id, base] of Object.entries(CARDS)) {
+    if (!base.up) continue;
+    const up = cardDef({ id, up: true });
+    if (base.up.exhaust === false && /\(소멸\)|한 전투에 한 번/.test(up.desc)) stale.push(`${id}+ 설명에 소멸이 남음`);
+    for (const [k, v] of Object.entries(base.up)) {
+      if (typeof v !== 'number' || typeof base[k] !== 'number' || v === base[k]) continue;
+      if (new RegExp(`(^|[^0-9])${base[k]}([^0-9]|$)`).test(up.desc)) stale.push(`${id}+ 설명에 강화 전 숫자 ${base[k]}(${k})`);
+    }
+    if (/desc/.test(upgradeNote(id))) stale.push(`${id} 강화 미리보기에 desc`);
+  }
+  const ups = Object.values(CARDS).filter(c => c.up).length;
+  check(!stale.length, `강화되는 카드 ${ups}장의 강화판 설명${stale.length ? ' — ' + stale.join(', ') : ''}`);
 
   console.log(fails.length ? `\n실패 ${fails.length}개` : '\n모두 통과');
   process.exit(fails.length ? 1 : 0);

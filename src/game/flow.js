@@ -184,7 +184,7 @@ export function rewardsFor(node, enc, result) {
   if (kind !== 'normal') parts *= M.elitePartsMul;
   if (enc.partsMul) parts *= enc.partsMul;
   if (enc.bonusParts) parts += enc.bonusParts;
-  if (enc.tut === 1) parts *= 0.6;   // 학습 전투 (02)
+  if (enc.tut === 1) parts *= 0.6;   // 학습 전투 (03)
   out.parts = Math.round(parts);
   if (kind === 'elite') { out.shards = 1 + M.shardBonus; out.relics = relicChoice(R); }
   if (kind === 'boss') { out.shards = 3 + M.shardBonus; out.relicPick = relicChoice(R, [['boss', 100]], 3); }

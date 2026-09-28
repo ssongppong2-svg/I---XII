@@ -3,7 +3,7 @@
 // 효과 필드: dmg 피해 · ol 내 과부하 · bossOl 보스 과부하 · rapid 연사 가중 · persist 상주 · exhaust 소멸(한 전투 한 번)
 //           shield 실드 · cool 과부하 감소 · leap 도약 칸 · draw 뽑기 · heal HP · push 밀치기 · delay 맞은 적 다음 행동 건너뜀
 //           delayAll 모든 적 다음 행동 건너뜀 · hot 과부하 50 이상이면 피해 배율 · selfHit 내 HP 소모 · back 직전 칸으로 · junk 쓸모 없음(저주)
-// up = 강화했을 때 바뀌는 값
+// up = 강화했을 때 바뀌는 값 (설명이 달라지면 up.desc 로 — 예: 소멸이 없어지는 카드)
 
 // 사거리: 플레이어 기준 [행 변화, 열 변화], 음수 행 = 앞(위). 쓸 때 고른 방향으로 돌린다
 export const SHAPES = {
@@ -48,7 +48,7 @@ export const CARDS = {
   holy_pierce: { name: '성광 관통', kind: 'shot', rarity: 'basic', shape: 'pierce', dmg: 4, up: { dmg: 6 },
     desc: '전방 직선을 끝까지 꿰뚫는다.' },
   prayer_ward: { name: '기도 방벽', kind: 'guard', rarity: 'basic', shield: 1, up: { shield: 2 },
-    desc: '다음 피격을 막는 실드를 두른다. 실드는 최대 2겹.' },
+    desc: '다음 피격을 한 번 막는 실드를 두른다. 실드는 겹쳐 두를 수 있다.' },
   steam_leap: { name: '증기 도약', kind: 'move', rarity: 'basic', leap: 2, up: { leap: 3 },
     desc: '방향을 골라 도약한다. 적은 뛰어넘을 수 있지만 적 위에는 내릴 수 없다.' },
   coolant: { name: '냉각 성수', kind: 'cool', rarity: 'basic', cool: 40, up: { cool: 60 },
@@ -70,7 +70,7 @@ export const CARDS = {
   wind_up: { name: '태엽 감기', kind: 'cool', rarity: 'common', draw: 2, up: { draw: 3 },
     desc: '카드를 뽑는다. 손패가 가득 차면 그만큼만.' },
   smoke_step: { name: '연막 걸음', kind: 'move', rarity: 'common', leap: 1, shield: 1, up: { leap: 2 },
-    desc: '연기를 뿌리며 한 걸음 옮기고 실드를 두른다.' },
+    desc: '연기를 뿌리며 자리를 옮기고 실드를 두른다.' },
   scatter: { name: '산탄 사격', kind: 'shot', rarity: 'common', shape: 'cone4', dmg: 4, up: { dmg: 6 },
     desc: '앞으로 퍼지는 산탄을 쏜다.' },
   vent_strike: { name: '과열 방출', kind: 'melee', rarity: 'common', shape: 'fan3', dmg: 6, hot: 2, cool: 30, up: { dmg: 8 },
@@ -85,7 +85,7 @@ export const CARDS = {
   // ── 희귀
   whirl_saw: { name: '회전 톱날', kind: 'melee', rarity: 'rare', shape: 'ring8', dmg: 6, ol: 20, up: { dmg: 8 },
     desc: '몸을 축으로 톱날을 돌려 주위 8칸을 벤다.' },
-  time_stop: { name: '시간 정지', kind: 'jam', rarity: 'rare', delayAll: true, exhaust: true, up: { exhaust: false },
+  time_stop: { name: '시간 정지', kind: 'jam', rarity: 'rare', delayAll: true, exhaust: true, up: { exhaust: false, desc: '모든 적이 다음 행동을 한 번 건너뛴다. 소멸하지 않아 몇 번이고 쓸 수 있다.' },
     desc: '모든 적이 다음 행동을 한 번 건너뛴다. 한 전투에 한 번(소멸).' },
   rewind_step: { name: '되감기', kind: 'move', rarity: 'rare', back: true, cool: 30, up: { cool: 50 },
     desc: '이번 루프에 처음 서 있던 칸으로 돌아가고 과부하를 낮춘다.' },
@@ -101,7 +101,7 @@ export const CARDS = {
     desc: '사방으로 종소리를 터뜨린다. 방향과 상관없이 전부 맞는다.' },
 
   // ── 사이비 (천막에서)
-  zealot_prayer: { name: '광신의 기도', kind: 'cult', rarity: 'cult', shield: 2, exhaust: true, up: { exhaust: false },
+  zealot_prayer: { name: '광신의 기도', kind: 'cult', rarity: 'cult', shield: 2, exhaust: true, up: { exhaust: false, desc: '신도들의 기도가 실드 두 겹이 된다. 소멸하지 않는다.' },
     desc: '신도들의 기도가 실드 두 겹이 된다. 한 전투에 한 번(소멸).' },
   blood_communion: { name: '피의 성찬', kind: 'cult', rarity: 'cult', heal: 1, exhaust: true, up: { cool: 30 },
     desc: 'HP를 1 회복한다. 한 전투에 한 번(소멸).' },
@@ -140,7 +140,7 @@ const UP_LABEL = { dmg: '피해', shield: '실드', leap: '도약', cool: '과�
 export function upgradeNote(id) {
   const base = CARDS[id];
   if (!base || !base.up) return '';
-  return Object.entries(base.up).map(([k, v]) => {
+  return Object.entries(base.up).filter(([k]) => k !== 'desc').map(([k, v]) => {
     const L = UP_LABEL[k] || k;
     if (typeof v === 'boolean') return v ? `${L} 붙음` : `${L} 없어짐`;
     return base[k] === undefined ? `${L} ${v} 추가` : `${L} ${base[k]}→${v}`;
