@@ -16,7 +16,7 @@
 export const STORY_BG = {
   s02: 'bg-battle', s03: 'bg-battle', s04: 'bg-shop', s05: 'bg-event', s06: 'bg-alley', s07: 'bg-shop',
   s08: 'bg-rest-1', s09: 'bg-alley', s10: 'bg-event', s11: 'bg-battle', s12: 'bg-battle', s13: 'bg-battle',
-  s14: 'bg-rest-2', s15: 'bg-battle', s16: 'bg-battle', s17: 'bg-battle', s18: 'bg-title',
+  s14: 'bg-rest-1', s15: 'bg-battle', s16: 'bg-battle', s17: 'bg-battle', s18: 'bg-rest-2',   // 14 도시 안 화로 쉼터 = 도시 야영지 · 18 성벽 밖 임시 야영 = 숲 야영지 (대본의 배경 지시)
 };
 // 대본의 노드 이름 (그림 슬롯 · 도움말에서 쓴다)
 export const STORY_TITLES = {
