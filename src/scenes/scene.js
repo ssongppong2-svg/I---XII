@@ -154,7 +154,7 @@ export function playScene(script, opt = {}) {
     q('#ptVoiceArt').innerHTML = bel ? `<img src="${bel}" alt="" draggable="false">` : '';
     setHeroFace('idle');
     dom.dataset.tint = '';
-    dom.classList.remove('duo', 'trio', 'solo-b');
+    dom.classList.remove('duo', 'trio', 'solo-b', 'in-input');
     q('#scPlace').hidden = true;
     q('#dname').hidden = true;
     q('#dtext').innerHTML = '';
@@ -524,6 +524,7 @@ function showInput(step) {
   const inp = q('#scInName');
   inp.value = (RUN && RUN.name) || step.def || '';
   q('#scInput').hidden = false;
+  dom.classList.add('in-input');   // 떠 있는 작은 그림(04 접힌 그림)은 위로 작게 — 입력 판을 가리지 않게 (styles/scene.css)
   setTimeout(() => inp.focus(), 60);
 }
 export function validName(v) {
@@ -538,6 +539,7 @@ function submitName() {
   if (!r.ok) { q('#scInErr').textContent = r.err; SFX.deny(); return; }
   SC.inputting = false;
   q('#scInput').hidden = true;
+  dom.classList.remove('in-input');
   q('#dbox').classList.remove('choosing');
   SC.log.push({ who: 'pick', name: '이름', html: esc(r.name) });
   if (SC.onName) SC.onName(r.name);

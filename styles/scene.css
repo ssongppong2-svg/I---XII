@@ -280,6 +280,11 @@
 @keyframes dialFlicker{0%,100%{opacity:1}12%{opacity:.35}20%{opacity:1}57%{opacity:.5}63%{opacity:1}}
 /* 작은 한 장 그림 (접힌 그림 등) */
 .sc-cg.small{width:520px;top:90px}
+/* 이름 입력 중 — 입력 판은 대사 층(.sc-stage) 안이라 그림보다 아래 층이다. 겹치지 않게 자리를 나눈다:
+   작은 그림은 위로 작게, 입력 판은 그 아래 대사창 바로 위로 (그림 아래에 적힌 이름을 옮겨 적는 모양) */
+.scene.in-input .sc-cg.small{top:30px;scale:.72;transform-origin:50% 0}
+.scene.in-input .sc-cg.small > img{max-height:420px;width:auto;max-width:100%;margin:0 auto}   /* 전용 그림(story-portrait)이 세로로 길어도 */
+.scene.in-input .sc-input{top:auto;bottom:268px;translate:-50% 0;padding:24px 40px 22px;gap:8px}
 /* 대신 그리는 한 장 그림 — 접힌 종이에 잉크 스케치 (04 마르트의 접힌 그림, story-portrait가 오기 전) */
 .cg-paper{position:relative;width:400px;margin:0 auto;padding:30px 30px 58px;rotate:-2.2deg;border-radius:3px;background:var(--card-art,none) center/cover,#D8C49A;box-shadow:0 30px 70px rgba(0,0,0,.7),0 0 0 1px rgba(90,60,30,.35)}
 .cg-sketch{position:relative;height:350px;overflow:hidden;border:1px solid rgba(80,55,25,.28)}

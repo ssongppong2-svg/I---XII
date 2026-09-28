@@ -210,6 +210,10 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   for (let i = 0; i < 80 && await page.evaluate(() => document.querySelector('#scInput').hidden); i++) { await page.keyboard.press('Space'); await page.waitForTimeout(90); }
   check(await page.evaluate(() => !document.querySelector('#scInput').hidden && document.querySelector('#scInName').value === '크로노스' && /접힌 그림/.test(document.querySelector('#scInPrompt').textContent)), '04: 접힌 그림 아래의 이름 — 기본값 「크로노스」');
   check(await page.evaluate(() => window.__cgAlt || !!document.querySelector('#scCg:not([hidden]) img')), '04: 접힌 그림 — 전용 그림이 없으면 주인공을 접힌 종이 스케치로');
+  // 입력 판은 대사 층 안이라 그림보다 아래 층 — 그림은 위로 작게, 입력 판은 그 아래 · 대사창 위로 나뉘어야 이름 칸이 가려지지 않는다
+  await page.waitForTimeout(500);
+  const inBox = await page.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(); const c = r('#scCg'), i = r('#scInput'), d = r('#dbox'); return { cg: Math.round(c.bottom), top: Math.round(i.top), bottom: Math.round(i.bottom), dbox: Math.round(d.top) }; });
+  check(inBox.cg <= inBox.top && inBox.bottom <= inBox.dbox + 2, `04: 이름 입력 판이 접힌 그림 · 대사창에 가리지 않는다 (그림 끝 ${inBox.cg} ≤ 입력 판 ${inBox.top}~${inBox.bottom} ≤ 대사창 ${inBox.dbox})`);
   await shot('05-name');
   await page.click('#scInOk');
   check(await stepUntil(() => /크로노스 님/.test(document.querySelector('#dtext').textContent) && document.querySelector('#dname').textContent === '마르트', 30), '04: 마르트가 「크로노스 님」 (04-008)');
