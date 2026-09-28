@@ -2,7 +2,7 @@
 import { register, go } from '../ui/router.js';
 import { RUN, chapterDef, maxHp, restAmbushChance } from '../game/run.js';
 import { writeRecur, autosave } from '../game/save.js';
-import { choices, enterNode, storyDef, storyOf } from '../game/flow.js';
+import { choices, enterNode, storyDef, storyOf, TRIALS } from '../game/flow.js';
 import { buildMapSVG, makeTurner, linkPoints } from '../map/view.js';
 import { NODE_TYPES } from '../data/nodes.js';
 import { FOES, BOSSES } from '../data/foes.js';
@@ -166,6 +166,7 @@ function infoHTML(id) {
   else if (n.type === 'elite' && ch.encounters.elite.length) { const e = ch.encounters.elite[(n.eliteIdx || 0) % ch.encounters.elite.length]; extra = `<p class="mi-foes">${e.foes.map(t => FOES[t].name).join(' · ')}</p>`; }
   else if (n.enc && n.enc.foes) extra = `<p class="mi-foes">적: ${n.enc.foes.map(t => FOES[t].name).join(' · ')}${RUN.alert >= 50 ? ' + 증원 1' : ''}</p>`;
   if (n.type === 'event' && n.event) extra = `<p class="mi-foes">「${EVENTS[n.event].title}」</p>`;
+  if (n.type === 'trial' && TRIALS[n.trial]) extra = `<p class="mi-foes">시험 「${TRIALS[n.trial].name}」 — ${TRIALS[n.trial].desc}</p>${extra}`;   // 조건을 미리 알고 길을 고를 수 있게
   const watch = n.watched && !ch.hunted ? `<p class="mi-watch">${icon('eye').replace('<svg', '<svg style="width:14px;height:14px;fill:#FF9C8C;display:inline-block;vertical-align:-2px"')} 감시 톱니 — 들어가면 경계도 +20</p>` : '';
   return { head: `<div class="mi-head" style="--tone:${T.tone}">${icon(T.icon)}<b>${T.label}</b>${state}</div>`, body: `<p>${T.desc}</p>${extra}${watch}` };
 }

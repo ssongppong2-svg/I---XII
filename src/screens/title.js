@@ -21,7 +21,9 @@ function saveLine() {
   const s = hasSave() ? peekSave() : null;
   if (!s) return '';
   const ch = CHAPTERS[s.chapter] ? `${s.chapter}장 「${CHAPTERS[s.chapter].title}」` : `${s.chapter}장 (준비 중)`;
-  return `${esc(s.name || '???')} · ${ch} · 난이도 ${roman(s.diff)} · ${fmtTime(s.playMs)}`;
+  // 이름 · 장 / 난이도 · 시간 / 지금 목표 — 줄마다 나눠서 (좁은 메뉴 폭에서 글이 어중간하게 꺾이지 않게. 쉬었다 와도 어디까지 왔는지 바로 알게)
+  const goal = s.goal && CHAPTERS[s.chapter] && !s.cleared ? `<small>목표 — ${esc(s.goal)}</small>` : '';
+  return `<span>${esc(s.name || '???')} · ${ch}</span><span>난이도 ${roman(s.diff)} · ${fmtTime(s.playMs)}</span>${goal}`;
 }
 
 function menuHTML(items) {

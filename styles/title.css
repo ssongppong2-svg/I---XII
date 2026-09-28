@@ -19,6 +19,8 @@
 .ti-item:focus-visible{outline:2px solid #FFF1C9;outline-offset:3px}
 @keyframes tiItem{from{opacity:0;transform:translateX(24px)}}
 .ti-save{margin:-4px 0 4px;padding-right:6px;font:600 14px/1.45 var(--f-ui);color:#EADBC0;text-align:right;text-shadow:0 1px 0 rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.8)}
+.ti-save span,.ti-save small{display:block}
+.ti-save small{margin-top:2px;font:500 13px/1.45 var(--f-ui);color:#C9B89A}
 .ti-foot{position:absolute;left:40px;bottom:26px;margin:0;font-size:13px;color:rgba(234,219,192,.62);letter-spacing:.04em}
 .ti-foot kbd{display:inline-block;min-width:20px;margin:0 2px;padding:1px 5px;border:1px solid rgba(234,219,192,.3);border-radius:3px;font:700 11px/1.4 var(--f-ui);text-align:center}
 /* 제작진 — 양피지 한 장 */
