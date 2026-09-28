@@ -193,6 +193,9 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await shot('05-name');
   await page.click('#scInOk');
   check(await stepUntil(() => /크로노스 님/.test(document.querySelector('#dtext').textContent) && document.querySelector('#dname').textContent === '마르트', 30), '04: 마르트가 「크로노스 님」 (04-008)');
+  await page.keyboard.press('KeyL');
+  check(await page.evaluate(() => { const n = document.querySelector('#scLogList p .nm'); return !!n && n.textContent === '크로노스' && getComputedStyle(n).display === 'inline'; }), '대사 기록: 글 속 이름은 글 안에 그대로 (화자 이름표처럼 따로 떨어지지 않는다)');
+  await page.keyboard.press('Escape');
   await page.click('#scSkipBtn');
   await page.waitForFunction(() => !document.querySelector('#scChoices').hidden, null, { timeout: 8000 });
   const c04 = await page.evaluate(() => [...document.querySelectorAll('#scChoices button')].map(b => b.textContent));

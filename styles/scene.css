@@ -153,11 +153,12 @@
 .sc-logp{position:absolute;left:50%;top:50%;z-index:8;width:1000px;height:82%;translate:-50% -50%;display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:10px;background:rgba(12,11,16,.98);box-shadow:0 30px 80px rgba(0,0,0,.6);cursor:default;user-select:text;-webkit-user-select:text}
 .sc-logp .sheet-head{position:static;margin:0;border-radius:10px 10px 0 0}
 .lg-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px;padding:20px 28px 26px}
-.lg-item b{display:block;font:700 14px/1.3 var(--f-ui);letter-spacing:.04em;color:var(--brass)}
+.lg-item>b{display:block;font:700 14px/1.3 var(--f-ui);letter-spacing:.04em;color:var(--brass)}   /* 화자 이름표 — 글 속 이름(.nm)은 아래처럼 글 안에 그대로 */
+.lg-item p .nm{color:var(--brass-hi);font-weight:900}
 .lg-item p{margin:4px 0 0;font:500 19px/1.7 var(--f-serif);color:var(--bone)}
 .lg-item.nar p{color:#C9C0D3}
-.lg-item.pick b,.lg-item.pick p{color:var(--aether)}
-.lg-item.voice b,.lg-item.voice p{color:#F2BCC6}
+.lg-item.pick>b,.lg-item.pick p{color:var(--aether)}
+.lg-item.voice>b,.lg-item.voice p{color:#F2BCC6}
 .lg-item.voice p{font-style:italic}
 .lg-list .hint{color:var(--mute)}
 /* 움직임 줄이기 — 잠깐 떴다 사라지는 알림(얻고 잃은 것 · 장소)은 애니메이션 없이 제시간 동안 보이게 */
@@ -248,12 +249,12 @@
 .dtext.or{color:#F4E4CE}
 .dtext.eda{color:#E2F0F0}
 .dtext.barnett{color:#F1DEC8}
-.lg-item.c-marte b{color:#FFB6C4}
-.lg-item.c-or b{color:#FFBE78}
-.lg-item.c-eda b{color:#9ED8E6}
-.lg-item.c-barnett b,.lg-item.c-black b{color:#E8B878}
-.lg-item.c-broadcast b,.lg-item.c-foe b,.lg-item.c-boss b{color:#9FB6CC}
-.lg-item.paper b{color:#C9A46A}
+.lg-item.c-marte>b{color:#FFB6C4}
+.lg-item.c-or>b{color:#FFBE78}
+.lg-item.c-eda>b{color:#9ED8E6}
+.lg-item.c-barnett>b,.lg-item.c-black>b{color:#E8B878}
+.lg-item.c-broadcast>b,.lg-item.c-foe>b,.lg-item.c-boss>b{color:#9FB6CC}
+.lg-item.paper>b{color:#C9A46A}
 /* 주인공 자세 — 스탠딩을 조금 낮춘다(숨이 찰 때) */
 .pt-hero .pt-art{transition:transform .8s cubic-bezier(.2,.8,.3,1)}
 .pt-hero.low .pt-art{transform:translateY(64px) rotate(-1.2deg)}
