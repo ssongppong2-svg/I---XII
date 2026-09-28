@@ -22,15 +22,27 @@ const OPT = [
   { k: 'shake', label: '화면 흔들림', type: 'toggle', sub: '폭발 · 피격 때 판이 흔들린다' },
   { k: 'tutorial', label: '튜토리얼 안내', type: 'toggle', sub: '1장 이야기 전투(03 · 06)의 단계별 안내' },
 ];
+// 전체 화면 — 저장하지 않는다(브라우저는 누를 때만 전체 화면을 허락한다). 막힌 곳(다른 페이지 안에 담긴 경우 등)에서는 줄을 숨긴다
+const canFull = () => !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+export function toggleFullscreen() {
+  if (!canFull()) return Promise.resolve();
+  const p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  return Promise.resolve(p).catch(() => {});   // 거절돼도(권한 등) 조용히 — 스위치는 실제 상태로 되돌린다
+}
 export function openSettings() {
-  const render = () => OPT.map(o => {
+  const full = () => canFull() ? `<label class="cfg-row sw-row"><span>전체 화면<small>모니터를 꽉 채워서 — Esc로도 나올 수 있어요</small></span><input type="checkbox" data-full${document.fullscreenElement ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>` : '';
+  const render = () => full() + OPT.map(o => {
     if (o.type === 'toggle') return `<label class="cfg-row sw-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><input type="checkbox" data-k="${o.k}"${SET[o.k] ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>`;
     if (o.type === 'range') return `<div class="cfg-row"><span>${o.label}</span><input class="range" type="range" min="0" max="100" step="5" data-k="${o.k}" value="${Math.round(SET[o.k] * 100)}"></div>`;
     return `<div class="cfg-row"><span>${o.label}</span><div class="seg">${o.opts.map(([v, l]) => `<button type="button" data-k="${o.k}" data-v="${v}" class="${SET[o.k] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
   }).join('') + '<p class="dim" style="margin-top:14px">설정은 이 브라우저에 저장돼요.</p>';
   const body = openSheet({ title: '설정', body: render() });
+  // Esc 등으로 전체 화면이 풀리면 스위치도 따라 바뀐다 (창이 닫히면 알아서 멈춘다)
+  const sync = () => { const x = body.querySelector('input[data-full]'); if (!body.isConnected) document.removeEventListener('fullscreenchange', sync); else if (x) x.checked = !!document.fullscreenElement; };
+  document.addEventListener('fullscreenchange', sync);
   body.addEventListener('change', e => {
     const t = e.target;
+    if (t.matches('input[data-full]')) { SFX.click(); toggleFullscreen().then(sync); return; }
     if (t.matches('input[type=checkbox][data-k]')) { setSetting(t.dataset.k, t.checked); if (t.dataset.k === 'sound' && t.checked) { initAudio(); SFX.click(); } }
     if (t.matches('input[type=range][data-k]')) { setSetting(t.dataset.k, +t.value / 100); SFX.click(); }
   });
@@ -103,8 +115,11 @@ export function openHelp() {
     <p>적은 <b>2코스트마다</b> 움직여요. 머리 위 숫자 1 = 내 다음 행동 뒤. 분홍 표식 칸 밖에서 행동을 끝내면 맞지 않아요.</p>
     <p><b>과부하</b>: 강한 카드 · 못총이 과부하를 채워요. 100이면 4코스트 동안 마비. 보스를 과부하시키면 4코스트 동안 기습 · 턴 공격이 멈춰요.</p>
     <p><b>HP</b>는 전투가 끝나도 이어져요. 휴식 · 천막 · 일부 카드와 유물로 회복해요.</p></section>
-  <section><h4>조작</h4><p><b>이동</b> WASD · 방향키 · 옆 칸 클릭 · <b>카드</b> 1–6 또는 클릭(방향이 여럿이면 칸을 눌러 조준) · <b>뽑기</b> Q · <b>취소</b> Esc · <b>규칙</b> H · <b>소리</b> M · <b>대사</b> Space/클릭 · <b>대사 기록</b> L · <b>자동</b> A</p>
-    <p><b>지도</b>: 빛나는 톱니 클릭(또는 ←→로 고르고 Enter) · <b>덱</b> D · <b>유물</b> R · <b>메뉴</b> Esc</p></section>
+  <section><h4>조작</h4><p><b>어디서나</b>: <b>메뉴</b> Esc · <b>규칙</b> H · <b>소리</b> M · <b>전체 화면</b>은 설정에서</p>
+    <p><b>전투</b>: <b>이동</b> WASD · 방향키 · 옆 칸 클릭 · <b>카드</b> 1–6 또는 클릭(방향이 여럿이면 칸을 눌러 조준) · <b>뽑기</b> Q · <b>회복약</b> E · <b>취소</b> Esc(고른 카드가 있을 때)</p>
+    <p><b>대사</b>: <b>넘기기</b> Space · Enter · 클릭 · <b>선택지</b> 1–4 · <b>대사 기록</b> L · <b>자동</b> A</p>
+    <p><b>지도</b>: 빛나는 톱니 클릭(또는 ←→로 고르고 Enter) · <b>덱</b> D · <b>유물</b> R</p>
+    <p><b>칸 화면</b>: <b>선택지</b> 숫자 키(번호가 붙은 것) · <b>덱</b> D · <b>보상 화면</b>: 카드 1–3 · 계속 Enter</p></section>
   <section><h4>이미지 슬롯</h4><p class="dim"><code>assets/</code> 폴더에 이 이름(webp · png · jpg)으로 넣으면 자동으로 써요. 없는 슬롯은 기본 그림이 나와요.</p><div class="slot-grid" id="slotGrid"><p class="dim">확인하는 중…</p></div></section>` });
   const slots = imageSlots();
   loadAll(slots.map(x => x[0])).then(() => {

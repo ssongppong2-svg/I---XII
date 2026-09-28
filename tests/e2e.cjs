@@ -559,6 +559,37 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await page.evaluate(() => I12.core.debugWin());
   await sceneWait();
   check(await stepUntil(() => /수프 다 드셨어요/.test(document.querySelector('#dtext').textContent), 60), '15: 14에서 못 들은 에다 대화가 전투 뒤에 한 번');
+  await clearScene();
+  await waitScreen('scr-reward');
+  await page.click('#rwGo');
+  await waitMap();
+
+  console.log('22. 칸에서 받은 것은 한 번만 — 이어 하기(새로고침)로 다시 받지 않는다 (심연 — 숫자 키 1 · 천막 · 유물 제단)');
+  const pickOnce = async (type, act) => {
+    await page.evaluate(t => {
+      const n = Object.values(I12.RUN.map.nodes).find(x => x.layer === 3);
+      for (const k of ['abyss', 'tent', 'taken', 'offer', 'loreIdx']) delete n[k];
+      n.type = t; I12.RUN.hp = 2; I12.RUN.pos = n.prev[0];
+      I12.flow.enterNode(n.id);
+    }, type);
+    await waitScreen('scr-node');
+    await page.waitForTimeout(400);
+    await act();
+    await page.waitForTimeout(500);
+    const got = await run();
+    await toTitleAndContinue();
+    await waitScreen('scr-node');
+    await page.waitForTimeout(500);
+    const again = await page.evaluate(() => document.querySelectorAll('.nd-opt:not([disabled]), .rw-relic:not([disabled])').length);
+    const res = await page.evaluate(() => document.querySelector('#ndBody').textContent.trim().length > 0 || /집었다/.test(document.querySelector('#ndText').textContent));
+    const now = await run();
+    const same = ['hp', 'parts', 'alert'].every(k => now[k] === got[k]) && now.deck.length === got.deck.length && now.relics.length === got.relics.length;
+    check(again === 0 && res && same, `${type}: 고른 뒤 이어 하기 — 결과만 남고 다시 고를 수 없다 (남은 선택지 ${again})`);
+    await page.evaluate(() => { I12.RUN.pending = null; });
+  };
+  await pickOnce('abyss', () => page.keyboard.press('Digit1'));   // 칸 화면 선택지는 숫자 키로도
+  await pickOnce('tent', () => page.click('.nd-opt'));
+  await pickOnce('shrine', () => page.click('.rw-relic'));
 
   check(errs.length === 0, `자바스크립트 오류 없음${errs.length ? ' — ' + errs.join(' | ') : ''}`);
   await browser.close();

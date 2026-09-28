@@ -108,10 +108,11 @@ function alertPop(n, why) {
   g.classList.add(n > 0 ? 'bump' : 'ease');
 }
 // 설명 글 바꾸기 — instant면 타자 없이 (강화소처럼 누를 때마다 숫자만 바뀌는 글)
+// 치던 글은 끝까지 보여 준 뒤에 바꾼다 — 위의 상인 · 신도 말(ndSay)이 치다 만 채로 남지 않게
 function setText(html, instant = false) {
   const t = q('#ndText');
   if (!t) return;
-  if (seq) { seq.stop(); seq = null; }
+  if (seq) { seq.finish(); seq = null; }
   if (instant) t.innerHTML = html; else typeInto(t, html, TYPE);
 }
 // 몸통은 그릴 때마다 새 요소로 갈아 끼운다 — 다시 그려도 이전 클릭 처리기가 쌓이지 않게 (두 번 사지는 일 방지)
@@ -165,19 +166,21 @@ function pickFromDeck({ title, sub = '', filter = () => true, onPick, preview = 
     onPick(uid);
   });
 }
-// 카드 여러 장 중 하나 (보상과 같은 모양, 화면 안에)
-function cardPick(ids, { onPick, skip = '건너뛴다', title = '한 장을 고르세요', lead = '' } = {}) {
+// 카드 여러 장 중 하나 (보상과 같은 모양, 화면 안에). picked = 이미 고른 카드(다시 들어왔을 때 — 고른 모양만 보여 준다)
+function cardPick(ids, { onPick, skip = '건너뛴다', title = '한 장을 고르세요', lead = '', picked = null } = {}) {
   const b = body(`${lead}<p class="nd-sub">${title}</p><div class="nd-cards">${ids.map(id => bigCardHTML(id, { pick: true, extra: `data-id="${id}"` })).join('')}</div>`);
+  const mark = c => b.querySelectorAll('.card').forEach(x => { x.classList.toggle('taken', x === c); x.classList.toggle('off', x !== c); x.style.pointerEvents = 'none'; });
+  leaveLabel(skip);
+  if (picked) { mark(b.querySelector(`.card[data-id="${picked}"]`)); return; }
   b.querySelector('.nd-cards').addEventListener('click', e => {
     const c = e.target.closest('.card[data-id]');
     if (!c) return;
     addCard(c.dataset.id);
     SFX.gain();
-    b.querySelectorAll('.card').forEach(x => { x.classList.toggle('taken', x === c); x.classList.toggle('off', x !== c); x.style.pointerEvents = 'none'; });
+    mark(c);
+    if (onPick) onPick(c.dataset.id);   // 고른 것을 칸에 적는 일이 먼저 — 같은 저장에 들어가게
     autosave(); hud();
-    if (onPick) onPick(c.dataset.id);
   });
-  leaveLabel(skip);
 }
 const relicHTML = id => `<span class="relic r-${RELICS[id].rarity}" data-tip="relic:${id}">${icon(RELICS[id].icon)}</span>`;
 
@@ -250,23 +253,24 @@ const HANDLERS = {
     renderImplant();
   },
 
-  // ── 심연
+  // ── 심연 — 한 번만 디딘다 (결과는 칸에 남아, 다시 들어와도 같은 글만)
   abyss() {
     frame({ title: '심연', text: '발밑이 끝없이 가라앉는다. 심연은 무엇이든 돌려준다. 아니면 앗아간다.', artHTML: glyph('vortex') });
+    if (node.abyss) { abyssDone(); return; }
     opts([
       { label: '발을 디딘다', desc: '좋은 일 셋 · 나쁜 일 셋 중 하나', on: () => {
         const out = R.pick(['parts', 'heal', 'relic', 'hurt', 'lose', 'curse']);
         let t = '';
         if (out === 'parts') { const n = R.int(50, 90); gainParts(n); t = `부품 ${n}개가 손에 쥐어져 있었다.`; }
-        if (out === 'heal') { const n = heal(2); t = `심연이 상처를 메웠다. HP +${n}.`; }
+        if (out === 'heal') { const n = heal(2); t = n ? `심연이 상처를 메웠다. HP +${n}.` : '심연이 상처를 더듬었지만, 메울 곳이 없었다.'; }
         if (out === 'relic') { const id = relicChoice(R, [['common', 55], ['rare', 45]])[0]; if (id) { addRelic(id); t = `어둠 속에서 「${RELICS[id].name}」${eulreul(RELICS[id].name)} 건져 올렸다.`; } else { gainParts(60); t = '부품 60개가 떠올랐다.'; } }
         if (out === 'hurt') { if (RUN.hp > 1) { hurt(1); t = '무언가가 살을 베어 갔다. HP −1.'; } else { addAlert(20); t = '비명이 새어 나갔다. 경계도 +20.'; } }
-        if (out === 'lose') { const n = Math.min(RUN.parts, R.int(30, 50)); gainParts(-n); t = `주머니가 가벼워졌다. 부품 −${n}.`; }
+        if (out === 'lose') { const n = Math.min(RUN.parts, R.int(30, 50)); gainParts(-n); t = n ? `주머니가 가벼워졌다. 부품 −${n}.` : '빈 주머니를 뒤지던 손이 그냥 물러갔다.'; }
         if (out === 'curse') { addCard('rust'); t = '녹이 스며들었다. 저주 카드 「녹」이 덱에 들어갔다.'; }
+        node.abyss = t;
         (['hurt', 'lose', 'curse'].includes(out) ? SFX.hurt : SFX.gain)();
         hud(); autosave();
-        body(`<p class="nd-result">${icon('vortex')} ${t}</p>`);
-        leaveLabel('떠난다');
+        abyssDone();
       } },
     ]);
     leaveLabel('물러선다');
@@ -285,21 +289,24 @@ const HANDLERS = {
     const kind = node.alley === 'shortcut' && !canShortcut(RUN.map, node.id) ? 'hide' : node.alley;   // 이야기 칸을 건너뛰는 지름길은 없다 (예전 저장의 골목)
     if (kind === 'hide') {
       frame({ title: '숨을 틈', text: '좁은 골목 안쪽, 감시가 닿지 않는 틈이 있다. 잠시 숨을 죽이면 흔적이 흐려질 것이다.', artHTML: glyph('alley') });
+      if (node.hid) { hideDone(); return; }   // 한 번만 — 다시 들어와도 경계도가 또 내려가지 않는다
       opts([{ label: '숨는다 — 경계도 −30', desc: ch.hunted ? '추격대에게 들킬 수도 있다 (30%)' : '감시의 눈이 멀어진다', on: () => {
-        if (ch.hunted && R.chance(0.3)) { SFX.alarm(); body(`<p class="nd-alarm">${icon('burst')} 들켰다!</p>`); setTimeout(() => fight(encounterFor({ id: node.id + '#found', type: 'battle' }, { sub: '골목 — 발각' })), 900); return; }
-        addAlert(-30); SFX.cool(); hud(); autosave();
-        body(`<p class="nd-result">${icon('eye')} 숨을 죽였다. 경계도가 내려갔다 (지금 ${RUN.alert}).</p>`);
+        node.hid = ch.hunted && R.chance(0.3) ? 'found' : 'hid';
+        if (node.hid === 'hid') { addAlert(-30); SFX.cool(); } else SFX.alarm();
+        hud(); autosave();
+        hideDone();
       } }]);
     } else if (kind === 'narrow') {
       frame({ title: '좁은 골목', text: '양옆 벽이 바짝 붙은 골목. 기계들이 길을 막고 있다 — 판의 양 끝 세로줄이 막힌 채로 싸운다.<br><span class="dim">피할 곳이 적은 대신 부품 보상 ×1.5</span>', artHTML: glyph('alley'), leave: '돌아간다' });
       opts([{ label: '뚫고 지나간다', desc: '좁은 판 전투', on: () => fight(encounterFor({ id: node.id + '#narrow', type: 'battle', enc: { foes: R.pick(chapterDef().encounters.easy).slice() } }, { narrow: true, partsMul: 1.5, sub: '좁은 골목' })) }]);
     } else if (kind === 'deal') {
       frame({ title: '뒷골목 거래', say: '카드 한 장을 내놓으면, 더 좋은 걸 주지.', text: '두건을 깊이 눌러쓴 거래상이 손바닥을 펼친다. 얼굴은 보이지 않는다.', artHTML: glyph('mask') });
-      opts([{ label: '카드 한 장을 내놓는다', desc: '덱에서 한 장을 없애고, 희귀 · 전설 카드 3장 중 1장을 받는다', on: () => pickFromDeck({ title: '내놓을 카드', filter: c => CARDS[c.id].rarity !== 'curse' || true, onPick: uid => {
+      if (node.deal) { dealDone(); return; }   // 거래는 한 번 — 다시 들어오면 꺼내 놓은 세 장(고른 뒤면 고른 모양) 그대로
+      opts([{ label: '카드 한 장을 내놓는다', desc: '덱에서 한 장을 없애고, 희귀 · 전설 카드 3장 중 1장을 받는다', on: () => pickFromDeck({ title: '내놓을 카드', onPick: uid => {
         const c = removeCard(uid);
+        node.deal = { gave: cardDef(c).name, ids: cardChoices(R, 'high', 3) };
         SFX.coin(); hud(); autosave();
-        setText(`「${cardDef(c).name}」${eulreul(cardDef(c).name)} 내주었다. 거래상이 품에서 카드 세 장을 꺼낸다.`);
-        cardPick(cardChoices(R, 'high', 3), { skip: '떠난다', title: '하나를 고르세요' });
+        dealDone();
       } }) }]);
     } else {
       frame({ title: '지름길', text: '무너진 담장 너머로 지름길이 보인다. 다만 감시탑의 빛이 곧장 닿는 길이다.', artHTML: glyph('alley'), leave: '원래 길로 간다' });
@@ -320,11 +327,11 @@ const HANDLERS = {
     if (node.loreIdx === undefined) { node.loreIdx = seen % Math.max(1, list.length); RUN.flags.lore[ch.num] = seen + 1; }
     const line = list[node.loreIdx] || '';
     frame({ title: '신도들의 천막', say: fmt(line), text: `천막 안의 신도들이 목소리를 낮춘다. 「${esc(RUN.name || '당신')}${RUN.name ? ' 님' : ''}, 필요한 게 있으면 말해요.」`, artHTML: charArt('believer', 'tent') });
-    const next = nextEliteBoss();
+    if (node.tent) { tentDone(); return; }   // 셋 중 하나만 — 다시 들어오면 고른 일의 결과만
     opts([
-      { label: '치료 — HP +2', desc: `지금 ${RUN.hp} / ${maxHp()}`, on: () => { const n = heal(2); SFX.heal(); hud(); autosave(); body(`<p class="nd-result">${icon('chalice')} 신도들이 숨겨 둔 약으로 상처를 감쌌다. HP +${n}.</p>`); } },
-      { label: '성물 — 사이비 카드 한 장', desc: '신도들이 간직해 온 옛 기도문 세 장 중 하나', on: () => { setText('신도들이 빼앗기지 않은 기도문을 조심스레 펼쳐 보인다.'); cardPick(cardChoices(R, 'cult', 3), { skip: '떠난다' }); } },
-      { label: '속삭임 — 앞길의 정보', desc: '앞에 기다리는 것에 대해 듣고 경계도 −15', on: () => { addAlert(-15); hud(); autosave(); SFX.page(); body(`<div class="nd-result">${next}</div>`); } },
+      { label: '치료 — HP +2', desc: `지금 ${RUN.hp} / ${maxHp()}`, on: () => { node.tent = { kind: 'heal', got: heal(2) }; SFX.heal(); hud(); autosave(); tentDone(); } },
+      { label: '성물 — 사이비 카드 한 장', desc: '신도들이 간직해 온 옛 기도문 세 장 중 하나', on: () => { node.tent = { kind: 'cards', ids: cardChoices(R, 'cult', 3) }; autosave(); tentDone(); } },
+      { label: '속삭임 — 앞길의 정보', desc: '앞에 기다리는 것에 대해 듣고 경계도 −15', on: () => { addAlert(-15); node.tent = { kind: 'whisper' }; hud(); autosave(); SFX.page(); tentDone(); } },
     ]);
   },
 
@@ -346,15 +353,45 @@ const HANDLERS = {
     if (!node.offer) node.offer = relicChoice(R, [['common', 55], ['rare', 45]], 2);
     frame({ title: '유물 제단', text: '먼지 쌓인 제단 위에 두 개의 물건이 놓여 있다. 하나를 집으면 다른 하나는 바스러질 것이다.', artHTML: glyph('gem') });
     const b = body(`<div class="nd-relics">${node.offer.map(id => `<button class="rw-relic" type="button" data-id="${id}"><span class="relic big r-${RELICS[id].rarity}">${icon(RELICS[id].icon)}</span><b>${RELICS[id].name}</b><small>${RELICS[id].desc}</small></button>`).join('')}</div>`);
+    const took = id => {
+      b.querySelectorAll('.rw-relic').forEach(y => { y.disabled = true; y.classList.toggle('taken', y.dataset.id === id); });
+      setText(`「${RELICS[id].name}」${eulreul(RELICS[id].name)} 집었다. 다른 하나는 먼지가 되었다.`);
+    };
+    if (node.taken) { took(node.taken); return; }   // 이미 집었다 — 다시 들어와도 남은 하나를 또 집을 수 없다
     b.addEventListener('click', e => {
       const x = e.target.closest('.rw-relic');
-      if (!x || x.disabled) return;
+      if (!x || x.disabled || node.taken) return;
+      node.taken = x.dataset.id;
       addRelic(x.dataset.id); SFX.gain(); hud(); autosave();
-      b.querySelectorAll('.rw-relic').forEach(y => { y.disabled = true; y.classList.toggle('taken', y === x); });
-      setText(`「${RELICS[x.dataset.id].name}」${eulreul(RELICS[x.dataset.id].name)} 집었다. 다른 하나는 먼지가 되었다.`);
+      took(x.dataset.id);
     });
   },
 };
+
+// 한 번만 하는 칸의 결과 — 고른 일은 칸(node)에 적어 두고, 다시 들어오면(이어 하기 · 새로고침) 이 결과만 보여 준다
+function abyssDone() { body(`<p class="nd-result">${icon('vortex')} ${node.abyss}</p>`); leaveLabel('떠난다'); }
+function hideDone() {
+  if (node.hid !== 'found') { body(`<p class="nd-result">${icon('eye')} 숨을 죽였다. 경계도가 내려갔다 (지금 ${RUN.alert}).</p>`); return; }
+  // 들켰다(추격이 붙은 장) — 휴식 습격처럼 싸워야 지나간다
+  body(`<p class="nd-alarm">${icon('burst')} 들켰다! 골목 끝에서 추격대가 막아선다.</p><div class="nd-opts"><button class="nd-opt main" type="button" id="ndFight"><b>맞서 싸운다</b><small>골목 — 발각</small></button></div>`);
+  q('#ndLeave').hidden = true;
+  q('#ndFight').addEventListener('click', () => { SFX.click(); fight(encounterFor({ id: node.id + '#found', type: 'battle' }, { sub: '골목 — 발각' })); });
+}
+function dealDone() {
+  const d = node.deal;
+  const say = () => setText(d.picked ? `「${d.gave}」${eulreul(d.gave)} 내주고 「${CARDS[d.picked].name}」${eulreul(CARDS[d.picked].name)} 받았다. 거래상은 어느새 골목 안쪽으로 사라졌다.`
+    : `「${d.gave}」${eulreul(d.gave)} 내주었다. 거래상이 품에서 카드 세 장을 꺼낸다.`);
+  say();
+  cardPick(d.ids, { skip: '떠난다', title: '하나를 고르세요', picked: d.picked, onPick: id => { d.picked = id; say(); } });
+}
+function tentDone() {
+  const t = node.tent;
+  if (t.kind === 'heal') { body(`<p class="nd-result">${icon('chalice')} 신도들이 숨겨 둔 약으로 상처를 감쌌다. ${t.got ? `HP +${t.got}.` : '상처는 이미 아물어 있었다.'}</p>`); return; }
+  if (t.kind === 'whisper') { body(`<div class="nd-result">${nextEliteBoss()}</div>`); return; }
+  const say = () => setText(t.picked ? `신도들이 기도문 「${CARDS[t.picked].name}」${eulreul(CARDS[t.picked].name)} 건네며 손을 모았다.` : '신도들이 빼앗기지 않은 기도문을 조심스레 펼쳐 보인다.');
+  say();
+  cardPick(t.ids, { skip: '떠난다', picked: t.picked, onPick: id => { t.picked = id; say(); } });
+}
 
 // 상점 물건 — 칸마다 한 번 정한다 (상점 · 이야기 칸의 천막 상점)
 function shopStock() {
@@ -643,7 +680,7 @@ function eventResult(E) {
     : p || E.noLoot ? '' : '<p class="ev-none">얻은 것도, 잃은 것도 없다.</p>';
   const settle = () => { ev.pending = null; hud(); autosave(); };
   if (!p) { body(list); return; }
-  if (p.t === 'cards') { cardPick(p.ids, { skip: '떠난다', lead: list, onPick: settle }); return; }
+  if (p.t === 'cards') { cardPick(p.ids, { skip: '떠난다', lead: list, onPick: id => { ev.res.push({ t: `카드 「${CARDS[id].name}」`, k: 'good', i: 'deck' }); settle(); } }); return; }   // 고른 카드도 결과 목록에 (다시 들어오면 목록으로 보인다)
   if (p.t === 'remove' || p.t === 'upgrade') {
     const up = p.t === 'upgrade';
     const cards = up ? RUN.deck.filter(canUpgrade) : RUN.deck.slice();
@@ -832,7 +869,16 @@ function onKey(e) {
     return true;
   }
   if (e.code === 'KeyM') { toggleSound(); return true; }
+  if (e.code === 'KeyH') { openHelp(); return true; }
   if (e.code === 'KeyD') { openDeck(RUN.deck); return true; }
+  // 숫자 키 — 번호가 붙은 선택지(대사 장면 · 보상 화면과 같은 조작). 누르고 있어 반복되는 입력은 받지 않는다(다음 화면의 선택지까지 눌리지 않게)
+  const m = /^(?:Digit|Numpad)([1-9])$/.exec(e.code);
+  if (m) {
+    if (e.repeat || !root) return true;
+    const b = root.querySelectorAll('#ndBody .nd-opts > .nd-opt')[+m[1] - 1];
+    if (b && !b.disabled) b.click();
+    return true;
+  }
   return false;
 }
 register('node', { mount, onKey, unmount() { alive = false; if (seq) seq.stop(); seq = null; hideTip(); root = null; shownAlert = null; } });
