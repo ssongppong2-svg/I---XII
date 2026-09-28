@@ -50,7 +50,8 @@ async function mount(holder) {
     ...rw.note.map(t => `<div class="rw-row note">${icon('hourglass')}<b>${t}</b></div>`),
     restNote ? `<div class="rw-row note">${icon('flame')}<b>${restNote}</b></div>` : '',
   ].join('');
-  holder.innerHTML = `<div class="rw">
+  // 보스 유물을 고르지 않는 보상(대부분의 전투)은 자리가 넉넉하다 — 카드를 크게 (roomy)
+  holder.innerHTML = `<div class="rw${rw.relicPick.length ? '' : ' roomy'}">
     <p class="rw-kick">교전 종료</p>
     <h2 class="rw-title">${W.boss ? '보스 격파' : W.caught ? '포위를 뚫었다' : '승리'}</h2>
     <div class="rw-list">${rows}</div>
