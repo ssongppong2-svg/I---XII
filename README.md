@@ -81,7 +81,7 @@ python3 -m http.server 8000     # → http://localhost:8000
 | `src/screens/` | 타이틀 · 난이도 · 프롤로그 · 지도 · 전투 · 칸(휴식 · 상점 …) · 보상 · 재귀 · 챕터 끝 |
 | `src/data/` | 내용 — `difficulty` · `cards` · `relics` · `foes` · `nodes` · `chapters` · `events` · `lore` · `story/` |
 | `assets/` | 그림 — 이름 규칙은 [assets/README.md](assets/README.md) |
-| `tests/e2e.cjs` · `tests/monkey.cjs` | 흐름 시험 · 무작위 완주 시험 |
+| `tests/data.cjs` · `tests/e2e.cjs` · `tests/monkey.cjs` | 데이터 점검 · 흐름 시험 · 무작위 완주 시험 |
 
 ## 내용 고치기
 
@@ -97,6 +97,7 @@ python3 -m http.server 8000     # → http://localhost:8000
 ## 시험
 
 ```bash
+node tests/data.cjs     # 데이터 점검 — 브라우저 없이 몇 초 (대본 · 사건 · 카드를 고친 뒤 먼저)
 npm i -D playwright     # 한 번만
 node tests/e2e.cjs      # 폴더를 직접 띄워서 시험 (E2E_SHOTS=폴더 로 화면 저장)
 node tests/monkey.cjs 3 # 무작위 완주 — 지도 · 선택지 · 칸 화면 · 보상을 무작위로 골라 1장 끝까지 (숫자는 씨앗)
