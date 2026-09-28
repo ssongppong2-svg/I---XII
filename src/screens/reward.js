@@ -1,4 +1,4 @@
-// 전리품 — 부품 · 톱니 조각 · 유물은 바로 들어오고, 카드는 3장 중 1장 (건너뛰기 가능), 보스 유물은 3개 중 1개
+// 전리품 — 부품 · 톱니 조각 · 유물은 바로 들어오고, 카드는 3장 중 1장 (고르지 않고 「카드 없이 계속」도 된다), 보스 유물은 3개 중 1개
 // 받을 것은 RUN.reward 에 적혀 있다 — 이 화면에서 꺼도 이어 할 때 다시 여기로, 두 번 받지 않게
 import { register, go } from '../ui/router.js';
 import { RUN, gainParts, gainShards, addRelic, addCard } from '../game/run.js';
@@ -56,11 +56,10 @@ async function mount(holder) {
     <div class="rw-list">${rows}</div>
     ${rw.relicPick.length ? `<h3 class="rw-h">보스 유물 — 하나를 고르세요</h3><div class="rw-relics">${rw.relicPick.map(id => `<button class="rw-relic" type="button" data-id="${id}"><span class="relic big r-${RELICS[id].rarity}">${icon(RELICS[id].icon)}</span><b>${RELICS[id].name}</b><small>${RELICS[id].desc}</small></button>`).join('')}</div>` : ''}
     ${rw.cards.length ? `<h3 class="rw-h">카드 한 장을 덱에 넣을 수 있어요</h3><div class="rw-cards">${rw.cards.map(id => bigCardHTML(id, { pick: true, extra: `data-id="${id}"` })).join('')}</div>` : ''}
-    <div class="rw-foot"><button class="btn-sub" type="button" id="rwSkip">카드 건너뛰기</button><button class="btn-main" type="button" id="rwGo">계속</button></div>
+    <div class="rw-foot"><button class="btn-main" type="button" id="rwGo">계속</button></div>
   </div>`;
   holder.querySelector('.rw-cards')?.addEventListener('click', e => { const c = e.target.closest('.card[data-id]'); if (c) takeCard(c.dataset.id); });
   holder.querySelector('.rw-relics')?.addEventListener('click', e => { const b = e.target.closest('.rw-relic'); if (b) takeRelic(b.dataset.id); });
-  holder.querySelector('#rwSkip').addEventListener('click', () => { SFX.click(); W.cardTaken = false; autosave(); refresh(); });
   holder.querySelector('#rwGo').addEventListener('click', proceed);
   bindTips(holder.querySelector('.rw-list'), t => relicTip(t.dataset.tip));
   refresh();
@@ -77,7 +76,6 @@ function refresh() {
     c.classList.toggle('off', W.cardTaken !== null && W.cardTaken !== c.dataset.id);
   });
   root.querySelectorAll('.rw-relic').forEach(b => { b.classList.toggle('taken', b.dataset.id === W.bossPick); b.disabled = !!W.bossPick; });
-  root.querySelector('#rwSkip').hidden = !W.rewards.cards.length || W.cardTaken !== null;
 }
 function takeCard(id) {
   if (W.cardTaken !== null) return;
