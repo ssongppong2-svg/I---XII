@@ -517,6 +517,49 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await page.click('#ceTitle');
   await waitScreen('scr-title');
 
+  console.log('21. 14 불을 끄는 값 — 쉬다가 습격 (대본 14-B): 습격 대사 → 쉼터 습격 전투 → 칸으로 → 에다 대화는 15에서');
+  await page.evaluate(() => { localStorage.removeItem('i12.run.auto.v1'); localStorage.removeItem('i12.run.recur.v1'); });
+  await page.reload();
+  await page.waitForFunction(() => window.I12 && document.querySelector('.scr-title .ti-item'));
+  await page.click('.ti-item[data-a="start"]');
+  await waitScreen('scr-difficulty');
+  await page.click('#dfGo');
+  await sceneWait();
+  await clearScene();
+  await waitMap();
+  const s14 = await page.evaluate(() => { I12.RUN.name = '크로노스'; I12.RUN.flags.ev = Object.assign({}, I12.RUN.flags.ev, { or_met: true, or_dead: true, barnett_back: true }); const n = Object.values(I12.RUN.map.nodes).find(x => x.story === 's14'); I12.RUN.pos = n.prev[0]; I12.flow.enterNode(n.id); return n.id; });
+  await sceneWait();
+  await clearScene();
+  await page.waitForSelector('.nd-opt');
+  // 쉬었고 습격에 걸린 상태 (확률 판정은 칸에서 한 번 — 결과를 적어 두고 이어 하기로 들어간다)
+  await page.evaluate(id => { I12.RUN.map.nodes[id].rested = { mode: 'rest', got: 2, ambushed: true }; I12.save.autosave(); }, s14);
+  await toTitleAndContinue();
+  check(await stepUntil(() => /미등록 열원/.test(document.querySelector('#dtext').textContent), 20), '14-B: 습격 대사 — 감시 시계가 열원을 찾는다');
+  await clearScene();
+  await waitScreen('scr-battle');
+  await battleReady();
+  check(await page.evaluate(id => I12.B.foes.map(f => f.type).join() === 'watcher,charger' && JSON.parse(localStorage.getItem('i12.run.recur.v1')).pending === id, s14), '14-B: 쉼터 습격 전투 (감시 시계 · 돌진 기계) · 재귀 지점은 쉰 뒤의 14');
+  await page.evaluate(() => I12.core.debugWin());
+  await sceneWait();
+  await clearScene();
+  await waitScreen('scr-reward');
+  await page.click('#rwGo');
+  await page.waitForSelector('.scr-node .nd-result');
+  // 칸 화면 글은 타자 치듯 찍히므로 다 찍힐 때까지 기다린다
+  check(await page.waitForFunction(() => /기계들을 물리쳤다/.test((document.querySelector('.nd-result') || {}).textContent || '') && /신호교로 떠난다/.test((document.querySelector('#ndLeave') || {}).textContent || ''), null, { timeout: 10000 }).then(() => true, () => false), '14-B: 이긴 뒤 칸으로 돌아와 결과 한 줄 · 신호교로 떠난다');
+  await page.click('#ndLeave');
+  await waitMap();
+  R = await run();
+  check(R.goal === '신호교를 건너 외곽문으로 간다' && !R.flags.ev.eda_talk, '14-B: 목표 갱신 · 에다 대화는 아직 (쉬다가 습격받았으니)');
+  await enterNode('s15');
+  await sceneWait();
+  await clearScene();
+  await waitScreen('scr-battle');
+  await battleReady();
+  await page.evaluate(() => I12.core.debugWin());
+  await sceneWait();
+  check(await stepUntil(() => /수프 다 드셨어요/.test(document.querySelector('#dtext').textContent), 60), '15: 14에서 못 들은 에다 대화가 전투 뒤에 한 번');
+
   check(errs.length === 0, `자바스크립트 오류 없음${errs.length ? ' — ' + errs.join(' | ') : ''}`);
   await browser.close();
   if (srv) srv.close();
