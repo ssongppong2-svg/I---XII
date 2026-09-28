@@ -1,0 +1,76 @@
+/* ═════════════ 타이틀 — 폐허 도시 그림 · 오른쪽 나무판 메뉴 ═════════════ */
+.scr-title{background:#0B0908}
+.ti-bg{animation:tiBg 1.2s ease-out}
+@keyframes tiBg{from{opacity:0;transform:scale(1.03)}}
+.ti-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 52%,rgba(10,8,8,.28) 72%,rgba(10,8,8,.5)),linear-gradient(180deg,rgba(10,8,8,.25),transparent 30%,transparent 78%,rgba(10,8,8,.55))}
+.ti-logo{position:absolute;left:760px;top:118px;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none;animation:tiIn 1.4s ease-out both .2s}
+.ti-logo .logo{display:flex;align-items:center;gap:26px;font:800 100px/1 var(--f-num);color:#E9C987;letter-spacing:.04em;text-shadow:0 4px 0 rgba(0,0,0,.55),0 0 36px rgba(0,0,0,.6),0 0 60px rgba(233,201,135,.25)}
+.ti-logo .logo i{display:block;width:60px;height:3px;background:#E9C987;box-shadow:0 2px 0 rgba(0,0,0,.5)}
+.ti-logo .logo-sub{margin:0;font:700 19px/1.4 var(--f-serif);letter-spacing:.18em;color:#EADBC0;text-shadow:0 2px 0 rgba(0,0,0,.7),0 0 12px rgba(0,0,0,.7)}
+@keyframes tiIn{from{opacity:0;transform:translateY(-8px)}}
+/* 메뉴 — 항목마다 나무판 */
+.ti-menu{position:absolute;right:92px;top:606px;width:330px;display:flex;flex-direction:column;align-items:stretch;gap:12px}
+.ti-item{position:relative;height:66px;padding:0 0 4px 50px;border:0;background:var(--plank-thin,linear-gradient(180deg,#6B4A2E,#452E1C)) center/100% 100% no-repeat;color:#E9D8B8;
+  font:600 33px/1 var(--f-title);letter-spacing:.04em;text-align:left;cursor:pointer;filter:drop-shadow(0 8px 10px rgba(0,0,0,.55)) brightness(.86);
+  transition:transform .18s ease,filter .18s ease,color .18s;animation:tiItem .5s ease-out both;animation-delay:calc(.35s + var(--i) * .07s)}
+.ti-item span{text-shadow:0 2px 0 rgba(0,0,0,.75),0 0 10px rgba(0,0,0,.6)}
+.ti-item.on{transform:translateX(-16px);color:#FFF4DA;filter:drop-shadow(0 10px 14px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(255,200,120,.28)) brightness(1.08)}
+.ti-item.on::after{content:"";position:absolute;left:-70px;right:18px;bottom:-5px;height:2px;background:linear-gradient(90deg,transparent,rgba(255,214,150,.95) 40%,rgba(255,214,150,.4) 85%,transparent);pointer-events:none}
+.ti-item:focus-visible{outline:2px solid #FFF1C9;outline-offset:3px}
+@keyframes tiItem{from{opacity:0;transform:translateX(24px)}}
+.ti-save{margin:-4px 0 4px;padding-right:6px;font:600 14px/1.45 var(--f-ui);color:#EADBC0;text-align:right;text-shadow:0 1px 0 rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.8)}
+.ti-save span,.ti-save small{display:block}
+.ti-save small{margin-top:2px;font:500 13px/1.45 var(--f-ui);color:#C9B89A}
+.ti-foot{position:absolute;left:40px;bottom:26px;margin:0;font-size:13px;color:rgba(234,219,192,.62);letter-spacing:.04em}
+.ti-foot kbd{display:inline-block;min-width:20px;margin:0 2px;padding:1px 5px;border:1px solid rgba(234,219,192,.3);border-radius:3px;font:700 11px/1.4 var(--f-ui);text-align:center}
+/* 제작진 — 양피지 한 장 */
+.ti-credits{position:absolute;inset:0;z-index:20;display:grid;place-items:center;background:rgba(6,5,6,.72);animation:fadeIn .2s ease-out}
+.tc-board{width:560px;min-height:760px;border-radius:18px;padding:84px 70px 60px;display:flex;flex-direction:column;align-items:center;gap:8px;color:#2A1A0C;text-align:center;
+  background:linear-gradient(rgba(246,234,206,.18),rgba(246,234,206,.18)),var(--card-art,#C9B38A) center/100% 100% no-repeat;filter:drop-shadow(0 30px 50px rgba(0,0,0,.7));animation:riseIn .3s ease-out}
+.tc-board h3{margin:0;font:800 64px/1 var(--f-num);color:#3A2410}
+.tc-board .tc-sub{margin:0 0 26px;font:700 16px/1.4 var(--f-serif);letter-spacing:.14em;color:#5E4630}
+.tc-board dl{margin:0;width:100%;display:flex;flex-direction:column;gap:22px}
+.tc-board dt{font:700 14px/1.3 var(--f-ui);letter-spacing:.2em;color:#6A5238}
+.tc-board dd{margin:8px 0 0;font:700 24px/1.5 var(--f-serif);color:#2A1A0C}
+.tc-blank{display:inline-block;width:220px;height:1.2em;border-bottom:1.5px solid rgba(58,36,16,.55)}
+.tc-board .btn-sub{margin-top:auto;font-family:var(--f-title);font-size:22px;background:rgba(42,26,12,.85);border-color:#6A5238;color:#F6E7CC}
+
+/* ═════════════ 난이도 — 시계 ═════════════ */
+.scr-diff{background:radial-gradient(60% 70% at 32% 50%,rgba(214,174,98,.12),transparent 70%),linear-gradient(90deg,#08070B,#0E0C13 60%,#15121C)}
+.df-head{position:absolute;left:120px;top:70px}
+.df-head h2{margin:0;font:900 44px/1.2 var(--f-serif);letter-spacing:.06em}
+.df-head p{margin:10px 0 0;font-size:17px;color:var(--ash)}
+.df-clock{position:absolute;left:160px;top:190px;width:760px;height:760px}
+.df-clock svg.face{position:absolute;inset:0;width:100%;height:100%}
+.df-clock .rim{fill:#120F0A;stroke:var(--brass);stroke-width:4}
+.df-clock .rim2{fill:none;stroke:var(--brass-lo);stroke-width:1.5}
+.df-clock .tick{stroke:#6E5A3A;stroke-width:2}
+.df-clock .tick.big{stroke:var(--brass);stroke-width:4}
+.df-hand{position:absolute;left:50%;top:50%;width:0;height:0;z-index:0;transition:rotate .55s cubic-bezier(.3,1.4,.5,1)}
+.df-hand i{position:absolute;left:-7px;bottom:0;width:14px;height:176px;border-radius:7px 7px 2px 2px;background:linear-gradient(180deg,var(--brass-hi),var(--brass-lo));box-shadow:0 0 16px rgba(242,211,143,.5)}
+.df-num{z-index:1}
+.df-hand i::before{content:"";position:absolute;left:50%;top:-26px;width:0;height:0;margin-left:-14px;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:30px solid var(--brass-hi)}
+.df-hub{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE7AE,#C99A45 60%,#7C6234);box-shadow:0 0 20px rgba(242,211,143,.6)}
+.df-num{position:absolute;width:86px;height:86px;margin:-43px 0 0 -43px;border-radius:50%;border:1px solid transparent;background:none;color:#C9B89A;font:800 34px/1 var(--f-num);cursor:pointer;transition:color .15s,background .15s,border-color .15s,transform .15s}
+.df-num:hover{color:var(--brass-hi);background:rgba(214,174,98,.08)}
+.df-num.on{color:#1A140A;background:radial-gradient(circle at 35% 30%,#FFE7AE,#D6AE62 60%,#8C6A2E);border-color:#FFF1C9;box-shadow:0 0 30px rgba(242,211,143,.6);transform:scale(1.08)}
+.df-num.hard{color:#E0A08A}
+.df-num.hard.on{color:#4A140C}   /* 고른 숫자는 금빛 단추 위 — 어려운 시각도 어둡게 (분홍 글자는 금빛 위에서 안 보임) */
+.df-panel{position:absolute;right:120px;top:190px;width:760px;min-height:600px;display:flex;flex-direction:column;gap:18px;padding:34px 40px;border:1px solid var(--line-2);border-radius:12px;background:rgba(18,16,23,.92);box-shadow:0 30px 70px rgba(0,0,0,.5)}
+.df-title{display:flex;align-items:baseline;gap:20px}
+.df-title b{font:800 84px/1 var(--f-num);color:var(--brass)}
+.df-title span{font:900 28px/1.3 var(--f-serif)}
+.df-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.df-stats div{padding:14px 16px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2)}
+.df-stats dt{font-size:13px;color:var(--mute)}
+.df-stats dd{margin:6px 0 0;font:800 26px/1 var(--f-num);color:var(--bone)}
+/* 규칙 12줄이 늘 모두 보이게 — 촘촘히. 고른 시각의 줄이 빛나고, 그 뒤 시각은 흐리게 */
+.df-rules{flex:1;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.df-rules li{display:flex;gap:14px;align-items:baseline;padding:5px 12px;border-radius:6px;font-size:15px;line-height:1.35;color:var(--ash)}
+.df-rules li small{margin-left:auto;padding-left:12px;font-size:13px;color:var(--mute);white-space:nowrap}
+.df-rules li b{flex:none;width:44px;font:800 17px/1 var(--f-num);color:var(--brass-lo)}
+.df-rules li.new{background:rgba(214,174,98,.1);color:var(--bone)}
+.df-rules li.new b{color:var(--brass-hi)}
+.df-rules li.base{color:var(--mute)}
+.df-rules li.off{opacity:.3}
+.df-btns{display:flex;gap:12px}

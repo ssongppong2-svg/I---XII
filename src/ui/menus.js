@@ -1,0 +1,167 @@
+// 설정 · 덱 보기 · 유물 · 규칙 · 일시정지 메뉴
+import { SET, setSetting } from '../core/settings.js';
+import { openSheet, closeSheet, confirmBox } from './overlay.js';
+import { SFX, initAudio } from './sfx.js';
+import { icon } from './icons.js';
+import { esc } from '../core/util.js';
+import { cardDef, KINDS, extraLine, upgradeNote, CARDS } from '../data/cards.js';
+import { RELICS, IMPLANTS } from '../data/relics.js';
+import { cardStatHTML, cardTagsHTML, miniRangeHTML } from '../battle/view.js';
+import { art, loadAll, FACES } from './assets.js';
+import { FOES, BOSSES } from '../data/foes.js';
+import { NODE_TYPES } from '../data/nodes.js';
+import { EVENTS } from '../data/events.js';
+import { CH1_STORY } from '../data/story/ch1.js';
+
+// ── 설정
+const OPT = [
+  { k: 'sound', label: '소리', type: 'toggle' },
+  { k: 'volume', label: '전체 음량', type: 'range' },
+  { k: 'music', label: '배경음', type: 'range', sub: '화면마다 깔리는 소리 · 음악 (효과음 · 대사 소리는 그대로)' },
+  { k: 'textSpeed', label: '대사 글자 속도', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게'], ['instant', '바로']] },
+  { k: 'autoSpeed', label: '자동 넘김 빠르기', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게']] },
+  { k: 'battleSpeed', label: '전투 연출 속도', type: 'seg', sub: '적의 움직임 · 타격 · 폭발 사이의 멈춤', opts: [['normal', '보통'], ['fast', '빠르게']] },
+  { k: 'shake', label: '화면 흔들림', type: 'toggle', sub: '폭발 · 피격 때 판이 흔들린다' },
+  { k: 'tutorial', label: '튜토리얼 안내', type: 'toggle', sub: '1장 이야기 전투(03 · 06)의 단계별 안내' },
+];
+// 전체 화면 — 저장하지 않는다(브라우저는 누를 때만 전체 화면을 허락한다). 막힌 곳(다른 페이지 안에 담긴 경우 등)에서는 줄을 숨긴다
+const canFull = () => !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+export function toggleFullscreen() {
+  if (!canFull()) return Promise.resolve();
+  const p = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  return Promise.resolve(p).catch(() => {}).then(syncFull);   // 거절돼도(권한 등) 조용히 — 스위치는 실제 상태로 되돌린다
+}
+// 설정 창의 전체 화면 스위치를 실제 상태에 맞춘다 — Esc로 풀릴 때도 (듣는 것은 하나뿐, 창을 몇 번 열어도 쌓이지 않는다)
+const syncFull = () => { const x = document.querySelector('input[data-full]'); if (x) x.checked = !!document.fullscreenElement; };
+document.addEventListener('fullscreenchange', syncFull);
+export function openSettings() {
+  const full = () => canFull() ? `<label class="cfg-row sw-row"><span>전체 화면<small>모니터를 꽉 채워서 — Esc로도 나올 수 있어요</small></span><input type="checkbox" data-full${document.fullscreenElement ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>` : '';
+  const render = () => full() + OPT.map(o => {
+    if (o.type === 'toggle') return `<label class="cfg-row sw-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><input type="checkbox" data-k="${o.k}"${SET[o.k] ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>`;
+    if (o.type === 'range') return `<div class="cfg-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><input class="range" type="range" min="0" max="100" step="5" data-k="${o.k}" value="${Math.round(SET[o.k] * 100)}"></div>`;
+    return `<div class="cfg-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><div class="seg">${o.opts.map(([v, l]) => `<button type="button" data-k="${o.k}" data-v="${v}" class="${SET[o.k] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
+  }).join('') + '<p class="dim" style="margin-top:14px">설정은 이 브라우저에 저장돼요.</p>';
+  const body = openSheet({ title: '설정', body: render() });
+  body.addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('input[data-full]')) { SFX.click(); toggleFullscreen(); return; }
+    if (t.matches('input[type=checkbox][data-k]')) { setSetting(t.dataset.k, t.checked); if (t.dataset.k === 'sound' && t.checked) { initAudio(); SFX.click(); } }
+    if (t.matches('input[type=range][data-k]')) { setSetting(t.dataset.k, +t.value / 100); SFX.click(); }
+  });
+  body.addEventListener('input', e => { const t = e.target; if (t.matches('input[type=range][data-k]')) setSetting(t.dataset.k, +t.value / 100); });
+  body.addEventListener('click', e => {
+    const b = e.target.closest('button[data-k]');
+    if (!b) return;
+    setSetting(b.dataset.k, b.dataset.v);
+    SFX.click();
+    body.innerHTML = render();
+  });
+}
+export function toggleSound() {
+  initAudio();
+  setSetting('sound', !SET.sound);
+  if (SET.sound) SFX.click();
+  return SET.sound;
+}
+
+// ── 카드 (큰 카드 한 장)
+export function bigCardHTML(inst, { pick = false, price = '', extra = '', mid = false, showUp = false } = {}) {
+  const def = typeof inst === 'string' ? CARDS[inst] : cardDef(inst);
+  const kind = KINDS[def.kind];
+  const up = def.upgraded;
+  const more = extraLine(def);
+  return `<div class="card big${mid ? ' mid' : ''} k-${def.kind} r-${def.rarity}${up ? ' up' : ''}${pick ? ' pick' : ''}" ${extra}>
+    <span class="c-top"><span class="c-cost">1</span><span class="c-kind">${icon(kind.icon)}${kind.label}</span></span>
+    <span class="c-name">${def.name}</span>
+    <span class="c-mid">${miniRangeHTML(def)}<span class="c-stat">${cardStatHTML(def, false)}</span></span>
+    <p class="c-text">${def.desc}${more ? `<span class="c-eff">${more}</span>` : ''}</p>
+    <span class="c-tags">${cardTagsHTML(def, def.id, false)}</span>${showUp ? `<span class="c-up">${icon('up')}${upgradeNote(def.id)}</span>` : ''}${price}</div>`;
+}
+
+// ── 덱 보기
+const KIND_ORDER = ['melee', 'shot', 'far', 'jam', 'guard', 'cool', 'move', 'cult', 'curse'];
+export function openDeck(deck, { title = '덱', sub = '' } = {}) {
+  const sorted = deck.slice().sort((a, b) => KIND_ORDER.indexOf(CARDS[a.id].kind) - KIND_ORDER.indexOf(CARDS[b.id].kind) || a.id.localeCompare(b.id) || (b.up - a.up));
+  openSheet({ title, sub: sub || `${deck.length}장`, wide: true, body: `<div class="deck-grid">${sorted.map(c => bigCardHTML(c)).join('')}</div>` });
+}
+
+// ── 유물 목록
+export function relicTip(key) {
+  const [kind, id] = key.split(':');
+  const R = kind === 'implant' ? IMPLANTS[id] : RELICS[id];
+  if (!R) return '';
+  const tag = kind === 'implant' ? '기계 이식' : { common: '일반 유물', rare: '희귀 유물', boss: '보스 유물', dark: '암시장 유물' }[R.rarity] || '유물';
+  return `<b>${esc(R.name)}</b>${esc(R.desc)}<span class="t-sub">${tag}</span>`;
+}
+export function openRelics(relics, implants) {
+  const row = (R, id, cls) => `<div class="relic-row"><span class="relic big ${cls}">${icon(R.icon)}</span><div><b>${R.name}</b><p>${R.desc}</p></div></div>`;
+  const body = `${relics.length ? '' : '<p class="dim">아직 유물이 없어요.</p>'}<div class="relic-list">${relics.map(id => row(RELICS[id], id, 'r-' + RELICS[id].rarity)).join('')}</div>
+    ${implants.length ? `<h4 style="margin-top:22px">기계 이식</h4><div class="relic-list">${implants.map(id => row(IMPLANTS[id], id, 'r-implant implant')).join('')}</div>` : ''}`;
+  openSheet({ title: '유물', sub: `유물 ${relics.length} · 이식 ${implants.length}`, body });
+}
+
+// ── 규칙과 조작
+export function openHelp() {
+  openSheet({ title: '규칙과 조작', wide: true, body: `
+  <section><h4>톱니 지도</h4><p>챕터 하나가 커다란 톱니 장치예요. 칸(톱니)을 끝내면 장치가 돌고, <b>지금 톱니와 축으로 이어진 톱니</b>가 빛나요(축에 빛이 흘러요) — 그중 하나를 골라 나아가요. 톱니가 전부 보이니 보스까지 길을 미리 짤 수 있어요.</p>
+    <p><b>이야기 칸</b>(금빛 톱니 · 가운데 대본 번호): 반드시 지나는 뼈대 칸이에요. 그 사이의 위아래 두 톱니 중 하나를 골라 전투 · 사건 · 상점 · 휴식 등을 겪어요. 1장 지도는 <b>두 줄</b> — 위 줄을 왼쪽에서 오른쪽으로, 아래 줄을 오른쪽에서 왼쪽으로 가면 끝에 보스가 있어요. 위쪽 가운데의 <b>목표</b>는 이야기가 바꿔요.</p>
+    <p><b>숨은 곳</b>(04 · 08): 들어가면 먼저 회복해요(습격 없음). <b>휴식</b>(14)은 회복한 뒤 습격을 한 번 판정하고, 쉬지 않고 떠날 수도 있어요.</p>
+    <p><b>경계도</b>: 0~100 게이지 · <b>0 · 1 · 2단계</b>(34 · 67에서 한 단계씩). 감시 톱니에 들어가면 +20, 쉬면 +10. 대본의 「경계 +1」은 한 단계예요. 단계가 높을수록 휴식 중 습격 확률이 올라가요(15 · 25 · 35%). 50 이상이면 사이 칸 전투에 적이 한 명 더(이야기 칸 전투는 대본대로), 100이면 발각 — 곧바로 강한 전투가 벌어지고, 이기면 50으로 내려가요.</p>
+    <p><b>가방</b>: <b>회복약</b>은 HP +2 — 지도 · 칸 화면에서는 언제든(눌러서), 전투 중에는 1코스트(<kbd>E</kbd>). <b>정비 부품</b>은 멈춘 기계를 고치는 선택지에 써요. 부품(돈)과는 따로 세요.</p>
+    <p><b>재귀(저장)</b>: 지도 오른쪽 위 「저장」으로 지금을 재귀 지점으로 새겨요. 챕터마다 횟수가 정해져 있어요(난이도마다 다름). 챕터를 시작할 때 · <b>이야기 칸의 전투 직전</b> · <b>보스 앞</b>에서는 저절로 새겨져요(횟수를 쓰지 않아요). 전투에서 쓰러지면 마지막 재귀 지점으로 돌아가요 — 덱 · 유물 · HP · 지도 모두 그때로. 이야기 속 사건이 아니라 <b>다시 해 보는 기능</b>이라, 되돌아와도 인물들은 기억하지 않아요.</p></section>
+  <section><h4>전투 — 한 루프의 흐름</h4><ol>
+    <li>루프 시작 — 코스트 4 충전, 손패 3장까지 보충, <b>빨간 기습 줄</b>(보스전은 턴 공격 패턴도) 예고</li>
+    <li>행동할 때마다(이동 · 카드 · 뽑기 = 1코스트) — 순번이 된 <b>적</b>이 예고대로 이동 또는 공격하고, 다음 행동을 새로 예고</li>
+    <li><b>2번째 행동이 끝나는 순간</b> 기습 폭발 → (보스전) <b>주황 턴 공격 범위</b> 공개</li>
+    <li>(보스전) <b>마지막 행동이 끝나는 순간</b> 턴 공격 → 다음 루프</li></ol>
+    <p>적은 <b>2코스트마다</b> 움직여요. 머리 위 숫자 1 = 내 다음 행동 뒤. 분홍 표식 칸 밖에서 행동을 끝내면 맞지 않아요.</p>
+    <p><b>과부하</b>: 강한 카드 · 못총이 과부하를 채워요. 100이면 4코스트 동안 마비. 보스를 과부하시키면 4코스트 동안 기습 · 턴 공격이 멈춰요.</p>
+    <p><b>HP</b>는 전투가 끝나도 이어져요. 휴식 · 천막 · 일부 카드와 유물로 회복해요.</p></section>
+  <section><h4>조작</h4><p><b>어디서나</b>: <b>메뉴</b> Esc · <b>규칙</b> H · <b>소리</b> M · <b>전체 화면</b>은 설정에서</p>
+    <p><b>전투</b>: <b>이동</b> WASD · 방향키 · 옆 칸 클릭 · <b>카드</b> 1–6 또는 클릭(방향이 여럿이면 칸을 눌러 조준) · <b>뽑기</b> Q · <b>회복약</b> E · <b>취소</b> Esc(고른 카드가 있을 때)</p>
+    <p><b>대사</b>: <b>넘기기</b> Space · Enter · 클릭 · <b>선택지</b> 1–4 · <b>대사 기록</b> L · <b>자동</b> A</p>
+    <p><b>지도</b>: 빛나는 톱니 클릭(또는 ←→로 고르고 Enter) · <b>덱</b> D · <b>유물</b> R</p>
+    <p><b>칸 화면</b>: <b>선택지</b> 숫자 키(번호가 붙은 것) · <b>덱</b> D · <b>보상 화면</b>: 카드 1–3 · 계속 Enter</p></section>
+  <section><h4>그림 · 소리 슬롯</h4><p class="dim"><code>assets/</code> 폴더에 이 이름(webp · png · jpg)으로 넣으면 자동으로 써요. 없는 슬롯은 기본 그림이 나와요.</p>
+    <p class="dim">배경음 파일(ogg · mp3 · m4a, 되풀이): <code>bgm-title</code> 타이틀 · <code>bgm-map</code> 지도 · <code>bgm-battle</code> 전투 · <code>bgm-boss</code> 보스 — 없으면 합성한 소리(오르골 · 째깍거림 · 맥박)를 깔아요. 크기는 설정의 「배경음」으로.</p><div class="slot-grid" id="slotGrid"><p class="dim">확인하는 중…</p></div></section>` });
+  const slots = imageSlots();
+  loadAll(slots.map(x => x[0])).then(() => {
+    const g = document.getElementById('slotGrid');
+    if (!g) return;
+    const have = slots.filter(([k]) => art(k)).length;
+    g.innerHTML = slots.map(([k, label]) => `<span class="slot${art(k) ? ' ok' : ''}">${art(k) ? '●' : '○'} <code>${k}</code><small>${esc(label)}</small></span>`).join('') + `<p class="dim slot-sum">${have} / ${slots.length} 슬롯에 그림이 있어요</p>`;
+  });
+}
+// 게임이 찾는 그림 이름 전부 — [파일 이름, 설명]
+function imageSlots() {
+  return [
+    ['hero-sd', '주인공 · 격자 SD'],
+    ...Object.values(FACES).map(f => [f.file, `주인공 표정 · ${f.label}`]),
+    ['shopkeeper', '상점 주인'], ['shopkeeper-hmph', '상점 주인 · 흥.'], ['blackmarket', '암시장 상인'], ['believer', '미지의 신도'],
+    ...Object.values(BOSSES).flatMap(b => [[b.art, `${b.name} · 보스 줄 띠`], [b.artFull, `${b.name} · 전신`]]),
+    ...Object.values(FOES).flatMap(f => [[f.art + '-sd', `${f.name} · 격자 SD`], [f.art, `${f.name} · 스탠딩`]]),
+    ['card-bg', '카드 배경'], ['ui-plank', '나무판 (넓은 것)'], ['ui-plank-thin', '나무판 (가는 것)'],
+    ['bg-title', '배경 · 타이틀'], ['bg-battle', '배경 · 전투'], ['bg-rest-1', '배경 · 휴식 1'], ['bg-rest-2', '배경 · 휴식 2'],
+    ['bg-shop', '배경 · 상점'], ['bg-alley', '배경 · 골목'], ['bg-event', '배경 · 사건'],
+    ...['blackmarket', 'forge', 'implant', 'abyss', 'trial', 'tent', 'shrine'].map(t => [`bg-${t}`, `배경 · ${NODE_TYPES[t].label}`]),
+    // 사건 — 등장인물 스탠딩(대본의 cast.art) · 사건마다 배경(없으면 bg-event)
+    ...[...new Map(Object.values(EVENTS).flatMap(e => Object.values(e.cast || {})).filter(c => c.art).map(c => [c.art, `사건 인물 · ${c.name}`])).entries()],
+    ...Object.entries(EVENTS).map(([id, e]) => [`bg-ev-${id}`, `배경 · 사건 「${e.title}」`]),
+    // 1장 대본 — 한 장 그림 · 이야기 칸마다 전용 배경(없으면 대본이 말한 기존 배경) · 인물(없으면 신도 · 암시장 상인 그림으로)
+    ['story-nailgun', '한 장 그림 · 장력 가속 못총 (01)'], ['story-portrait', '한 장 그림 · 마르트의 접힌 그림 (04)'],
+    ...Object.keys(CH1_STORY.bgs).map(id => [`bg-st-${id}`, `배경 · 이야기 ${id.slice(1)} ${CH1_STORY.titles[id] || ''}`]),
+    ...Object.values(CH1_STORY.cast).filter(c => c.art).map(c => [c.art, `인물 · ${c.name}${c.alt ? ` (없으면 ${c.alt === 'believer' ? '신도' : '암시장 상인'} 그림${c.tone ? '에 색조' : ''})` : ''}`]),
+  ];
+}
+
+// ── 일시정지 메뉴 (Esc)
+export async function pauseMenu({ canSave = false } = {}) {
+  return confirmBox({ title: '메뉴', text: '', buttons: [
+    { label: '계속', value: 'resume', main: true },
+    { label: '설정', value: 'settings' },
+    { label: '규칙과 조작', value: 'help' },
+    { label: '타이틀로', value: 'title' },
+  ] });
+}
+export { closeSheet };
+export const heroImg = () => art('hero');
