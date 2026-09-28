@@ -1,6 +1,7 @@
 // I — XII 무작위 완주 시험 (Playwright) — 지도 · 선택지 · 칸 화면 · 보상을 무작위로 고르며 1장 끝까지 간다 (전투는 이긴 것으로)
 //   node tests/monkey.cjs [씨앗]      — 정해진 흐름 시험(e2e.cjs)이 지나가지 않는 드문 길에서 오류 · 멈춤을 찾는다
 //   멈추면(같은 화면 · 같은 대사가 40번) 그 자리의 상태와 화면(monkey-stuck.png)을 남기고 끝낸다
+//   MONKEY_SOUND=1 — 소리를 켠 채로 (배경음 · 장면 배경 소리가 바뀌는 길에서도 오류가 없는지)
 const http = require('http'), fs = require('fs'), path = require('path');
 const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
 const ROOT = path.resolve(__dirname, '..');
@@ -16,7 +17,7 @@ const pick = a => a[Math.floor(rnd() * a.length)];
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   const errs = []; page.on('pageerror', e => errs.push(e.message)); page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push('console: ' + m.text()); });
   await page.goto(base + '/index.html#debug');
-  await page.evaluate(() => { localStorage.clear(); localStorage.setItem('i12.settings.v1', JSON.stringify({ tutorial: false, textSpeed: 'instant', sound: false, autoSpeed: 'fast' })); });
+  await page.evaluate(sound => { localStorage.clear(); localStorage.setItem('i12.settings.v1', JSON.stringify({ tutorial: false, textSpeed: 'instant', sound, autoSpeed: 'fast' })); }, !!process.env.MONKEY_SOUND);
   await page.reload();
   await page.waitForFunction(() => window.I12 && document.querySelector('.scr-title .ti-item'));
   await page.click('.ti-item[data-a="start"]');
