@@ -16,6 +16,7 @@ import { ITEMS } from '../data/items.js';
 import { LORE } from '../data/lore.js';
 import { FOES, BOSSES } from '../data/foes.js';
 import { makeRng, hashSeed } from '../core/rng.js';
+import { canShortcut } from '../map/gen.js';
 import { icon } from '../ui/icons.js';
 import { art, load, loadAll, bgImgHTML } from '../ui/assets.js';
 import { bigCardHTML, openDeck, relicTip, openSettings, openHelp, pauseMenu, toggleSound } from '../ui/menus.js';
@@ -281,7 +282,7 @@ const HANDLERS = {
   // ── 골목 — 4가지 중 무작위 (지도를 만들 때 정해짐)
   alley() {
     const ch = chapterDef();
-    const kind = node.alley;
+    const kind = node.alley === 'shortcut' && !canShortcut(RUN.map, node.id) ? 'hide' : node.alley;   // 이야기 칸을 건너뛰는 지름길은 없다 (예전 저장의 골목)
     if (kind === 'hide') {
       frame({ title: '숨을 틈', text: '좁은 골목 안쪽, 감시가 닿지 않는 틈이 있다. 잠시 숨을 죽이면 흔적이 흐려질 것이다.', artHTML: glyph('alley') });
       opts([{ label: '숨는다 — 경계도 −30', desc: ch.hunted ? '추격대에게 들킬 수도 있다 (30%)' : '감시의 눈이 멀어진다', on: () => {
@@ -318,7 +319,7 @@ const HANDLERS = {
     const seen = (RUN.flags.lore[ch.num] || 0);
     if (node.loreIdx === undefined) { node.loreIdx = seen % Math.max(1, list.length); RUN.flags.lore[ch.num] = seen + 1; }
     const line = list[node.loreIdx] || '';
-    frame({ title: '신도들의 천막', say: `“${fmt(line)}”`, text: `천막 안의 신도들이 목소리를 낮춘다. "${esc(RUN.name || '당신')}${RUN.name ? ' 님' : ''}, 필요한 게 있으면 말해요."`, artHTML: charArt('believer', 'tent') });
+    frame({ title: '신도들의 천막', say: fmt(line), text: `천막 안의 신도들이 목소리를 낮춘다. 「${esc(RUN.name || '당신')}${RUN.name ? ' 님' : ''}, 필요한 게 있으면 말해요.」`, artHTML: charArt('believer', 'tent') });
     const next = nextEliteBoss();
     opts([
       { label: '치료 — HP +2', desc: `지금 ${RUN.hp} / ${maxHp()}`, on: () => { const n = heal(2); SFX.heal(); hud(); autosave(); body(`<p class="nd-result">${icon('chalice')} 신도들이 숨겨 둔 약으로 상처를 감쌌다. HP +${n}.</p>`); } },
@@ -579,7 +580,8 @@ function eventCtx() {
       removeCard(c.uid); note(`저주 「${CARDS[c.id].name}」 없어짐`, 'good', 'check'); SFX.cool();
       return CARDS[c.id].name;
     },
-    shortcut() { RUN.flags.shortcut = true; note('지름길 — 다음엔 두 칸 앞 톱니로', 'good', 'leap'); },
+    shortcut() { if (!canShortcut(RUN.map, RUN.pos)) return; RUN.flags.shortcut = true; note('지름길 — 다음엔 두 칸 앞 톱니로', 'good', 'leap'); },
+    canShortcut: () => canShortcut(RUN.map, RUN.pos),   // 바로 다음이 이야기 칸이면 건너뛸 수 없다
     // 가방 · 경계 단계 · 목표 (대본 1장)
     item(id, n = 1) { addItem(id, n); note(`${ITEMS[id].name} ${sgn(n)}`, n > 0 ? 'good' : 'bad', ITEMS[id].icon); n > 0 ? SFX.gain() : SFX.click(); },
     alertUp() { if (alertStageUp()) { note(`경계 +1단계 — 지금 ${alertStage()}단계`, 'bad', 'eye'); SFX.warn(); } },   // 대본의 '경계도 +1'
@@ -798,7 +800,7 @@ function renderImplant() {
   const cost = 2;
   if (node.done) { body(`<p class="nd-result">${icon('chip')} 「${IMPLANTS[node.done].name}」 — 이식이 끝났다. 몸 안에서 낯선 톱니가 돈다.</p>`); return; }
   const b = body(`<div class="nd-relics">${node.offer.map(id => `<button class="rw-relic implant" type="button" data-id="${id}"${RUN.shards < cost ? ' disabled' : ''}><span class="relic big r-implant implant">${icon(IMPLANTS[id].icon)}</span><b>${IMPLANTS[id].name}</b><small>${IMPLANTS[id].desc}</small><span class="price${RUN.shards >= cost ? '' : ' no'}">${icon('shard')}${cost}</span></button>`).join('')}</div>
-    ${RUN.shards < cost ? `<p class="nd-sub">톱니 조각이 ${cost}개 필요해요 (지금 ${RUN.shards}개). 정예 · 보스 · 시험에서 얻을 수 있어요.</p>` : '<p class="nd-sub">한 곳에서 하나만 이식할 수 있어요.</p>'}`, { keepScroll: true });
+    ${RUN.shards < cost ? `<p class="nd-sub">톱니 조각이 ${cost}개 필요해요 (지금 ${RUN.shards}개). ${chapterDef().encounters.elite.length ? '정예 · 보스 · 시험' : '사건 · 시험 · 보스'}에서 얻을 수 있어요.</p>` : '<p class="nd-sub">한 곳에서 하나만 이식할 수 있어요.</p>'}`, { keepScroll: true });
   b.addEventListener('click', async e => {
     const x = e.target.closest('.rw-relic');
     if (!x || x.disabled) return;

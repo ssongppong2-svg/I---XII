@@ -447,7 +447,7 @@ export const EVENTS = {
           mt('없어요. 물 차서. 다행이네요.'),
           after('가짜 기록을 써 넣었다. 감시망이 남쪽 수로를 뒤지기 시작할 것이다.'),
         ] },
-        { label: '순찰 경로를 훔쳐본다', desc: '지름길 — 다음엔 두 칸 앞 톱니로 · 경계도 +10', then: [
+        { label: '순찰 경로를 훔쳐본다', desc: '지름길 — 다음엔 두 칸 앞 톱니로 · 경계도 +10', cond: G => G.canShortcut(), lack: '다음 칸이 이야기 칸이라 건너뛸 길이 없다', then: [
           nar('기록판에 순찰 경로가 떠올랐다. 감시가 비는 골목들이 한눈에 보였다.'),
           act(G => { G.shortcut(); G.alert(10); }),
           me('aim', '여기, 여기. 두 칸은 건너뛸 수 있어.'),
@@ -685,7 +685,7 @@ export const EVENTS = {
         me('pain', '……있어. 조금 돌아.'),
       ] },
       { choice: [
-        { label: '빠진 칸을 건너 올라간다', desc: 'HP −1 · 지름길 — 다음엔 두 칸 앞 톱니로', cond: G => G.hp() > 1, lack: 'HP가 2 이상이어야 한다', then: [
+        { label: '빠진 칸을 건너 올라간다', desc: 'HP −1 · 지름길 — 다음엔 두 칸 앞 톱니로', cond: G => G.hp() > 1 && G.canShortcut(), lack: G => (G.canShortcut() ? 'HP가 2 이상이어야 한다' : '다음 칸이 이야기 칸이라 건너뛸 길이 없다'), then: [
           nar('빠진 칸을 건너뛰다 발목이 꺾였다. 손잡이를 잡은 손이 미끄러졌다.'),
           act(G => { G.hurt(1); G.shortcut(); }),
           mt('다음엔 제가 먼저 건널게요.'),

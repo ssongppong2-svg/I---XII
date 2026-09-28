@@ -3,7 +3,7 @@ import { RUN, chapterDef, dm, mods, addAlert, maxHp } from './run.js';
 import { BOSSES, FOES } from '../data/foes.js';
 import { autosave, writeRecur } from './save.js';
 import { CHAPTERS } from '../data/chapters.js';
-import { genMap, twoAhead } from '../map/gen.js';
+import { genMap, twoAhead, canShortcut } from '../map/gen.js';
 import { makeRng, hashSeed } from '../core/rng.js';
 import { POOL } from '../data/cards.js';
 import { RELIC_POOL, RELICS } from '../data/relics.js';
@@ -38,7 +38,7 @@ export function startChapter(n) {
 // 지금 고를 수 있는 톱니
 export function choices() {
   if (!RUN.map || !RUN.pos) return [];
-  if (RUN.flags.shortcut) return twoAhead(RUN.map, RUN.pos);
+  if (RUN.flags.shortcut && canShortcut(RUN.map, RUN.pos)) return twoAhead(RUN.map, RUN.pos);   // 이야기 칸은 건너뛰지 않는다
   return RUN.map.nodes[RUN.pos].next.slice();
 }
 

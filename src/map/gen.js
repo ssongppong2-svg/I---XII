@@ -78,7 +78,7 @@ export function genMap(ch, seed, opt = {}) {
   }
   // 칸마다 내용 씨앗 · 전투 구성 · 사건 (사건은 그 층의 때에 맞는 것만 — 오르가 함께인지, 잃은 뒤인지)
   const events = eventBag(makeRng(hashSeed(seed, 'events', ch.num)), EVENT_POOL[ch.num] || EVENT_POOL[1], opt.seenEvents || {});
-  for (const i of layers.keys()) for (const id of layers[i]) fillContent(ch, nodes[id], R, seed, events);
+  for (const i of layers.keys()) for (const id of layers[i]) fillContent(ch, nodes[id], R, seed, events, nodes);
   // 4) 위치 · 크기 · 도는 방향
   layout(nodes, layers, L, R, ch);
   return { chapter: ch.num, nodes, layers, edges, arc: 0, start: layers[0][0] };
@@ -148,7 +148,7 @@ function eventBag(r, pool, seen) {
   };
 }
 
-function fillContent(ch, n, R, seed, events) {
+function fillContent(ch, n, R, seed, events, nodes) {
   n.seed = hashSeed(seed, ch.num, n.id);
   const r = makeRng(n.seed);
   const E = ch.encounters;
@@ -160,7 +160,7 @@ function fillContent(ch, n, R, seed, events) {
   else if (n.type === 'story') n.enc = null;       // 이야기 칸 — 대사 · 전투는 대본(data/story)이 정한다
   else if (n.type === 'boss') n.enc = Object.assign({ kind: 'boss' }, E.boss);
   else if (n.type === 'event') n.event = events((ch.phases || {})[n.layer]);
-  else if (n.type === 'alley') n.alley = r.pick(['hide', 'narrow', 'deal', 'shortcut']);
+  else if (n.type === 'alley') n.alley = r.pick(skippable(nodes, n.id) ? ['hide', 'narrow', 'deal', 'shortcut'] : ['hide', 'narrow', 'deal']);   // 지름길은 건너뛸 수 있는 자리에서만
   if (n.type === 'trial') n.trial = r.pick(['untouched', 'swift', 'frugal']);
   if (n.type === 'elite') n.eliteIdx = null;
 }
@@ -252,6 +252,12 @@ export function typeCounts(map) {
 }
 
 // 지름길: 지금 칸에서 두 칸 앞 톱니들
+// 바로 다음 층이 모두 사이 칸일 때만 건너뛸 수 있다 — 이야기 칸 · 보스는 건너뛰지 않는다 (1장: 사이 층 3 → 5층의 05만)
+function skippable(nodes, id) {
+  const next = nodes[id].next.map(x => nodes[x]);
+  return next.length > 0 && next.every(n => !['story', 'boss', 'start'].includes(n.type) && n.next.length > 0);
+}
+export const canShortcut = (map, id) => !!(map && map.nodes[id]) && skippable(map.nodes, id);
 export function twoAhead(map, id) {
   const out = new Set();
   for (const a of map.nodes[id].next) for (const b of map.nodes[a].next) out.add(b);

@@ -129,6 +129,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check(rows.top && rows.bottom && rows.dir, '지도: 두 줄 — 위 줄 왼→오, 아래 줄 오→왼 (끝에 보스)');
   check(await page.evaluate(() => document.querySelectorAll('.mech .gn.t-story .sno').length === 13 && /출고되지 않은 물건/.test(document.querySelector('.mech').textContent) && /16·17/.test(document.querySelector('.mech').textContent)), '지도: 이야기 칸 13개 · 보스 16·17');
   check(!nodes.elite && nodes.boss.length === 1 && R.map.layers.every(l => l.length <= 2), '1장: 정예 없음 · 사이 층은 톱니 두 개');
+  check(await page.evaluate(() => { const id = I12.RUN.map.layers[4][0], keep = [I12.RUN.pos, I12.RUN.flags.shortcut]; I12.RUN.pos = id; I12.RUN.flags.shortcut = true; const c = I12.flow.choices(); [I12.RUN.pos, I12.RUN.flags.shortcut] = keep; return c.length > 0 && c.every(x => I12.RUN.map.nodes[x].story === 's05'); }), '지름길이 있어도 이야기 칸(05)은 건너뛰지 않는다');
   const least = await page.evaluate(() => I12.ch.CHAPTERS[1].atLeast);
   check(Object.entries(least).every(([t, c]) => (nodes[t] || []).length >= c), `지도: 사이 칸 최소 개수 — ${Object.entries(least).map(([t, c]) => `${t} ${(nodes[t] || []).length}/${c}`).join(' · ')}`);
 

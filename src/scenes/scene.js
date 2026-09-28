@@ -1,6 +1,6 @@
 // 대사 장면 — 프롤로그 · 정예/보스 이야기 · 재귀 · 사건
 // 대사 = { who, face?, name?, vo?, text } — text는 글 또는 ctx => 글. name을 적으면 그 이름으로 말한다 · vo = 모습 없이 목소리만(대본의 「스탠딩 없음」)
-// 선택지 = { choice: [{ label, desc?, when?, cond?, lack?, then }] } — when이 거짓이면 숨기고, cond가 거짓이면 흐리게 막는다(lack = 이유)
+// 선택지 = { choice: [{ label, desc?, when?, cond?, lack?, then }] } — when이 거짓이면 숨기고, cond가 거짓이면 흐리게 막는다(lack = 이유, 글 또는 G => 글)
 // 갈림 = { if: ctx => bool, then: [...], else: [...] } · 운 = { roll: 0.5, win: [...], lose: [...] }
 // 효과 = { act: ctx => {} } · 결과 한 줄 = { after: '…' } (장면이 끝난 뒤 사건 화면에 남는 글)
 // 챕터 카드 = { card: { num, title, sub? } } · 이름 카드 = { card: { kick, title, sub } } (보스 이름 등)
@@ -465,7 +465,8 @@ function showChoice(opts) {
   const box = q('#scChoices');
   box.innerHTML = list.map(({ o, dis }, i) => {
     const desc = typeof o.desc === 'function' ? o.desc(ctx) : o.desc;
-    const sub = dis && o.lack ? o.lack : desc;
+    const lack = typeof o.lack === 'function' ? o.lack(ctx) : o.lack;
+    const sub = dis && lack ? lack : desc;
     return `<button type="button" data-i="${i}"${dis ? ' disabled' : ''}><kbd>${i + 1}</kbd><span class="ch-t"><span class="ch-l">${fmt(o.label)}</span>${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`;
   }).join('');
   box.classList.toggle('many', list.length > 3);
