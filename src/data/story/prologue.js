@@ -15,7 +15,7 @@ export const PROLOGUE_CAST = {
 export const PROLOGUE = [
   // ── 01 작업실의 마지막 손님
   // [회상. 크로노스가 살해되기 전 단 한 번의 과거다. 작업실 전경은 새 그림 없이 암전과 작업음으로 표현한다.]
-  { tint: 'black', amb: 'work', place: '회상 · 작업실' },
+  { tint: 'black', amb: 'work', place: '회상 · 작업실', head: '01 · 작업실의 마지막 손님' },
   { wait: 1400 },
   me('idle', '문 닫아. 찬바람 들어오면 이 작은 축부터 굳는다.'),
   vis('전달한 요청서는 읽으셨습니까?'),
@@ -47,7 +47,7 @@ export const PROLOGUE = [
   { wait: 1600 },
 
   // ── 02 숨을 쉬는 순서 — 폐기 보관소 (회수소 지하)
-  { bg: { slot: 'bg-st-s02', base: 'bg-battle' }, tint: 'dark', amb: 'drip', place: '회종시 · 회수소 지하 폐기 보관소' },
+  { bg: { slot: 'bg-st-s02', base: 'bg-battle' }, tint: 'dark', amb: 'drip', place: '회종시 · 회수소 지하 폐기 보관소', head: '02 · 숨을 쉬는 순서' },
   nar('무언가 얼굴 위에 덮여 있었다. 천에서는 기름과 젖은 먼지 냄새가 났다.'),
   { who: 'hero', vo: true, text: '치워.' },
   nar('목소리가 제대로 나오지 않았다. 천을 잡은 손이 한 번 미끄러졌다.'),

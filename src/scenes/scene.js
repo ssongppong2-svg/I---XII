@@ -11,6 +11,7 @@
 // 종이 기록 = { paper: '제목', text, emblem?: 'I' } — 낡은 종이 패널 위에 글 (대사창 대신)
 // 권한 패널 = { panel: '제목', text, tone?: 'deny' } — 기계의 화면(설비 조작 · 철회된 권한). 종이 기록처럼 누르면 넘어간다
 // 상태 한 줄 = { sys: '글' } — 위쪽에 잠깐 떴다 사라진다(멈추지 않는다) · 배경 소리 = { amb: 'work' | 'fire' | 'wind' | 'hum' | 'street' | 'drip' | null }
+// 장소 이름표 = { place: '회종시 · 골목', head: '05 · 녹슨 자동인형' } — head는 이름표 위의 칸 번호 · 제목 (playScene의 heading 옵션이면 첫 장소에 저절로)
 // 주인공 자세 = { hero: 'low' | '' } (스탠딩을 조금 낮춘다) · 물러나기 = { exit: 'hero' | 'guest'(손님 모두) | 'boss' | 인물 이름 }
 // 문자판 흔들림 = { dial: 'I', flicker: true } · 작은 그림 = { cg: '그림', small: true } (그림이 없을 때 대신 그릴 것 = alt: 'portrait') · 보스 화면 손상 = { bossDmg: 1 | 2 | 0 }
 // 손님 칸은 둘 — 세 사람이 이야기할 때 둘째 손님은 가운데에. 새로 말하는 사람은 빈 칸, 없으면 가장 오래 말 안 한 사람 자리에 선다
@@ -127,7 +128,7 @@ export const sceneOpen = () => dom && !dom.hidden;
 export function playScene(script, opt = {}) {
   return new Promise(res => {
     Object.assign(SC, { queue: (script || []).slice(), log: [], onEnd: res, choosing: null, carding: false, typing: false, inputting: false, bossName: opt.bossName || '대형 감시기계', onName: opt.onName || null,
-      ctx: opt.ctx || null, cast: opt.cast || {}, onChoice: opt.onChoice || null });
+      ctx: opt.ctx || null, cast: opt.cast || {}, onChoice: opt.onChoice || null, heading: opt.heading || '' });
     // 배경 그림 (사건) — 없으면 아래 화면이 어둡게 비친다
     const bk = bgKey(opt.bg);
     const bg = bk ? bgImgHTML(bk) : '';
@@ -245,7 +246,7 @@ function next() {
     if (silent(step)) continue;
     stage(step);
     if (step.tint !== undefined) dom.dataset.tint = step.tint;
-    if (step.place) showPlace(step.place);
+    if (step.place) showPlace(step.place, step.head);
     if (step.sys) showSys(step.sys);
     if (step.fx) sceneFx(step.fx);
     if (step.exit) { exitPortrait(step.exit); }
@@ -259,12 +260,17 @@ function next() {
   }
 }
 
-function showPlace(text) {
+// 장소 이름표 — head(또는 장면을 열 때 넘긴 heading) = 칸 번호 · 제목. 장면의 첫 장소 이름표 위에 한 번, 조금 더 오래
+function showPlace(text, head = '') {
   const p = q('#scPlace');
-  p.textContent = text; p.hidden = false;
+  const h = head || SC.heading;
+  SC.heading = '';
+  p.innerHTML = h ? `<small>${esc(h)}</small>${esc(text)}` : esc(text);
+  p.classList.toggle('with-head', !!h);
+  p.hidden = false;
   p.style.animation = 'none'; void p.offsetWidth; p.style.animation = '';
   clearTimeout(SC.placeT);
-  SC.placeT = setTimeout(() => { p.hidden = true; }, 3000);
+  SC.placeT = setTimeout(() => { p.hidden = true; }, h ? 4200 : 3000);
 }
 // 상태 한 줄 — 기계의 표시 (외부 송신 격리 등). 멈추지 않고 잠깐 떴다 사라진다
 function showSys(text) {

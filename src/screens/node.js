@@ -410,11 +410,13 @@ function shopStock() {
 
 /* ═════════════ 이야기 칸 ═════════════ */
 // 대본 장면 — 사건과 같은 도우미(G)로 선택지 효과를 처리한다. 저장은 장면이 끝난 뒤
-async function storyScene(script, G = eventCtx()) {
+// heading = 장소 이름표 위에 한 번 띄울 칸 번호 · 제목 (이야기 칸의 첫 장면)
+async function storyScene(script, G = eventCtx(), heading = '') {
   const S = storyOf(RUN.chapter);
-  await playScene(script, Object.assign(sceneOpts(), { ctx: G, cast: S.cast || {}, bg: bgKeyOf(node), onName: n => { RUN.name = n; } }));
+  await playScene(script, Object.assign(sceneOpts(), { ctx: G, cast: S.cast || {}, bg: bgKeyOf(node), heading, onName: n => { RUN.name = n; } }));
   return G;
 }
+const headOf = d => (d.no ? `${d.no} · ${d.title}` : '');
 // 이야기 칸의 사람 그림 — 전용 그림(art)이 있으면 그것, 없으면 대신 쓰는 그림(altArt)
 const storyArt = (d, fallback, glyphName) => charArt(d.art && art(d.art) ? d.art : d.altArt || fallback, glyphName);
 // 장면을 보는 동안 칸 화면은 제목만 (장면이 끝나야 떠날 수 있다)
@@ -428,7 +430,7 @@ const STORY = {
     const here = node;
     if (!node.preDone) {
       storyCover(d);
-      await storyScene(d.pre);
+      await storyScene(d.pre, eventCtx(), headOf(d));
       if (!alive || node !== here) return;
       node.preDone = true;
       writeRecur({ at: node.id });   // 전투 직전 — 쓰러지면 여기로 (저장 횟수를 쓰지 않는다)
@@ -441,7 +443,7 @@ const STORY = {
     const here = node;
     if (node.ev && node.ev.done) { eventResult(d); return; }
     storyCover(d);
-    const G = await storyScene(d.scene);
+    const G = await storyScene(d.scene, eventCtx(), headOf(d));
     if (!alive || node !== here) return;
     if (node.healed && node.healed.got && !G.res.some(r => r.i === 'heart')) G.res.unshift({ t: `HP +${node.healed.got}`, k: 'good', i: 'heart' });   // 장면을 보다 끄고 다시 봐도 회복한 것은 남긴다
     node.ev = { done: true, after: G.afterText || '', res: G.res, pending: G.pending };
@@ -454,7 +456,7 @@ const STORY = {
     const here = node;
     if (!node.preDone) {
       storyCover(d, storyArt(d, 'blackmarket', 'mask'));
-      await storyScene(d.pre);
+      await storyScene(d.pre, eventCtx(), headOf(d));
       if (!alive || node !== here) return;
       node.preDone = true;
       autosave();
@@ -470,7 +472,7 @@ const STORY = {
     const here = node;
     if (!node.preDone) {
       storyCover(d, glyph('flame'));
-      await storyScene(d.pre);
+      await storyScene(d.pre, eventCtx(), headOf(d));
       if (!alive || node !== here) return;
       node.preDone = true;
       autosave();
@@ -659,7 +661,7 @@ async function playEvent(id, E) {
     ...E.scene,
   ];
   let picked = '';
-  await playScene(script, { ctx: G, cast: Object.assign({}, storyOf(RUN.chapter).cast || {}, E.cast || {}), bg: bgKeyOf(node), onChoice: l => { if (!picked) picked = l; } });
+  await playScene(script, { ctx: G, cast: Object.assign({}, storyOf(RUN.chapter).cast || {}, E.cast || {}), bg: bgKeyOf(node), heading: `사건 · ${E.title}`, onChoice: l => { if (!picked) picked = l; } });
   if (!alive || node !== here) return;
   node.ev = { done: true, after: G.afterText || '', res: G.res, pending: G.pending };
   RUN.flags.seen = Object.assign({}, RUN.flags.seen, { [key]: picked || true });

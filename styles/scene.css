@@ -132,6 +132,8 @@
 .dtext.npc{color:#EDE3CE}
 .sc-place{position:absolute;left:48px;top:40px;z-index:6;padding:12px 26px 12px 16px;border-left:3px solid var(--brass);background:linear-gradient(90deg,rgba(12,10,16,.92),rgba(12,10,16,0));font:700 18px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--bone);pointer-events:none;animation:placeIn 3s ease forwards}
 @keyframes placeIn{0%{opacity:0;transform:translateX(-12px)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+.sc-place small{display:block;margin-bottom:5px;font:700 13px/1.2 var(--f-ui);letter-spacing:.16em;color:var(--brass)}   /* 칸 번호 · 제목 */
+.sc-place.with-head{animation-duration:4.2s}
 .scene[data-tint="warm"]{background:radial-gradient(90% 75% at 50% 30%,rgba(70,42,16,.62),rgba(10,6,4,.94) 72%),rgba(12,8,4,.46)}
 .scene[data-tint="cold"]{background:radial-gradient(90% 75% at 50% 18%,rgba(46,78,110,.56),rgba(4,8,14,.94) 72%),rgba(4,8,14,.46)}
 .scene[data-tint="blood"]{background:radial-gradient(90% 75% at 50% 42%,rgba(120,12,34,.6),rgba(12,2,6,.95) 72%),rgba(22,2,8,.48)}

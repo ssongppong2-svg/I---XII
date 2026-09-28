@@ -139,6 +139,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await waitScreen('scr-node');
   await sceneWait();
   check(await page.evaluate(() => document.querySelector('#dname').textContent === '감시 시계'), '03: 감시 시계가 먼저 말한다 (03-001)');
+  check(await page.evaluate(() => { const p = document.querySelector('#scPlace'); return !p.hidden && p.querySelector('small') && /03 · 출고되지 않은 물건/.test(p.textContent) && /회수소 출구/.test(p.textContent); }), '03: 장소 이름표 위에 칸 번호 · 제목');
   await clearScene();
   await waitScreen('scr-battle');
   await page.waitForSelector('.tut', { timeout: 10000 });
