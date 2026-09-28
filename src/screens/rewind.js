@@ -30,6 +30,7 @@ function rewindFx(holder) {
 
 register('rewind', {
   async mount(holder) {
+    SFX.bed(null);   // 바늘이 거꾸로 도는 동안은 조용히
     await rewindFx(holder);
     const ok = rewind();
     if (!ok) { RUN.fallen = false; RUN.hp = maxHp(); startChapter(RUN.chapter); return; }   // 재귀 지점이 없으면 이 장의 처음으로
@@ -51,6 +52,7 @@ let ceHolder = null;
 register('chapterend', {
   async mount(holder, params = {}) {
     ceHolder = holder;
+    SFX.bed(null);   // 조용한 장 끝 — 먼 열차 소리만
     const st = RUN.stats;
     if (params.clear) {
       const ch = chapterDef();

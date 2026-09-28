@@ -18,6 +18,7 @@ let root = null, sel = 1;
 function mount(holder) {
   root = holder;
   sel = 1;
+  SFX.bed('title');   // 타이틀에서 이어서
   let face = '<svg class="face" viewBox="0 0 760 760" aria-hidden="true"><circle class="rim" cx="380" cy="380" r="370"/><circle class="rim2" cx="380" cy="380" r="300"/>';
   for (let i = 0; i < 60; i++) {
     const a = i / 60 * Math.PI * 2, big = i % 5 === 0;
@@ -89,6 +90,7 @@ register('difficulty', { mount, onKey });
 register('prologue', {
   async mount(holder) {
     holder.style.background = '#000';
+    SFX.bed(null);   // 01은 검은 화면과 작업음만
     await new Promise(r => setTimeout(r, 300));
     const cast = Object.assign({}, CH1_CAST, PROLOGUE_CAST);
     await loadAll(storyArtKeys(PROLOGUE, cast));

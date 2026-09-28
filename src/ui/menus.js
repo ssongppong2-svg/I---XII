@@ -16,7 +16,8 @@ import { CH1_STORY } from '../data/story/ch1.js';
 // ── 설정
 const OPT = [
   { k: 'sound', label: '소리', type: 'toggle' },
-  { k: 'volume', label: '음량', type: 'range' },
+  { k: 'volume', label: '전체 음량', type: 'range' },
+  { k: 'music', label: '배경음', type: 'range', sub: '화면마다 깔리는 소리 · 음악 (효과음 · 대사 소리는 그대로)' },
   { k: 'textSpeed', label: '대사 글자 속도', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게'], ['instant', '바로']] },
   { k: 'autoSpeed', label: '자동 넘김 빠르기', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게']] },
   { k: 'shake', label: '화면 흔들림', type: 'toggle', sub: '폭발 · 피격 때 판이 흔들린다' },
@@ -36,7 +37,7 @@ export function openSettings() {
   const full = () => canFull() ? `<label class="cfg-row sw-row"><span>전체 화면<small>모니터를 꽉 채워서 — Esc로도 나올 수 있어요</small></span><input type="checkbox" data-full${document.fullscreenElement ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>` : '';
   const render = () => full() + OPT.map(o => {
     if (o.type === 'toggle') return `<label class="cfg-row sw-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><input type="checkbox" data-k="${o.k}"${SET[o.k] ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>`;
-    if (o.type === 'range') return `<div class="cfg-row"><span>${o.label}</span><input class="range" type="range" min="0" max="100" step="5" data-k="${o.k}" value="${Math.round(SET[o.k] * 100)}"></div>`;
+    if (o.type === 'range') return `<div class="cfg-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><input class="range" type="range" min="0" max="100" step="5" data-k="${o.k}" value="${Math.round(SET[o.k] * 100)}"></div>`;
     return `<div class="cfg-row"><span>${o.label}</span><div class="seg">${o.opts.map(([v, l]) => `<button type="button" data-k="${o.k}" data-v="${v}" class="${SET[o.k] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
   }).join('') + '<p class="dim" style="margin-top:14px">설정은 이 브라우저에 저장돼요.</p>';
   const body = openSheet({ title: '설정', body: render() });
@@ -104,7 +105,7 @@ export function openHelp() {
   <section><h4>톱니 지도</h4><p>챕터 하나가 커다란 톱니 장치예요. 칸(톱니)을 끝내면 장치가 돌고, <b>지금 톱니와 축으로 이어진 톱니</b>가 빛나요(축에 빛이 흘러요) — 그중 하나를 골라 나아가요. 톱니가 전부 보이니 보스까지 길을 미리 짤 수 있어요.</p>
     <p><b>이야기 칸</b>(금빛 톱니 · 가운데 대본 번호): 반드시 지나는 뼈대 칸이에요. 그 사이의 위아래 두 톱니 중 하나를 골라 전투 · 사건 · 상점 · 휴식 등을 겪어요. 1장 지도는 <b>두 줄</b> — 위 줄을 왼쪽에서 오른쪽으로, 아래 줄을 오른쪽에서 왼쪽으로 가면 끝에 보스가 있어요. 위쪽 가운데의 <b>목표</b>는 이야기가 바꿔요.</p>
     <p><b>숨은 곳</b>(04 · 08): 들어가면 먼저 회복해요(습격 없음). <b>휴식</b>(14)은 회복한 뒤 습격을 한 번 판정하고, 쉬지 않고 떠날 수도 있어요.</p>
-    <p><b>경계도</b>: 0~100 게이지 · <b>0 · 1 · 2단계</b>(34 · 67에서 한 단계씩). 감시 톱니에 들어가면 +20, 쉬면 +10. 대본의 「경계 +1」은 한 단계예요. 단계가 높을수록 휴식 중 습격 확률이 올라가요(15 · 25 · 35%). 50을 넘으면 전투에 적이 한 명 더, 100이면 발각 — 곧바로 강한 전투가 벌어져요.</p>
+    <p><b>경계도</b>: 0~100 게이지 · <b>0 · 1 · 2단계</b>(34 · 67에서 한 단계씩). 감시 톱니에 들어가면 +20, 쉬면 +10. 대본의 「경계 +1」은 한 단계예요. 단계가 높을수록 휴식 중 습격 확률이 올라가요(15 · 25 · 35%). 50 이상이면 사이 칸 전투에 적이 한 명 더(이야기 칸 전투는 대본대로), 100이면 발각 — 곧바로 강한 전투가 벌어지고, 이기면 50으로 내려가요.</p>
     <p><b>가방</b>: <b>회복약</b>은 HP +2 — 지도 · 칸 화면에서는 언제든(눌러서), 전투 중에는 1코스트(<kbd>E</kbd>). <b>정비 부품</b>은 멈춘 기계를 고치는 선택지에 써요. 부품(돈)과는 따로 세요.</p>
     <p><b>재귀(저장)</b>: 지도 오른쪽 위 「저장」으로 지금을 재귀 지점으로 새겨요. 챕터마다 횟수가 정해져 있어요(난이도마다 다름). 챕터를 시작할 때 · <b>이야기 칸의 전투 직전</b> · <b>보스 앞</b>에서는 저절로 새겨져요(횟수를 쓰지 않아요). 전투에서 쓰러지면 마지막 재귀 지점으로 돌아가요 — 덱 · 유물 · HP · 지도 모두 그때로. 이야기 속 사건이 아니라 <b>다시 해 보는 기능</b>이라, 되돌아와도 인물들은 기억하지 않아요.</p></section>
   <section><h4>전투 — 한 루프의 흐름</h4><ol>
@@ -120,7 +121,8 @@ export function openHelp() {
     <p><b>대사</b>: <b>넘기기</b> Space · Enter · 클릭 · <b>선택지</b> 1–4 · <b>대사 기록</b> L · <b>자동</b> A</p>
     <p><b>지도</b>: 빛나는 톱니 클릭(또는 ←→로 고르고 Enter) · <b>덱</b> D · <b>유물</b> R</p>
     <p><b>칸 화면</b>: <b>선택지</b> 숫자 키(번호가 붙은 것) · <b>덱</b> D · <b>보상 화면</b>: 카드 1–3 · 계속 Enter</p></section>
-  <section><h4>이미지 슬롯</h4><p class="dim"><code>assets/</code> 폴더에 이 이름(webp · png · jpg)으로 넣으면 자동으로 써요. 없는 슬롯은 기본 그림이 나와요.</p><div class="slot-grid" id="slotGrid"><p class="dim">확인하는 중…</p></div></section>` });
+  <section><h4>그림 · 소리 슬롯</h4><p class="dim"><code>assets/</code> 폴더에 이 이름(webp · png · jpg)으로 넣으면 자동으로 써요. 없는 슬롯은 기본 그림이 나와요.</p>
+    <p class="dim">배경음 파일(ogg · mp3 · m4a, 되풀이): <code>bgm-title</code> 타이틀 · <code>bgm-map</code> 지도 · <code>bgm-battle</code> 전투 · <code>bgm-boss</code> 보스 — 없으면 합성한 소리(오르골 · 째깍거림 · 맥박)를 깔아요. 크기는 설정의 「배경음」으로.</p><div class="slot-grid" id="slotGrid"><p class="dim">확인하는 중…</p></div></section>` });
   const slots = imageSlots();
   loadAll(slots.map(x => x[0])).then(() => {
     const g = document.getElementById('slotGrid');

@@ -211,6 +211,7 @@ async function mount(holder, params = {}) {
   root = holder;
   alive = true;
   busy = true;
+  SFX.bed('map');
   const ch = chapterDef();
   const map = RUN.map;
   holder.innerHTML = `${mapClock(RUN.chapter)}${ch.hunted ? '' : '<div class="map-search"></div>'}

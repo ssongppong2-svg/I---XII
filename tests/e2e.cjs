@@ -37,6 +37,9 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   page.on('pageerror', e => errs.push(e.message));
 
   const shot = async name => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, name + '.png') }); };
+  // 화면이 고른 배경음 · 대사 장면에서 낮추는지 (시험은 기본 설정 — 소리를 켠 채로 돈다. 머리 없는 브라우저라 들리지는 않는다)
+  const aud = () => page.evaluate(async () => (await import('/src/ui/sfx.js')).audioState());
+  const auds = {};
   const sceneOpen = () => page.evaluate(() => !document.querySelector('#scene').hidden);
   // 장면 끝까지 — 건너뛰기는 선택지 앞에서 멈추므로, 선택지가 뜨면 고를 수 있는 첫 번째를 누른다
   const clearScene = async () => {
@@ -130,6 +133,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await clearScene();
   await waitMap();
   await shot('03-map');
+  auds.map = await aud();
   let R = await run();
   check(R.name === '' && R.diff === 4 && R.chapter === 1 && R.v === 3 && R.flags.ev.took_hand, `이름은 아직 없음 · 난이도 IV · 저장 판 3 · 02 선택 깃발 (${JSON.stringify(R.name)} · v${R.v})`);
   check(R.goal === '회수소를 빠져나간다' && R.saves.left === 5, `목표 · 저장 횟수 (${R.goal} · ${R.saves.left})`);
@@ -151,8 +155,12 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await sceneWait();
   check(await page.evaluate(() => document.querySelector('#dname').textContent === '감시 시계'), '03: 감시 시계가 먼저 말한다 (03-001)');
   check(await page.evaluate(() => { const p = document.querySelector('#scPlace'); return !p.hidden && p.querySelector('small') && /03 · 출고되지 않은 물건/.test(p.textContent) && /회수소 출구/.test(p.textContent); }), '03: 장소 이름표 위에 칸 번호 · 제목');
+  auds.scene = await aud();
   await clearScene();
   await waitScreen('scr-battle');
+  auds.battle = await aud();
+  check(auds.map.bed === 'map' && !auds.map.scene && auds.scene.scene && auds.scene.duck < 1 && auds.battle.bed === 'battle' && !auds.battle.scene,
+    `배경음: 지도 → 대사 장면에서 낮춤 → 전투 (${auds.map.bed} · ${auds.scene.duck} · ${auds.battle.bed})`);
   await page.waitForSelector('.tut', { timeout: 10000 });
   check(await page.evaluate(() => I12.B.rows === 6 && I12.B.foes.length === 1 && I12.B.foes[0].type === 'watcher' && document.querySelector('#meName').textContent === '???'), '03: 6×6 판 · 감시 시계 1기 · 이름칸 ???');
   let snap = await recurSnap();
@@ -496,6 +504,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check(await stepUntil(() => !document.querySelector('#scSys').hidden && /격리 중/.test(document.querySelector('#scSys').textContent), 90), '16 끝: 외부 송신 격리 중 — 상태 한 줄');
   await clearScene();
   await battleReady();
+  auds.boss = await aud();
   const lay = await page.evaluate(() => ({ rows: I12.B.rows, cells: document.querySelectorAll('#board .cell').length }));
   check(lay.rows === 7 && lay.cells === 42, '보스전: 보스 줄 + 6×6 (7줄)');
   await page.evaluate(() => { I12.core.debugHurtBoss(0.6); });
@@ -527,6 +536,8 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await waitScreen('scr-chapterend');
   await page.waitForSelector('#ceGo');
   check(await page.evaluate(() => /다음 목적지 — II가 있는 시설/.test(document.querySelector('.ce').textContent) && !!document.querySelector('.ce.quiet .ce-dial .dn.on') && !!document.querySelector('.ce-dial .dn.pulse')), '장 끝: I만 점등 · II는 다음 목적지로만 · 조용한 끝');
+  auds.end = await aud();
+  check(auds.boss.bed === 'boss' && auds.end.bed === null && !auds.end.scene, `배경음: 보스전은 따로 · 장 끝은 조용히 (${auds.boss.bed} · ${auds.end.bed})`);
   await shot('10-chapterend');
   await toTitleAndContinue();
   await waitScreen('scr-chapterend');

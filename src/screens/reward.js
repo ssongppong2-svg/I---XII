@@ -18,6 +18,7 @@ let root = null, W = null;
 async function mount(holder) {
   root = holder;
   W = RUN.reward;
+  SFX.bed('map');   // 싸움이 끝난 뒤 — 지도의 째깍거림으로
   if (!W) { finishNode(); return; }
   // 승리 대사를 보다가 껐다 — 대사부터
   if (W.win) {

@@ -4,7 +4,7 @@
 // 조용히 빠지므로(연출 · 배경 소리 · 색조 · 아이콘) 여기서 미리 잡는다.
 //   1) 소스 모듈 문법 — 브라우저가 읽는 방식(ES 모듈)으로 (node --check 로는 못 잡는 겹친 선언 등)
 //   2) 효과음 — 코드에서 부르는 SFX.이름 이 모두 있는지
-//   3) 장면 연출 · 배경 소리 · 색조 — 대본의 fx · amb · tint 이름을 장면 엔진 · 소리 · 스타일이 아는지
+//   3) 장면 연출 · 배경 소리 · 색조 — 대본의 fx · amb · tint 이름을 장면 엔진 · 소리 · 스타일이 아는지 (화면의 배경음 이름도)
 //   4) 아이콘 — icon('이름') · glyph('이름') · 데이터의 icon: '이름' 이 모두 그려지는지
 //   5) 적 · 카드 참조 — 전투 구성의 foes 와 저주 카드 이름 등이 실제로 있는지
 //   6) 카드 설명 — 강화판 설명이 강화 전 숫자 · 소멸을 그대로 적고 있지 않은지
@@ -50,10 +50,17 @@ const load = f => import(pathToFileURL(path.join(ROOT, f)).href);
   const fxUsed = [...new Set(all(dataText, /fx: '([a-z0-9_]+)'/g))];
   const fxMissing = fxUsed.filter(k => !fxKnown.has(k));
   check(!fxMissing.length, `대본의 연출(fx) ${fxUsed.length}종을 장면 엔진이 안다${fxMissing.length ? ' — 모름: ' + fxMissing.join(', ') : ''}`);
-  const ambKnown = new Set(all(read(path.join(ROOT, 'src/ui/sfx.js')), /kind === '([a-z0-9_]+)'/g));
+  const { LOOP_KINDS } = await load('src/ui/sfx.js');
+  const ambKnown = new Set(LOOP_KINDS);
   const ambUsed = [...new Set(all(dataText, /amb: '([a-z0-9_]+)'/g))];
   const ambMissing = ambUsed.filter(k => !ambKnown.has(k));
   check(!ambMissing.length, `배경 소리(amb) ${ambUsed.length}종${ambMissing.length ? ' — 없음: ' + ambMissing.join(', ') : ''}`);
+  // 화면의 배경음 — SFX.bed('종류') · 칸마다(node.js의 NODE_BED · bedOf가 돌려주는 이름)
+  const nodeSrc = read(path.join(ROOT, 'src/screens/node.js'));
+  const bedBlock = (nodeSrc.match(/const NODE_BED = \{[^}]*\};\nfunction bedOf[\s\S]*?\n\}/) || [''])[0];
+  const bedUsed = new Set([...all(srcText, /SFX\.bed\(([^)]*)\)/g).flatMap(x => all(x, /'([a-z]+)'/g)), ...all(bedBlock, /(?::|\?|\|\|) '([a-z]+)'/g)]);
+  const bedMissing = [...bedUsed].filter(k => !ambKnown.has(k));
+  check(bedBlock && bedUsed.size >= 10 && !bedMissing.length, `화면의 배경음 ${bedUsed.size}종 (${[...bedUsed].join(' · ')})${bedMissing.length ? ' — 없음: ' + bedMissing.join(', ') : ''}`);
   const css = walk(path.join(ROOT, 'styles')).filter(f => f.endsWith('.css')).map(read).join('\n');
   const tintUsed = [...new Set(all(dataText, /tint: '([a-z0-9_]+)'/g))];
   const tintMissing = tintUsed.filter(k => !css.includes(`data-tint="${k}"`));

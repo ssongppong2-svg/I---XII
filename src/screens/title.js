@@ -47,6 +47,7 @@ function setFocus(i, sound = true) {
 
 function mount(holder) {
   root = holder;
+  SFX.bed('title');   // 오르골 가락 (소리를 켜기 전이면 처음 누를 때부터)
   holder.innerHTML = `${bgImgHTML('bg-title', 'ti-bg')}<div class="ti-shade"></div>
     <div class="ti-logo" aria-label="I — XII"><div class="logo"><span>I</span><i></i><span>XII</span></div><p class="logo-sub">열두 개의 시(時)를 되찾는 이야기</p></div>
     <nav class="ti-menu" id="tiMenu" aria-label="메뉴"></nav>

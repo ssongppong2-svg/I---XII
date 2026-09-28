@@ -25,6 +25,7 @@ async function mount(holder, params = {}) {
   const node = params.caught ? { id: `${RUN.pos}#caught${RUN.visited.length}`, type: 'caught' } : RUN.map.nodes[params.nodeId];
   const enc = params.enc || encounterFor(node, params.extra || {});
   ctx = { node, enc, params };
+  SFX.bed(enc.kind === 'boss' ? 'boss' : 'battle');
   // 그림 확인 (적 스탠딩 · SD · 보스)
   const keys = foeArtKeys(enc.foes || []);
   if (enc.boss) keys.push(BOSSES[enc.boss].art, BOSSES[enc.boss].artFull);

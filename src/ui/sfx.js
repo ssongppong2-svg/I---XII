@@ -1,24 +1,40 @@
-// 효과음 — 파일 없이 WebAudio로 합성
+// 효과음 · 배경음 — 파일 없이 WebAudio로 합성 (배경음은 assets/bgm-<종류> 파일이 있으면 그것을 깐다)
 import { SET, onSettings } from '../core/settings.js';
 
-let ctx = null, out = null, noise = null;
+let ctx = null, out = null, bgOut = null, duckG = null, noise = null;
 const gainFor = () => (SET.sound ? 0.8 * SET.volume : 0);
+const bgGainFor = () => (SET.sound ? SET.volume * SET.music : 0);   // 배경음 — 기본값(0.8)에서 예전 장면 배경 소리와 같은 크기
 
 export function initAudio() {
-  if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+  if (ctx) { if (ctx.state === 'suspended' && document.visibilityState !== 'hidden') ctx.resume().catch(() => {}); return; }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   try {
     ctx = new AC();
     out = ctx.createGain(); out.gain.value = gainFor(); out.connect(ctx.destination);
+    bgOut = ctx.createGain(); bgOut.gain.value = bgGainFor(); bgOut.connect(ctx.destination);
+    duckG = ctx.createGain(); duckG.gain.value = duckLevel(); duckG.connect(bgOut);
     const len = Math.floor(ctx.sampleRate * 1.2);
     noise = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = noise.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  } catch (e) { ctx = null; }
+  } catch (e) { ctx = null; return; }
+  if (wantBed) bedStart(wantBed);   // 소리를 켜기 전에 정해 둔 화면의 배경음
 }
-onSettings(k => { if ((k === 'sound' || k === 'volume') && out) out.gain.value = gainFor(); });
+onSettings(k => {
+  if (!ctx) return;
+  if (k === 'sound' || k === 'volume') out.gain.value = gainFor();
+  if (k === 'sound' || k === 'volume' || k === 'music') bgOut.gain.value = bgGainFor();
+  if (k === 'sound') { if (!SET.sound) { ambStop(0.2); bedStop(0.2); } else if (wantBed) bedStart(wantBed); }
+});
+// 창이 가려지면 소리를 멈춘다 — 다시 보이면 이어서 (가려진 사이 쌓인 소리가 한꺼번에 나지 않게 고리들은 멈춘 동안 건너뛴다)
+document.addEventListener('visibilitychange', () => {
+  if (!ctx) return;
+  if (document.visibilityState === 'hidden') ctx.suspend().catch(() => {});
+  else ctx.resume().catch(() => {});
+});
 
+// o.to = 보낼 곳 (없으면 효과음 쪽) — 배경음 고리의 소리는 고리의 음량(페이드 · 배경음 설정)을 따른다
 function tone(f, t, o = {}) {
   if (!ctx || !SET.sound) return;
   const t0 = ctx.currentTime + (o.at || 0);
@@ -29,7 +45,7 @@ function tone(f, t, o = {}) {
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime(o.v || 0.12, t0 + 0.008);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + t);
-  osc.connect(g).connect(out);
+  osc.connect(g).connect(o.to || out);
   osc.start(t0); osc.stop(t0 + t + 0.03);
 }
 function hiss(t, o = {}) {
@@ -40,7 +56,7 @@ function hiss(t, o = {}) {
   const g = ctx.createGain();
   g.gain.setValueAtTime(o.v || 0.2, t0);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + t);
-  src.connect(bf).connect(g).connect(out);
+  src.connect(bf).connect(g).connect(o.to || out);
   src.start(t0); src.stop(t0 + t + 0.03);
 }
 
@@ -58,65 +74,244 @@ const VOICES = {
   unknown:  [96, 10, 0.08, 'sine', 0.02],         // 알 수 없는 목소리 (II)
 };
 
-// ── 배경 소리 (대사 장면이 까는 고리) — 작업음 · 화로 · 바람 · 기계 소음 · 거리. 장면이 끝나면 멎는다
-let amb = null;
-function ambStop(fade = 0.9) {
-  if (!amb) return;
-  const a = amb; amb = null;
-  a.timers.forEach(t => clearTimeout(t));
-  if (!ctx) return;
-  const t = ctx.currentTime;
-  try { a.g.gain.cancelScheduledValues(t); a.g.gain.setValueAtTime(Math.max(0.0001, a.g.gain.value), t); a.g.gain.exponentialRampToValueAtTime(0.0001, t + fade); } catch (e) { /* 이미 멈춘 노드 */ }
-  a.srcs.forEach(s => { try { s.stop(t + fade + 0.05); } catch (e) { /* 이미 멈춤 */ } });
-}
-function ambLoop(g, f, type, q, v) {
+/* ═════════════ 배경음 ═════════════
+   두 겹 — 화면마다 깔리는 소리(bed: 타이틀 · 지도 · 전투 · 보스 · 칸마다)와 대사 장면의 배경 소리(amb: 대본의 amb).
+   둘 다 설정의 「배경음」 음량을 따른다. 대사 장면이 뜨면 bed는 30%로 낮아지고, 장면이 제 배경 소리를 깔면 잠시 꺼진다 */
+const noiseLoop = (g, f, type, q, v) => {
   const src = ctx.createBufferSource(); src.buffer = noise; src.loop = true;
   const bf = ctx.createBiquadFilter(); bf.type = type; bf.frequency.value = f; bf.Q.value = q;
   const gg = ctx.createGain(); gg.gain.value = v;
   src.connect(bf).connect(gg).connect(g); src.start();
   return src;
-}
-function ambHum(g, f, v, type = 'sine') {
+};
+const hum = (g, f, v, type = 'sine') => {
   const o = ctx.createOscillator(); o.type = type; o.frequency.value = f;
   const gg = ctx.createGain(); gg.gain.value = v;
   o.connect(gg).connect(g); o.start();
   return o;
+};
+// 느리게 숨 쉬는 저음 필터 — 드론을 거친다 (전투 · 보스)
+const breathLP = (a, g, f, depth, rate) => {
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = f; lp.Q.value = 0.9; lp.connect(g);
+  const lfo = ctx.createOscillator(); lfo.frequency.value = rate;
+  const lg = ctx.createGain(); lg.gain.value = depth;
+  lfo.connect(lg).connect(lp.frequency); lfo.start();
+  a.srcs.push(lfo);
+  return lp;
+};
+// 오르골 메아리 — 들어온 소리를 그대로 + 흐려지며 되풀이
+const echo = (g, time = 0.36, fb = 0.3, wet = 0.45) => {
+  const inG = ctx.createGain(), d = ctx.createDelay(1.5), f = ctx.createGain(), lp = ctx.createBiquadFilter(), w = ctx.createGain();
+  d.delayTime.value = time; f.gain.value = fb; lp.type = 'lowpass'; lp.frequency.value = 2200; w.gain.value = wet;
+  inG.connect(g); inG.connect(d); d.connect(lp); lp.connect(f).connect(d); lp.connect(w).connect(g);
+  return inG;
+};
+// 오르골 한 음 — 쇠 빗살: 사인 + 옥타브 + 짧은 금속성 배음
+const musicBox = (to, f, at, v) => {
+  tone(f, 2.6, { type: 'sine', v, at, to });
+  tone(f * 2.001, 1.1, { type: 'sine', v: v * 0.3, at, to });
+  tone(f * 4.2, 0.35, { type: 'sine', v: v * 0.08, at, to });
+};
+// 열두 칸 사다리(A 단조 5음 — 열두 시각)와 열두 음 가락 넷 · 가락마다 받치는 낮은 음
+const LADDER = [220, 261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5];
+const PHRASES = [
+  [5, 8, 10, 8, 9, 8, 7, 5, 6, 5, 4, 5],
+  [3, 5, 7, 5, 8, 7, 5, 4, 5, 4, 2, 3],
+  [5, 8, 10, 11, 10, 9, 8, 10, 9, 8, 7, 8],
+  [7, 6, 5, 4, 5, 3, 4, 2, 3, 1, 2, 0],
+];
+const BASS = [110, 87.31, 130.81, 98];
+
+// 고리 종류마다 소리 만들기 — (a: 고리, g: 고리의 음량, every: 드문드문 · pulse: 박자에 맞춰, T · N: 고리로 가는 tone · hiss)
+const LOOPS = {
+  // ── 대사 장면 (대본의 amb)
+  work(a, { g, every, T, N }) {        // 작업실 — 낮은 방 울림 + 드문드문 금속을 두드리는 소리
+    a.srcs.push(noiseLoop(g, 260, 'lowpass', 0.5, 0.05), hum(g, 62, 0.012));
+    every(0.7, 2.2, () => { const f = 1700 + Math.random() * 1400; T(f, 0.05, { type: 'triangle', v: 0.03 }); T(f * 1.5, 0.08, { type: 'sine', v: 0.012, at: 0.01 }); N(0.03, { v: 0.03, f: 5200, type: 'highpass' }); });
+  },
+  fire(a, { g, every, N }) {           // 화로 — 불 소리 + 타닥
+    a.srcs.push(noiseLoop(g, 700, 'lowpass', 0.4, 0.07));
+    every(0.25, 1.1, () => N(0.02 + Math.random() * 0.03, { v: 0.05 + Math.random() * 0.05, f: 2200 + Math.random() * 2400, type: 'bandpass', q: 2 }));
+  },
+  wind(a, { g }) {                     // 성벽 밖 · 다리 — 바람
+    a.srcs.push(noiseLoop(g, 420, 'lowpass', 0.7, 0.11), noiseLoop(g, 1300, 'bandpass', 0.35, 0.025));
+  },
+  hum(a, { g, every, T }) {            // 난방실 · 공장 — 기계 소음
+    a.srcs.push(hum(g, 55, 0.03, 'sawtooth'), hum(g, 110, 0.012), noiseLoop(g, 520, 'lowpass', 0.6, 0.04));
+    every(1.6, 4, () => T(90 + Math.random() * 40, 0.4, { type: 'triangle', v: 0.02 }));
+  },
+  street(a, { g, every, T }) {         // 시장 · 골목 — 먼 거리 소리
+    a.srcs.push(noiseLoop(g, 900, 'bandpass', 0.5, 0.035));
+    every(1.4, 3.6, () => T(300 + Math.random() * 500, 0.12, { type: 'triangle', v: 0.012 }));
+  },
+  drip(a, { g, every, T }) {           // 지하 · 복도 — 물방울
+    a.srcs.push(noiseLoop(g, 300, 'lowpass', 0.6, 0.035));
+    every(1.2, 3.2, () => T(1300 + Math.random() * 900, 0.09, { type: 'sine', v: 0.02, f2: 700 }));
+  },
+  // ── 화면 (bed)
+  title(a, { g, every, pulse, T, N }) {   // 타이틀 · 난이도 — 오르골 가락(열두 음) + 느린 시계
+    const box = echo(g);
+    a.srcs.push(hum(g, 55, 0.006), noiseLoop(g, 240, 'lowpass', 0.5, 0.012));
+    pulse(1, (at, n) => { T(n % 2 ? 1500 : 1800, 0.018, { type: 'square', v: 0.005, at }); N(0.02, { v: 0.008, f: 6500, type: 'highpass', at }); });
+    let p = 0;
+    every(10.5, 12, () => {
+      const i = p++ % PHRASES.length;
+      T(BASS[i], 6, { type: 'sine', v: 0.028, to: box });
+      PHRASES[i].forEach((n, k) => musicBox(box, LADDER[n], 0.3 + k * 0.5 + (Math.random() - 0.5) * 0.02, k === 0 ? 0.05 : 0.036));
+    }, 1.2);
+  },
+  map(a, { g, every, pulse, T, N }) {     // 톱니 지도 — 째깍거리는 장치 + 먼 톱니 + 가끔 오르골 몇 음 (타이틀 가락의 조각)
+    const box = echo(g, 0.42, 0.28, 0.5);
+    a.srcs.push(hum(g, 55, 0.012), hum(g, 82.4, 0.005), noiseLoop(g, 320, 'lowpass', 0.6, 0.018));
+    pulse(1, (at, n) => { T(n % 2 ? 1450 : 1750, 0.018, { type: 'square', v: 0.006, at }); N(0.02, { v: 0.012, f: 6000, type: 'highpass', at }); });
+    every(7, 13, () => { for (let i = 0; i < 6; i++) T(1300 + (i % 2) * 220, 0.02, { type: 'square', v: 0.006, at: i * 0.06 }); T(70, 0.6, { type: 'triangle', v: 0.018, f2: 60 }); }, 5);
+    every(6, 11, () => { const P = PHRASES[(Math.random() * PHRASES.length) | 0], s = (Math.random() * 8) | 0; for (let i = 0; i < 4; i++) musicBox(box, LADDER[P[(s + i) % 12]] / 2, i * 0.62, 0.028); }, 3);
+  },
+  battle(a, { g, every, pulse, T, N }) {  // 전투 — 맥놀이하는 낮은 기계음 + 느린 맥박 + 빠른 초침 + 먼 쇳소리
+    const lp = breathLP(a, g, 170, 60, 0.06);
+    a.srcs.push(hum(lp, 55, 0.04, 'sawtooth'), hum(lp, 55.35, 0.032, 'sawtooth'));
+    pulse(0.5, (at, n) => {
+      N(0.018, { v: n % 2 ? 0.008 : 0.014, f: 7000, type: 'highpass', at });
+      if (n % 4 === 0) T(64, 0.26, { v: 0.065, f2: 40, at }); else if (n % 4 === 2) T(60, 0.2, { v: 0.035, f2: 40, at });
+    });
+    every(9, 16, () => { T(180, 1.3, { type: 'triangle', v: 0.018, f2: 172 }); T(497, 0.9, { type: 'sine', v: 0.01 }); N(0.5, { v: 0.018, f: 900, type: 'bandpass', q: 5 }); }, 6);
+  },
+  boss(a, { g, every, pulse, T, N }) {    // 보스 — 더 낮고 무거운 기계음 + 빠른 맥박 + 거대한 쇳소리 + 조여 오는 낮은 음
+    const lp = breathLP(a, g, 150, 50, 0.09);
+    a.srcs.push(hum(lp, 41.2, 0.05, 'sawtooth'), hum(lp, 41.55, 0.04, 'sawtooth'), hum(g, 82.4, 0.008));
+    pulse(0.4, (at, n) => {
+      N(0.018, { v: n % 2 ? 0.009 : 0.016, f: 7000, type: 'highpass', at });
+      if (n % 2 === 0) T(58, 0.24, { v: n % 4 === 0 ? 0.08 : 0.048, f2: 36, at });
+    });
+    every(5, 9, () => { T(140, 1.6, { type: 'triangle', v: 0.022, f2: 132 }); T(386, 1.1, { type: 'sine', v: 0.012 }); T(1033, 0.6, { type: 'sine', v: 0.005 }); N(0.6, { v: 0.02, f: 700, type: 'bandpass', q: 4 }); }, 3);
+    every(14, 20, () => T(110, 4, { type: 'sine', v: 0.02, f2: 117 }), 10);
+  },
+  forge(a, { g, every, T, N }) {          // 강화소 — 화로 + 드문드문 모루
+    a.srcs.push(noiseLoop(g, 600, 'lowpass', 0.4, 0.05));
+    every(2.5, 5, () => { const f = 1100 + Math.random() * 300; T(f, 0.6, { type: 'triangle', v: 0.03 }); T(f * 2.7, 0.3, { type: 'sine', v: 0.012 }); N(0.05, { v: 0.04, f: 3000, type: 'bandpass', q: 2 }); }, 1.5);
+    every(0.3, 1.2, () => N(0.02 + Math.random() * 0.03, { v: 0.03 + Math.random() * 0.04, f: 2000 + Math.random() * 2000, type: 'bandpass', q: 2 }));
+  },
+  abyss(a, { g, every, T }) {             // 심연 — 깊은 바람 + 아주 낮은 울림
+    a.srcs.push(noiseLoop(g, 180, 'lowpass', 0.8, 0.09), noiseLoop(g, 700, 'bandpass', 0.3, 0.012), hum(g, 36.7, 0.02));
+    every(6, 12, () => T(73.4 + Math.random() * 10, 3, { type: 'sine', v: 0.02, f2: 70 }), 4);
+  },
+  // 파일 배경음 — assets/bgm-<종류>.ogg · mp3 · m4a (되풀이)
+  file(a, { g }, url) {
+    const el = new Audio(url);
+    el.loop = true;
+    try { ctx.createMediaElementSource(el).connect(g); } catch (e) { return; }
+    el.play().catch(() => {});
+    a.el = el;
+  },
+};
+
+// 대본의 amb · 화면의 bed로 부를 수 있는 이름 (데이터 점검이 읽는다)
+export const LOOP_KINDS = Object.keys(LOOPS).filter(k => k !== 'file');
+
+function loopStart(kind, dest, fade = 1.4, url = '') {
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(1, ctx.currentTime + fade);
+  g.connect(dest);
+  const a = { kind, g, srcs: [], timers: [], live: true, el: null };
+  // 드문드문 — 처음은 first초 뒤, 그다음은 min~max초마다. 창이 가려져 멈춘 동안은 건너뛴다
+  const every = (min, max, fn, first = min) => {
+    const i = a.timers.length; a.timers.push(0);
+    const loop = () => { if (!a.live) return; if (ctx.state === 'running') fn(); a.timers[i] = setTimeout(loop, (min + Math.random() * (max - min)) * 1000); };
+    a.timers[i] = setTimeout(loop, first * 1000);
+  };
+  // 박자에 맞춰 — sec초 간격을 소리 시계로 조금 앞서 예약해 흔들리지 않게 (fn(몇 초 뒤, 몇 번째))
+  const pulse = (sec, fn) => {
+    const i = a.timers.length; a.timers.push(0);
+    let next = 0, n = 0;
+    const loop = () => {
+      if (!a.live) return;
+      if (ctx.state === 'running') {
+        const now = ctx.currentTime;
+        if (next < now) next = now + 0.05;
+        while (next < now + 0.3) { fn(next - now, n++); next += sec; }
+      }
+      a.timers[i] = setTimeout(loop, 100);
+    };
+    loop();
+  };
+  const T = (f, t, o = {}) => tone(f, t, Object.assign({ to: g }, o));
+  const N = (t, o = {}) => hiss(t, Object.assign({ to: g }, o));
+  if (LOOPS[kind]) LOOPS[kind](a, { g, every, pulse, T, N }, url);
+  return a;
 }
+function loopStop(a, fade = 0.9) {
+  if (!a) return;
+  a.live = false;
+  a.timers.forEach(t => clearTimeout(t));
+  if (a.el) { const el = a.el; setTimeout(() => el.pause(), (fade + 0.1) * 1000); }
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  try { a.g.gain.cancelScheduledValues(t); a.g.gain.setValueAtTime(Math.max(0.0001, a.g.gain.value), t); a.g.gain.exponentialRampToValueAtTime(0.0001, t + fade); } catch (e) { /* 이미 멈춘 노드 */ }
+  a.srcs.forEach(s => { try { s.stop(t + fade + 0.05); } catch (e) { /* 이미 멈춤 */ } });
+  setTimeout(() => { try { a.g.disconnect(); } catch (e) { /* 이미 끊김 */ } }, (fade + 0.4) * 1000);
+}
+
+// ── 대사 장면의 배경 소리 (amb) — 장면이 끝나면 멎는다
+let amb = null, inScene = false;
+function ambStop(fade = 0.9) { if (!amb) return; loopStop(amb, fade); amb = null; duckTo(); }
 function ambStart(kind) {
   if (amb && amb.kind === kind) return;
   ambStop();
   if (!kind || !ctx || !SET.sound) return;
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, ctx.currentTime);
-  g.gain.exponentialRampToValueAtTime(1, ctx.currentTime + 1.4);
-  g.connect(out);
-  const a = { kind, g, srcs: [], timers: [] };
-  const every = (min, max, fn) => { const loop = () => { if (amb !== a) return; fn(); a.timers[0] = setTimeout(loop, (min + Math.random() * (max - min)) * 1000); }; a.timers.push(setTimeout(loop, min * 1000)); };
-  if (kind === 'work') {        // 작업실 — 낮은 방 울림 + 드문드문 금속을 두드리는 소리
-    a.srcs.push(ambLoop(g, 260, 'lowpass', 0.5, 0.05), ambHum(g, 62, 0.012));
-    every(0.7, 2.2, () => { const f = 1700 + Math.random() * 1400; tone(f, 0.05, { type: 'triangle', v: 0.03 }); tone(f * 1.5, 0.08, { type: 'sine', v: 0.012, at: 0.01 }); hiss(0.03, { v: 0.03, f: 5200, type: 'highpass' }); });
-  } else if (kind === 'fire') { // 화로 — 불 소리 + 타닥
-    a.srcs.push(ambLoop(g, 700, 'lowpass', 0.4, 0.07));
-    every(0.25, 1.1, () => hiss(0.02 + Math.random() * 0.03, { v: 0.05 + Math.random() * 0.05, f: 2200 + Math.random() * 2400, type: 'bandpass', q: 2 }));
-  } else if (kind === 'wind') { // 성벽 밖 · 다리 — 바람
-    a.srcs.push(ambLoop(g, 420, 'lowpass', 0.7, 0.11), ambLoop(g, 1300, 'bandpass', 0.35, 0.025));
-  } else if (kind === 'hum') {  // 난방실 · 공장 — 기계 소음
-    a.srcs.push(ambHum(g, 55, 0.03, 'sawtooth'), ambHum(g, 110, 0.012), ambLoop(g, 520, 'lowpass', 0.6, 0.04));
-    every(1.6, 4, () => tone(90 + Math.random() * 40, 0.4, { type: 'triangle', v: 0.02 }));
-  } else if (kind === 'street') { // 시장 · 골목 — 먼 거리 소리
-    a.srcs.push(ambLoop(g, 900, 'bandpass', 0.5, 0.035));
-    every(1.4, 3.6, () => tone(300 + Math.random() * 500, 0.12, { type: 'triangle', v: 0.012 }));
-  } else if (kind === 'drip') {   // 지하 · 복도 — 물방울
-    a.srcs.push(ambLoop(g, 300, 'lowpass', 0.6, 0.035));
-    every(1.2, 3.2, () => tone(1300 + Math.random() * 900, 0.09, { type: 'sine', v: 0.02, f2: 700 }));
-  }
-  amb = a;
+  amb = loopStart(kind, bgOut);
+  duckTo();
 }
-onSettings(k => { if (k === 'sound' && !SET.sound) ambStop(0.2); });
+
+// ── 화면의 배경음 (bed) — 같은 종류면 이어서, 바뀌면 천천히 갈아 끼운다
+let bed = null, bedKind = null, wantBed = null;
+const BGM_FILES = ['title', 'map', 'battle', 'boss'];   // 이 종류는 assets/bgm-<종류> 파일을 먼저 찾는다
+const bgmUrl = new Map();                               // 종류 → 주소 | null (찾아본 결과)
+function findBgm(kind) {
+  if (!BGM_FILES.includes(kind)) return Promise.resolve(null);
+  if (bgmUrl.has(kind)) return Promise.resolve(bgmUrl.get(kind));
+  return new Promise(res => {
+    const exts = ['ogg', 'mp3', 'm4a'];
+    let i = 0;
+    const next = () => {
+      if (i >= exts.length) { bgmUrl.set(kind, null); res(null); return; }
+      const url = `assets/bgm-${kind}.${exts[i++]}`;
+      const el = new Audio();
+      el.preload = 'metadata';
+      el.onloadedmetadata = () => { bgmUrl.set(kind, url); res(url); };
+      el.onerror = next;
+      el.src = url;
+    };
+    next();
+  });
+}
+function bedStop(fade = 1.2) { loopStop(bed, fade); bed = null; bedKind = null; }
+function bedStart(kind) {
+  if (!ctx || !SET.sound || !kind || bedKind === kind) return;
+  bedStop();
+  bedKind = kind;
+  findBgm(kind).then(url => {
+    if (bedKind !== kind || bed || !ctx || !SET.sound) return;   // 찾는 사이 화면이 바뀌었다
+    bed = loopStart(url ? 'file' : kind, duckG, 2, url || '');
+  });
+}
+// 대사 장면이 뜨면 bed를 낮춘다 — 장면이 제 배경 소리를 깔면 잠시 끈다
+const duckLevel = () => (amb ? 0.0001 : inScene ? 0.3 : 1);
+function duckTo() {
+  if (!ctx || !duckG) return;
+  const t = ctx.currentTime, v = duckLevel();
+  try { duckG.gain.cancelScheduledValues(t); duckG.gain.setValueAtTime(Math.max(0.0001, duckG.gain.value), t); duckG.gain.exponentialRampToValueAtTime(v, t + (v < 0.5 ? 0.7 : 1.8)); } catch (e) { /* 노드 없음 */ }
+}
+// 시험용 — 지금 정해진 배경음 (소리가 꺼져 있어도 화면이 무엇을 골랐는지)
+export const audioState = () => ({ bed: wantBed, playing: bed ? bed.kind : null, amb: amb ? amb.kind : null, scene: inScene, duck: duckLevel() });
 
 export const SFX = {
-  // 배경 소리 고리 — kind 없이 부르면 멎는다
+  // 대사 장면의 배경 소리 — kind 없이 부르면 멎는다
   amb(kind) { if (kind) ambStart(kind); else ambStop(); },
+  // 화면의 배경음 — 'title' · 'map' · 'battle' · 'boss' · 칸마다('fire' · 'street' · 'forge' …), null이면 조용히
+  bed(kind) { wantBed = kind || null; if (!wantBed) bedStop(); else bedStart(wantBed); },
+  // 대사 장면이 떠 있는 동안 (장면 엔진이 부른다)
+  scene(on) { inScene = !!on; duckTo(); },
   step()   { tone(420, 0.07, { type: 'triangle', v: 0.07, f2: 560 }); },
   fstep()  { tone(210, 0.08, { type: 'triangle', v: 0.06, f2: 170 }); hiss(0.05, { v: 0.04, f: 900 }); },
   shot()   { hiss(0.14, { v: 0.26, f: 2600, type: 'bandpass', q: 0.9 }); tone(900, 0.07, { type: 'square', v: 0.05, f2: 180 }); },

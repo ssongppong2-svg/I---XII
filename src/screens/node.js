@@ -852,10 +852,18 @@ function renderImplant() {
   });
 }
 
+// 칸마다 깔리는 배경음 (ui/sfx.js) — 이야기 칸은 그 칸이 하는 일로(쉼터 = 화로 · 바넷의 천막 = 거리)
+const NODE_BED = { rest: 'fire', tent: 'fire', shop: 'street', blackmarket: 'street', alley: 'street', forge: 'forge', implant: 'hum', abyss: 'abyss', shrine: 'drip' };
+function bedOf(n) {
+  if (n.type !== 'story') return NODE_BED[n.type] || 'map';
+  const d = storyDef(n) || {};
+  return d.kind === 'rest' || d.safeRest ? 'fire' : d.kind === 'shop' ? 'street' : 'map';
+}
 function mount(holder, params = {}) {
   root = holder;
   alive = true;
   node = RUN.map.nodes[params.nodeId];
+  SFX.bed(bedOf(node));
   R = makeRng(hashSeed(RUN.seed, node.id, 'node'));
   const h = HANDLERS[node.type];
   if (!h) { finishNode(); return; }

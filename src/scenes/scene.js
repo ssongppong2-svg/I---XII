@@ -167,6 +167,7 @@ export function playScene(script, opt = {}) {
     q('#scAutoBtn').classList.toggle('on', SC.auto);
     dom.hidden = false;
     $('#app').classList.add('in-scene');
+    SFX.scene(true);   // 화면의 배경음을 낮춘다 (장면이 제 배경 소리를 깔면 잠시 끈다)
     next();
   });
 }
@@ -603,7 +604,7 @@ function end() {
   hidePaper();
   clearTimeout(SC.autoT); clearTimeout(SC.cardT); clearTimeout(SC.placeT); clearTimeout(SC.waitT); clearTimeout(SC.sysT);
   q('#scPlace').hidden = true; q('#scSys').hidden = true;
-  SFX.amb(null);
+  SFX.amb(null); SFX.scene(false);
   SC.choosing = null; SC.carding = false; SC.typing = false; SC.inputting = false; SC.waiting = false;
   dom.hidden = true;
   $('#app').classList.remove('in-scene');
