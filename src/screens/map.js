@@ -46,7 +46,8 @@ function resHTML() {
   const mh = maxHp();
   let hearts = '';
   for (let i = 0; i < mh; i++) hearts += `<svg class="heart${i < RUN.hp ? '' : ' empty'}"><use href="#i-heart"/></svg>`;
-  return `<span class="hearts" title="HP ${RUN.hp} / ${mh}">${hearts}</span><span class="sep"></span>
+  // 하트 · 숫자 둘 다 두고, 위 막대가 좁을 때(tighter)만 숫자로 (fitTop)
+  return `<span class="hearts" title="HP ${RUN.hp} / ${mh}">${hearts}</span><span class="hearts-n" title="HP ${RUN.hp} / ${mh}"><svg class="heart"><use href="#i-heart"/></svg><b>${RUN.hp}</b><small>/ ${mh}</small></span><span class="sep"></span>
     <span class="res parts" title="부품 — 상점에서 쓴다">${icon('parts')}${RUN.parts}<small>부품</small></span>
     <span class="res shard" title="톱니 조각 — 강화소 · 기계 이식소에서 쓴다">${icon('shard')}${RUN.shards}<small>톱니 조각</small></span><span class="sep"></span>
     ${bagHTML()}<span class="sep"></span>
@@ -104,6 +105,18 @@ function refreshHud() {
   root.querySelector('#mSave').classList.toggle('spent', RUN.saves.left <= 0);
   root.querySelector('#mDeckN').textContent = RUN.deck.length;
   root.querySelector('#relicStrip').innerHTML = relicStripHTML();
+  fitTop();
+}
+// 위 막대 — 가운데 자원 줄이 장 제목이나 오른쪽 단추에 닿으면(하트가 많거나 숫자가 커질 때, 장 제목이 길 때)
+// 간격부터 좁히고(snug), 그래도 닿으면 작은 글씨를 접고(tight), 그래도 모자라면 하트를 「♥ 7 / 8」 숫자로(tighter). 넉넉하면 원래 모양 그대로
+const TIGHT = ['snug', 'tight', 'tighter'];
+function fitTop() {
+  const res = root.querySelector('#mapRes'), txt = root.querySelector('.ch-txt'), btns = root.querySelector('.map-btns');
+  if (!res || !txt || !btns) return;
+  // 나무판의 오른쪽 꼬리는 덮여도 괜찮다 — 제목 글자 끝에서 20px, 오른쪽 단추에서 16px 떨어지면 된다
+  const hits = () => { const r = res.getBoundingClientRect(), s = r.width / res.offsetWidth || 1; return txt.getBoundingClientRect().right + 20 * s > r.left || r.right + 16 * s > btns.getBoundingClientRect().left; };
+  res.classList.remove(...TIGHT);
+  for (const c of TIGHT) { if (!hits()) break; res.classList.add(c); }
 }
 
 // 톱니 상태: 지나온 길 · 지금 · 고를 수 있는 곳 · 앞으로 갈 수 있는 곳 · 못 가는 곳
@@ -212,6 +225,7 @@ async function mount(holder, params = {}) {
   svg = holder.querySelector('svg.mech');
   turner = makeTurner(svg, map);
   refreshHud();
+  if (document.fonts && document.fonts.status !== 'loaded') document.fonts.ready.then(() => { if (alive && root === holder) fitTop(); });   // 글꼴이 늦게 오면 폭이 바뀐다
   markGoal();
   markerAtNode(RUN.pos);
   avail = choices();

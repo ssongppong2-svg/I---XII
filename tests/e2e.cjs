@@ -623,6 +623,15 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   await waitScreen('scr-reward');
   await page.click('#rwGo');
   await waitMap();
+  // 지도 위 막대 — 하트가 많고 숫자가 커도 장 제목 글자 · 오른쪽 단추를 덮지 않는다 (좁으면 간격 → 작은 글씨 → 하트를 숫자로)
+  const top = await page.evaluate(async () => {
+    Object.assign(I12.RUN, { maxHpBase: 10, hp: 9, parts: 1234 });
+    I12.router.go('map', {});
+    await new Promise(r => setTimeout(r, 1200));
+    const t = document.querySelector('.ch-txt').getBoundingClientRect(), p = document.querySelector('#mapRes').getBoundingClientRect(), b = document.querySelector('.map-btns').getBoundingClientRect();
+    return { l: Math.round(p.left - t.right), r: Math.round(b.left - p.right), cls: document.querySelector('#mapRes').className };
+  });
+  check(top.l >= 0 && top.r >= 0, `지도 위 막대: 하트 10개 · 부품 1234여도 장 제목 · 단추와 겹치지 않는다 (${top.cls} · 여백 ${top.l} / ${top.r})`);
 
   check(errs.length === 0, `자바스크립트 오류 없음${errs.length ? ' — ' + errs.join(' | ') : ''}`);
   await browser.close();

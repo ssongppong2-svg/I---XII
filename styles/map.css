@@ -89,6 +89,13 @@
 .ch-txt span{display:block;margin-top:2px;font-size:13.5px;color:#E2CFAE;text-shadow:0 1px 0 rgba(0,0,0,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .map-res{display:flex;align-items:center;gap:28px;padding:12px 26px;border:1px solid var(--line);border-radius:40px;background:rgba(14,12,18,.82);box-shadow:0 10px 26px rgba(0,0,0,.45)}
 .map-res .sep{width:1px;height:28px;background:var(--line-2)}
+.map-res .hearts-n{display:none;align-items:center;gap:6px;font:800 19px/1 var(--f-num);color:#FFD9D2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.map-res .hearts-n small{font:700 14px/1 var(--f-num);color:#C9A8A2}
+/* 좁을 때 — 간격부터 좁히고, 그다음 작은 글씨를 접는다(아이콘 · 숫자는 그대로, 올리면 이름이 보인다) · 더 좁으면 하트를 숫자로 */
+.map-res.snug{gap:16px;padding:12px 18px}
+.map-res.tight .res small,.map-res.tight .bag-it small{display:none}
+.map-res.tighter .hearts{display:none}
+.map-res.tighter .hearts-n{display:inline-flex}
 .map-btns{justify-self:end;display:flex;gap:8px}
 .map-btns .icon-btn{height:44px;padding:0 14px;font-size:14px}
 .btn-save{border-color:var(--brass-lo)!important;color:var(--brass-hi)!important}

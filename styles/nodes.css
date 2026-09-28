@@ -150,7 +150,7 @@
 .deck-grid{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
 .deck-grid .card.big{cursor:default}
 .deck-grid.pick .card.big{cursor:pointer}
-.relic-list{display:flex;flex-direction:column;gap:10px}
+.relic-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}   /* 두 줄 — 유물이 많아도 한눈에 */
 .relic-row{display:flex;align-items:center;gap:16px;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2)}
 .relic-row .relic.big{width:64px;height:64px}
 .relic-row .relic.big svg{width:34px;height:34px}
