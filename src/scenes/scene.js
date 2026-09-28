@@ -12,7 +12,7 @@
 // 권한 패널 = { panel: '제목', text, tone?: 'deny' } — 기계의 화면(설비 조작 · 철회된 권한). 종이 기록처럼 누르면 넘어간다
 // 상태 한 줄 = { sys: '글' } — 위쪽에 잠깐 떴다 사라진다(멈추지 않는다) · 배경 소리 = { amb: 'work' | 'fire' | 'wind' | 'hum' | 'street' | 'drip' | null }
 // 주인공 자세 = { hero: 'low' | '' } (스탠딩을 조금 낮춘다) · 물러나기 = { exit: 'hero' | 'guest'(손님 모두) | 'boss' | 인물 이름 }
-// 문자판 흔들림 = { dial: 'I', flicker: true } · 작은 그림 = { cg: '그림', small: true } · 보스 화면 손상 = { bossDmg: 1 | 2 | 0 }
+// 문자판 흔들림 = { dial: 'I', flicker: true } · 작은 그림 = { cg: '그림', small: true } (그림이 없을 때 대신 그릴 것 = alt: 'portrait') · 보스 화면 손상 = { bossDmg: 1 | 2 | 0 }
 // 손님 칸은 둘 — 세 사람이 이야기할 때 둘째 손님은 가운데에. 새로 말하는 사람은 빈 칸, 없으면 가장 오래 말 안 한 사람 자리에 선다
 // ctx = playScene(…, { ctx })로 넘긴 도우미 (사건이면 부품 · 경계도 · 깃발 등 — screens/node.js)
 import { $, el, esc, iga, eulreul, eunneun, irago, ah, iyeo, isiyeo, iya, gwawa, euro, RM } from '../core/util.js';
@@ -198,8 +198,9 @@ function stage(step) {
   }
   if (step.cg !== undefined) {
     const u = step.cg && art(step.cg);
-    q('#scCg').innerHTML = u ? `<img src="${u}" alt="" draggable="false">` : '';
-    q('#scCg').hidden = !u;
+    const alt = !u && step.cg && CG_ALT[step.alt] ? CG_ALT[step.alt]() : '';   // 그림이 아직 없으면 대신 그릴 것 (alt)
+    q('#scCg').innerHTML = u ? `<img src="${u}" alt="" draggable="false">` : alt;
+    q('#scCg').hidden = !u && !alt;
   }
   if (step.dial !== undefined) {
     q('#scDial').innerHTML = step.dial ? dialSVG(step.dial, step.pulse || '') : '';
@@ -211,6 +212,14 @@ function stage(step) {
   if (step.bossDmg !== undefined) q('#ptBoss').dataset.dmg = step.bossDmg || '';
   if (step.amb !== undefined) SFX.amb(step.amb);
 }
+// 한 장 그림이 아직 없을 때 대신 그리는 것 — { cg: '그림', alt: '이름' }
+// portrait = 여러 번 접은 종이에 주인공 얼굴을 잉크 스케치처럼 (04 마르트가 간직한 접힌 그림). 전용 그림이 오면 그것이 나온다
+const CG_ALT = {
+  portrait: () => {
+    const u = faceUrl('idle');
+    return u ? `<div class="cg-paper"><div class="cg-sketch"><img src="${u}" alt="" draggable="false"></div><i class="cg-fold v"></i><i class="cg-fold h"></i><span class="cg-ink" aria-hidden="true"></span></div>` : '';
+  },
+};
 // 배경 이름 — { slot, base }면 slot 그림이 있을 때 slot (이야기 칸 전용 배경 bg-st-…)
 const bgKey = b => (!b ? '' : typeof b === 'string' ? b : art(b.slot) ? b.slot : b.base || '');
 function blankBox() {

@@ -277,6 +277,14 @@
 @keyframes dialFlicker{0%,100%{opacity:1}12%{opacity:.35}20%{opacity:1}57%{opacity:.5}63%{opacity:1}}
 /* 작은 한 장 그림 (접힌 그림 등) */
 .sc-cg.small{width:520px;top:90px}
+/* 대신 그리는 한 장 그림 — 접힌 종이에 잉크 스케치 (04 마르트의 접힌 그림, story-portrait가 오기 전) */
+.cg-paper{position:relative;width:400px;margin:0 auto;padding:30px 30px 58px;rotate:-2.2deg;border-radius:3px;background:var(--card-art,none) center/cover,#D8C49A;box-shadow:0 30px 70px rgba(0,0,0,.7),0 0 0 1px rgba(90,60,30,.35)}
+.cg-sketch{position:relative;height:350px;overflow:hidden;border:1px solid rgba(80,55,25,.28)}
+.sc-cg .cg-sketch img{position:absolute;left:-150px;top:-6px;width:680px;max-width:none;height:auto;border-radius:0;box-shadow:none;-webkit-mask-image:none;mask-image:none;filter:grayscale(1) sepia(.7) contrast(1.35) brightness(1.02);mix-blend-mode:multiply;opacity:.82}
+.cg-fold{position:absolute;pointer-events:none}
+.cg-fold.v{top:0;bottom:0;left:50%;width:14px;margin-left:-7px;background:linear-gradient(90deg,transparent,rgba(70,45,20,.2) 45%,rgba(255,248,230,.32) 55%,transparent)}
+.cg-fold.h{left:0;right:0;top:46%;height:14px;margin-top:-7px;background:linear-gradient(180deg,transparent,rgba(70,45,20,.2) 45%,rgba(255,248,230,.3) 55%,transparent)}
+.cg-ink{position:absolute;left:28%;right:28%;bottom:24px;height:10px;border-bottom:2px dotted rgba(60,38,18,.45);filter:blur(.6px)}   /* 닳은 글씨 — 이름이 적힌 자리 */
 /* 경고등 — 붉은빛이 느리게 맥박친다 */
 .scene[data-tint="alarm"]{background:radial-gradient(90% 75% at 50% 40%,rgba(120,12,20,.55),rgba(14,2,4,.95) 72%),rgba(20,2,6,.5)}
 .scene[data-tint="alarm"]::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:radial-gradient(80% 70% at 50% 30%,rgba(255,40,50,.22),transparent 70%);animation:alarmPulse 1.2s ease-in-out infinite}

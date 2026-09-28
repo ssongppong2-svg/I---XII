@@ -176,7 +176,12 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check(R.deck.length === cards0 + 1 && R.goal === '추위를 피할 곳으로 간다', `보상 카드가 덱에 들어간다 · 03 뒤 목표 (${R.goal})`);
 
   console.log('3. 04 그 이름을 아는 사람 — 안전한 휴식(회복) · 이름 입력 · 지원 받기 · 새로고침');
-  await page.evaluate(() => { I12.RUN.hp = 2; });
+  await page.evaluate(() => {
+    I12.RUN.hp = 2;
+    // 접힌 그림(story-portrait)이 없으면 주인공 스케치로 대신 — 장면 도중에 한 번이라도 떴는지 지켜본다
+    window.__cgAlt = false;
+    new MutationObserver(() => { if (document.querySelector('#scCg:not([hidden]) .cg-paper img')) window.__cgAlt = true; }).observe(document.body, { subtree: true, childList: true, attributes: true });
+  });
   await enterNode('s04');
   await waitScreen('scr-node');
   await sceneWait();
@@ -184,6 +189,7 @@ const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if
   check((await run()).hp === 4, '04: 들어오면 먼저 회복 (HP 2 → 4)');
   for (let i = 0; i < 80 && await page.evaluate(() => document.querySelector('#scInput').hidden); i++) { await page.keyboard.press('Space'); await page.waitForTimeout(90); }
   check(await page.evaluate(() => !document.querySelector('#scInput').hidden && document.querySelector('#scInName').value === '크로노스' && /접힌 그림/.test(document.querySelector('#scInPrompt').textContent)), '04: 접힌 그림 아래의 이름 — 기본값 「크로노스」');
+  check(await page.evaluate(() => window.__cgAlt || !!document.querySelector('#scCg:not([hidden]) img')), '04: 접힌 그림 — 전용 그림이 없으면 주인공을 접힌 종이 스케치로');
   await shot('05-name');
   await page.click('#scInOk');
   check(await stepUntil(() => /크로노스 님/.test(document.querySelector('#dtext').textContent) && document.querySelector('#dname').textContent === '마르트', 30), '04: 마르트가 「크로노스 님」 (04-008)');
