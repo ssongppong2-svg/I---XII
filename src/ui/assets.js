@@ -54,8 +54,11 @@ export const artHref = key => { const u = art(key); return u ? new URL(u, docume
 export const bgImgHTML = (key, cls = '') => { const u = art(key); return u ? `<img class="scr-bg${cls ? ' ' + cls : ''}" src="${u}" alt="" draggable="false">` : ''; };
 export const known = key => found.has(key);
 
-export function preloadCore() {
-  return loadAll([...Object.values(FACES).map(f => f.file), ...STATIC]);
+// 처음 불러오기 — onProgress(끝난 수, 전체)로 첫 화면의 「시계를 맞추는 중…」에 몇 장째인지 알린다 (없는 그림도 확인이 끝나면 센다)
+export function preloadCore(onProgress) {
+  const keys = [...Object.values(FACES).map(f => f.file), ...STATIC];
+  let done = 0;
+  return Promise.all(keys.map(k => load(k).then(u => { done++; if (onProgress) onProgress(done, keys.length); return u; })));
 }
 
 export function faceUrl(face) {

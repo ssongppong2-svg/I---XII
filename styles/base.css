@@ -24,6 +24,15 @@ button{font:inherit;color:inherit;margin:0}
 input{font:inherit;color:inherit}
 svg{display:block}
 [hidden]{display:none!important}
+/* 처음 불러오는 동안 (index.html) — 황동 시계 바늘이 돈다. 타이틀이 뜨면 화면째 사라진다 */
+.boot{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(ellipse at center,#15121B,#0B0A0F 70%);color:var(--brass);font:600 19px/1.4 var(--f-ui);letter-spacing:.06em}
+.boot-clock{position:relative;width:96px;height:96px;margin-bottom:6px;border:3px solid var(--brass);border-radius:50%;box-shadow:0 0 26px rgba(214,174,98,.22),inset 0 0 18px rgba(214,174,98,.12)}
+.boot-clock::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--brass-hi)}
+.boot-clock i{position:absolute;left:calc(50% - 1.5px);bottom:50%;width:3px;height:36px;border-radius:2px;background:var(--brass-hi);transform-origin:50% 100%;animation:bootHand 1.4s linear infinite}
+.boot-clock i.h{left:calc(50% - 2.5px);width:5px;height:24px;background:var(--brass);animation-duration:16.8s}
+.boot p{margin:0}
+.boot small{min-height:1.4em;font:500 14px/1.4 var(--f-ui);color:var(--mute);letter-spacing:.04em}
+@keyframes bootHand{to{transform:rotate(360deg)}}
 /* 타자기 커서 */
 .tw-cur{display:inline-block;width:.46em;height:1.05em;margin-left:2px;vertical-align:-.14em;background:currentColor;opacity:.75;animation:twBlink .8s steps(2,start) infinite}
 @keyframes twBlink{to{visibility:hidden}}

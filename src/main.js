@@ -47,7 +47,9 @@ if (/debug/.test(location.hash)) {
     });
 }
 
-preloadCore().then(() => {
+// 그림을 확인하는 동안 첫 화면(index.html의 .boot)에 몇 장째인지 — 타이틀이 뜨면 화면째 사라진다
+const bootN = document.getElementById('bootN');
+preloadCore((n, all) => { if (bootN) bootN.textContent = `그림 ${n} / ${all}`; }).then(() => {
   // 스타일시트에서 쓰는 그림 — 절대 주소로 넣어야 styles/ 기준으로 잘못 풀리지 않는다
   const setArt = (prop, key) => { const u = artHref(key); if (u) document.documentElement.style.setProperty(prop, `url("${u}")`); return !!u; };
   // 카드 배경(양피지) — 손패 · 보상 · 상점 · 덱 보기의 모든 카드에
