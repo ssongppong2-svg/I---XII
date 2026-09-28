@@ -130,7 +130,7 @@
 .dtext.foe{color:#F4DDE3}
 .dtext.black{color:#F1DEC8}
 .dtext.npc{color:#EDE3CE}
-.sc-place{position:absolute;left:48px;top:40px;z-index:6;padding:12px 26px 12px 16px;border-left:3px solid var(--brass);background:linear-gradient(90deg,rgba(12,10,16,.92),rgba(12,10,16,0));font:700 18px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--bone);pointer-events:none;animation:placeIn 3s ease forwards}
+.sc-place{position:absolute;left:48px;top:40px;z-index:6;padding:12px 44px 12px 16px;border-left:3px solid var(--brass);background:linear-gradient(90deg,rgba(12,10,16,.92),rgba(12,10,16,.8) calc(100% - 60px),rgba(12,10,16,0));text-shadow:0 1px 3px rgba(0,0,0,.9);font:700 18px/1.3 var(--f-ui);letter-spacing:.08em;color:var(--bone);pointer-events:none;animation:placeIn 3s ease forwards}   /* 긴 장소 이름도 끝까지 받쳐 준다 — 인물 그림(머리) 위에 겹쳐도 읽히게 */
 @keyframes placeIn{0%{opacity:0;transform:translateX(-12px)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
 .sc-place small{display:block;margin-bottom:5px;font:700 13px/1.2 var(--f-ui);letter-spacing:.16em;color:var(--brass)}   /* 칸 번호 · 제목 */
 .sc-place.with-head{animation-duration:4.2s}
