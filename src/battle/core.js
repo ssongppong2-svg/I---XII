@@ -45,7 +45,10 @@ export const H = {
 };
 
 class Abort extends Error {}
-export async function wait(ms) { const t = B.tok; await sleep(ms); if (t !== B.tok) throw new Abort(); }
+// 전투 연출의 멈춤 — pace는 설정의 「전투 연출 속도」(전투 화면이 정한다. 모의 전투는 그대로 1)
+let pace = 1;
+export const setPace = m => { pace = m > 0 ? m : 1; };
+export async function wait(ms) { const t = B.tok; await sleep(ms * pace); if (t !== B.tok) throw new Abort(); }
 
 export const inArea = (r, c) => r >= B.top && r < B.rows && inCol(c) && !(B.blocked && B.blocked.has(K(r, c)));
 export const colCells = c => B.area.filter(k => k % COLS === c);

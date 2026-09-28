@@ -3,7 +3,7 @@ import { register, go } from '../ui/router.js';
 import { RUN, maxHp, mods, dm, chapterDef, bag, alertStageUp } from '../game/run.js';
 import { autosave } from '../game/save.js';
 import { encounterFor, rewardsFor, sceneOpts as sceneOptsFor, storyOf, TRIALS } from '../game/flow.js';
-import { B, H, setupBattle, startBattle, log, SIGNAL_TURNS } from '../battle/core.js';
+import { B, H, setupBattle, startBattle, log, SIGNAL_TURNS, setPace } from '../battle/core.js';
 import { mountView, setupBoard, render, wireHooks, viewRoot } from '../battle/view.js';
 import { bindInput, battleKey } from '../battle/input.js';
 import { startTutorial, stopTutorial, tutorialActive } from '../battle/tutorial.js';
@@ -11,12 +11,17 @@ import { playScene } from '../scenes/scene.js';
 import { loadAll } from '../ui/assets.js';
 import { foeArtKeys, storyArtKeys } from '../ui/foeart.js';
 import { BOSSES } from '../data/foes.js';
-import { SET } from '../core/settings.js';
+import { SET, BATTLE_PACE, onSettings } from '../core/settings.js';
 import { openDeck, openHelp, openSettings, pauseMenu, relicTip, toggleSound } from '../ui/menus.js';
 import { bindTips, hideTip, confirmBox } from '../ui/overlay.js';
 import { SFX } from '../ui/sfx.js';
 
 let ctx = null, alive = false;
+
+// 전투 연출 속도 (설정) — 바꾸면 싸우는 중에도 바로
+const applyPace = () => setPace(BATTLE_PACE[SET.battleSpeed] || 1);
+applyPace();
+onSettings(k => { if (k === 'battleSpeed') applyPace(); });
 
 const sceneOpts = enc => sceneOptsFor(enc.boss);
 

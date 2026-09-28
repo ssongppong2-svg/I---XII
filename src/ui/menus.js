@@ -20,6 +20,7 @@ const OPT = [
   { k: 'music', label: '배경음', type: 'range', sub: '화면마다 깔리는 소리 · 음악 (효과음 · 대사 소리는 그대로)' },
   { k: 'textSpeed', label: '대사 글자 속도', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게'], ['instant', '바로']] },
   { k: 'autoSpeed', label: '자동 넘김 빠르기', type: 'seg', opts: [['slow', '느리게'], ['normal', '보통'], ['fast', '빠르게']] },
+  { k: 'battleSpeed', label: '전투 연출 속도', type: 'seg', sub: '적의 움직임 · 타격 · 폭발 사이의 멈춤', opts: [['normal', '보통'], ['fast', '빠르게']] },
   { k: 'shake', label: '화면 흔들림', type: 'toggle', sub: '폭발 · 피격 때 판이 흔들린다' },
   { k: 'tutorial', label: '튜토리얼 안내', type: 'toggle', sub: '1장 이야기 전투(03 · 06)의 단계별 안내' },
 ];
@@ -38,7 +39,7 @@ export function openSettings() {
   const render = () => full() + OPT.map(o => {
     if (o.type === 'toggle') return `<label class="cfg-row sw-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><input type="checkbox" data-k="${o.k}"${SET[o.k] ? ' checked' : ''}><i class="sw" aria-hidden="true"></i></label>`;
     if (o.type === 'range') return `<div class="cfg-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><input class="range" type="range" min="0" max="100" step="5" data-k="${o.k}" value="${Math.round(SET[o.k] * 100)}"></div>`;
-    return `<div class="cfg-row"><span>${o.label}</span><div class="seg">${o.opts.map(([v, l]) => `<button type="button" data-k="${o.k}" data-v="${v}" class="${SET[o.k] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
+    return `<div class="cfg-row"><span>${o.label}${o.sub ? `<small>${o.sub}</small>` : ''}</span><div class="seg">${o.opts.map(([v, l]) => `<button type="button" data-k="${o.k}" data-v="${v}" class="${SET[o.k] === v ? 'on' : ''}">${l}</button>`).join('')}</div></div>`;
   }).join('') + '<p class="dim" style="margin-top:14px">설정은 이 브라우저에 저장돼요.</p>';
   const body = openSheet({ title: '설정', body: render() });
   body.addEventListener('change', e => {
